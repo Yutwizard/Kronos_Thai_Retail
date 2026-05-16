@@ -1,0 +1,7 @@
+# torch is installed separately in the Dockerfiles (CPU vs GPU variant)
+transformers>=4.40
+huggingface_hub>=0.20
+einops
+matplotlib>=3.7
+scikit-learn>=1.3
+jupyterlab>=4.0

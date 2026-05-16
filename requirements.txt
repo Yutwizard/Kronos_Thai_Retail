@@ -1,0 +1,16 @@
+# Core data layer
+yfinance>=0.2.40
+pandas>=2.0
+numpy>=1.24
+pyarrow>=14.0
+
+# For Kronos (added in later notebooks)
+# torch>=2.0
+# transformers>=4.40
+# huggingface_hub>=0.20
+# einops
+# matplotlib
+# scikit-learn
+
+# For backtesting (added later)
+# vectorbt   # OR write our own simple backtester

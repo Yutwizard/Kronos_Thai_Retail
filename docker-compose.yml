@@ -1,0 +1,40 @@
+services:
+
+  # CPU service — works on Windows, Linux, macOS.
+  # Use this for: data download, verify_data_layer.py, notebooks 01-02 exploration.
+  notebook:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.cpu
+    volumes:
+      - ./data:/app/data
+      - ./notebooks:/app/notebooks
+      - ./kth:/app/kth
+      - ./configs:/app/configs
+    ports:
+      - "8888:8888"
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+
+  # GPU service — Windows (WSL2) and Linux only. macOS: use Colab instead.
+  # Use this for: Kronos inference (notebook 02), fine-tuning (notebook 04).
+  notebook-gpu:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.gpu
+    volumes:
+      - ./data:/app/data
+      - ./notebooks:/app/notebooks
+      - ./kth:/app/kth
+      - ./configs:/app/configs
+    ports:
+      - "8888:8888"
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

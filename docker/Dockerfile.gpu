@@ -1,0 +1,38 @@
+# GPU variant — requires NVIDIA Container Toolkit on the host.
+# Windows: WSL2 + NVIDIA CUDA drivers for WSL2 + Docker Desktop (WSL2 backend)
+# Linux:   nvidia-container-toolkit package
+# macOS:   NOT SUPPORTED — use the cpu service instead, or run on Colab.
+FROM nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.11 python3-pip python3.11-dev build-essential \
+    && rm -rf /var/lib/apt/lists/* \
+    && update-alternatives --install /usr/bin/python python /usr/bin/python3.11 1 \
+    && update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
+
+# Install data layer deps first (cheap layer, rarely changes)
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Install CUDA-enabled PyTorch, then the rest of the ML stack
+COPY requirements-ml.txt .
+RUN pip install --no-cache-dir torch torchvision \
+        --index-url https://download.pytorch.org/whl/cu121 \
+    && pip install --no-cache-dir -r requirements-ml.txt
+
+# Make kth importable as a proper package
+COPY pyproject.toml .
+COPY kth/ ./kth/
+RUN pip install --no-cache-dir -e .
+
+COPY . .
+
+EXPOSE 8888
+
+CMD ["jupyter", "lab", \
+     "--ip=0.0.0.0", "--port=8888", \
+     "--no-browser", "--allow-root", \
+     "--notebook-dir=/app"]
