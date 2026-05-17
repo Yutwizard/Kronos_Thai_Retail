@@ -7,3 +7,4 @@ reports/*.html
 checkpoints/
 kronos_repo/
 *.egg-info/
+venv/
