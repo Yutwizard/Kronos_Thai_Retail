@@ -62,8 +62,20 @@ def precompute_forecasts(
     cache_path.mkdir(parents=True, exist_ok=True)
     print(f"[precompute] Model: {kronos_th.model_name}  Cache: {cache_path}")
 
-    # NOTE: pd.bdate_range includes Mon-Fri including US holidays.
-    # Days with no ticker data produce no forecasts and no trades — no error.
+    # Pre-filter tickers that have enough data for lookback
+    from kth.data.loader import load_cached
+    viable = []
+    for t in tickers:
+        try:
+            df = load_cached(t)
+            if len(df) >= lookback:
+                viable.append(t)
+        except FileNotFoundError:
+            continue
+    if len(viable) < len(tickers):
+        print(f"[precompute] Skipped {len(tickers) - len(viable)} tickers (insufficient history)")
+    tickers = viable
+
     trading_days = pd.bdate_range(start=start_date, end=end_date, freq="B")
 
     for day in trading_days:
