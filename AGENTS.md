@@ -69,7 +69,11 @@ make build && make verify
 ## Reading order for context
 1. `PROJECT_STRUCTURE.md` — authoritative design doc, module specs, open questions
 2. `README.md` — project overview, caveats, quick start
-3. `docs/superpowers/specs/` — approved design specs for Layers 3–5 (read before implementing any model/backtest/report code)
-4. `kth/data/loader.py` — actual implementation of schema conversion and caching
-5. `kth/data/universe.py` — universe + friction definitions
+3. `docs/superpowers/specs/` — approved design specs for all layers
+4. `docs/superpowers/plans/` — implementation plans (specs → bite-sized tasks)
+5. `docs/superpowers/specs/2026-05-16-local-testing-design.md` — local testing pipeline (CPU + GPU)
+6. `kth/data/loader.py` — actual implementation of schema conversion and caching
+7. `kth/data/universe.py` — universe + friction definitions
+8. `kth/models/kronos_wrapper.py` — KronosTH wrapper (adapted to real Kronos API)
+9. `kth/models/_kronos_bridge.py` — import bridge for non-pip-installable Kronos repo
 

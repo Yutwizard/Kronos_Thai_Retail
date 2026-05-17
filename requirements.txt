@@ -7,7 +7,7 @@ pyarrow>=14.0
 # For Kronos (added in later notebooks)
 # torch>=2.0
 # transformers>=4.40
-# huggingface_hub>=0.20
+huggingface_hub>=0.20
 # einops
 # matplotlib
 # scikit-learn

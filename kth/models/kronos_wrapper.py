@@ -57,12 +57,7 @@ class KronosTH:
     @classmethod
     def from_pretrained(cls, model_name: str = "NeoQuasar/Kronos-small", **kwargs) -> "KronosTH":
         instance = cls(model_name=model_name, **kwargs)
-        instance._load_or_cache_model(key=model_name, is_checkpoint=False)
-        slug = model_name.replace("/", "_").replace("\\", "_")
-        hash_file = Path("./checkpoints") / slug / "commit_hash.txt"
-        if hash_file.exists():
-            commit_hash = hash_file.read_text().strip()
-            instance.model_name = f"{model_name}@{commit_hash[:7]}"
+        instance._load_or_cache_model(key=model_name)
         return instance
 
     @classmethod
@@ -76,18 +71,28 @@ class KronosTH:
             self._predictor = _MODEL_CACHE[key]
             return
 
-        from kronos import KronosPredictor
+        from kth.models._kronos_bridge import KronosPredictor, KronosTokenizer, Kronos
 
-        if is_checkpoint:
-            self._predictor = KronosPredictor.from_pretrained(key, device=self.device)
+        # Auto-derive tokenizer name: Kronos-small -> Kronos-Tokenizer-base
+        if not is_checkpoint:
+            tokenizer_name = "NeoQuasar/Kronos-Tokenizer-base"
+            print(f"Loading tokenizer: {tokenizer_name} ...")
+            tokenizer = KronosTokenizer.from_pretrained(tokenizer_name)
+            print(f"Loading model: {key} ...")
+            model = Kronos.from_pretrained(key)
         else:
-            local_path = self._resolve_local_checkpoint(key)
-            self._predictor = KronosPredictor.from_pretrained(str(local_path), device=self.device)
+            # Checkpoint: both tokenizer and model in same directory
+            ckpt = Path(key)
+            tokenizer = KronosTokenizer.from_pretrained(key)
+            model = Kronos.from_pretrained(key)
 
+        tokenizer.eval()
+        model.eval()
+        self._predictor = KronosPredictor(model=model, tokenizer=tokenizer, device=self.device)
         _MODEL_CACHE[key] = self._predictor
 
     @staticmethod
-    def _resolve_local_checkpoint(model_name: str) -> Path:
+    def _resolve_hf_checkpoint(model_name: str) -> Path:
         import shutil
         from huggingface_hub import snapshot_download, repo_info
 
@@ -121,6 +126,7 @@ class KronosTH:
 
         max_pred_len = max(pred_lens)
 
+        # 1. Input resolution
         if isinstance(ticker_or_df, str):
             from kth.data.loader import load_cached
             df = load_cached(ticker_or_df, self.cache_dir)
@@ -130,34 +136,46 @@ class KronosTH:
             self._validate_columns(df)
             ticker = "<dataframe>"
 
+        # 2. Context window
         if len(df) < lookback:
             raise ValueError(
                 f"lookback={lookback} exceeds available rows ({len(df)}). "
                 "Reduce lookback or extend data history."
             )
-        x_df = df.tail(lookback)
-        x_timestamps = x_df["timestamps"].reset_index(drop=True)
+        x_df = df.tail(lookback).reset_index(drop=True)
+        x_timestamps = x_df["timestamps"]
         x_ohlcva = x_df[["open", "high", "low", "close", "volume", "amount"]]
+        last_ts = x_timestamps.iloc[-1]
 
-        y_timestamps = pd.Series(range(1, max_pred_len + 1))
-
-        raw_samples = self._predictor.predict_batch(
-            x_df=x_ohlcva,
-            x_timestamp=x_timestamps,
-            y_timestamp=y_timestamps,
-            n_samples=n_samples,
+        # 3. Future timestamps (business days — Kronos uses .dt accessor for position encoding)
+        y_timestamps = pd.Series(
+            pd.bdate_range(start=last_ts + pd.Timedelta(days=1), periods=max_pred_len, freq="B")
         )
 
+        # 4. Multi-sample forward pass (Kronos predict() is single-sample; loop n_samples times)
+        raw_close_samples = np.zeros((n_samples, max_pred_len))
+        for s in range(n_samples):
+            pred_df = self._predictor.predict(
+                df=x_ohlcva,
+                x_timestamp=x_timestamps,
+                y_timestamp=y_timestamps,
+                pred_len=max_pred_len,
+                sample_count=1,
+                verbose=False,
+            )
+            raw_close_samples[s, :] = pred_df["close"].values
+
+        # 5. Build HorizonForecast per pred_len
         horizons = {}
         for pl in pred_lens:
-            samples_for_len = raw_samples[:, :pl]
-            horizons[pl] = self._build_horizon(y_timestamps.iloc[:pl], samples_for_len)
+            samples_for_len = raw_close_samples[:, :pl]
+            horizons[pl] = self._build_horizon(pl, samples_for_len)
 
         return ForecastResult(
             ticker=ticker,
             model_name=self.model_name,
             generated_at=pd.Timestamp.now(),
-            lookback_end=x_timestamps.iloc[-1],
+            lookback_end=last_ts,
             horizons=horizons,
         )
 
@@ -171,16 +189,16 @@ class KronosTH:
             )
 
     @staticmethod
-    def _build_horizon(y_ts: pd.Series, samples: np.ndarray) -> HorizonForecast:
-        n_samples, pred_len = samples.shape
+    def _build_horizon(pred_len: int, samples: np.ndarray) -> HorizonForecast:
+        n_samples = samples.shape[0]
         pcts = [5, 25, 50, 75, 95]
-        summary_data = {"timestamps": y_ts.values}
+        summary_data = {"timestamps": range(1, pred_len + 1)}
         for p in pcts:
             summary_data[f"p{p}"] = np.percentile(samples, p, axis=0)
         summary_data["mean"] = np.mean(samples, axis=0)
         summary = pd.DataFrame(summary_data)
 
-        sample_data = {"timestamps": y_ts.values}
+        sample_data = {"timestamps": range(1, pred_len + 1)}
         for i in range(n_samples):
             sample_data[f"s{i}"] = samples[i, :]
         samples_df = pd.DataFrame(sample_data)

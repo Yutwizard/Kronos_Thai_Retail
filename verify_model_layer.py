@@ -12,15 +12,28 @@ from pathlib import Path
 # Setup: mock kronos module before importing our wrapper
 # ---------------------------------------------------------------------------
 mock_kronos = MagicMock()
-mock_predictor_cls = MagicMock()
 
-def _mk_predictor(*args, **kwargs):
-    m = MagicMock()
-    m.predict_batch.side_effect = _mock_predict_batch
-    return m
+# KronosTokenizer + Kronos return new mocks each call (different keys -> different instances)
+mock_kronos.KronosTokenizer = MagicMock()
+mock_kronos.Kronos = MagicMock()
+mock_kronos.KronosTokenizer.from_pretrained = MagicMock(side_effect=lambda *a, **kw: MagicMock())
+mock_kronos.Kronos.from_pretrained = MagicMock(side_effect=lambda *a, **kw: MagicMock())
 
-mock_predictor_cls.from_pretrained.side_effect = _mk_predictor
-mock_kronos.KronosPredictor = mock_predictor_cls
+# KronosPredictor: each constructor returns a unique mock with predict() configured
+def _make_predictor(*args, **kwargs):
+    p = MagicMock()
+    def _mock_predict(df, x_timestamp, y_timestamp, pred_len, T=1.0, top_k=0, top_p=0.9, sample_count=1, verbose=False):
+        max_len = len(y_timestamp)
+        rng = np.random.default_rng(42)
+        base_price = df["close"].iloc[-1] if len(df) > 0 else 100.0
+        path = np.zeros(max_len)
+        drift = rng.normal(0.0005, 0.01, max_len)
+        path[:] = base_price * np.exp(np.cumsum(drift))
+        return pd.DataFrame({"close": path, "open": path, "high": path, "low": path, "volume": np.zeros(max_len), "amount": np.zeros(max_len)})
+    p.predict.side_effect = _mock_predict
+    return p
+
+mock_kronos.KronosPredictor = MagicMock(side_effect=_make_predictor)
 
 import sys
 sys.modules["kronos"] = mock_kronos
@@ -38,18 +51,6 @@ from kth.models.kronos_wrapper import (
 )
 from kth.data.loader import to_kronos_format
 from kth.data.universe import get_all_tickers
-
-# Configure mock to return random walk paths (NOT zeros — zeros make
-# Test 5 a false positive since all percentiles equal 0)
-def _mock_predict_batch(x_df, x_timestamp, y_timestamp, n_samples):
-    max_len = len(y_timestamp)
-    rng = np.random.default_rng(42)
-    base_price = 100.0
-    paths = np.zeros((n_samples, max_len))
-    for s in range(n_samples):
-        drift = rng.normal(0.0005, 0.01, max_len)
-        paths[s, :] = base_price * np.exp(np.cumsum(drift))
-    return paths
 
 # Create synthetic data matching verify_data_layer.py pattern
 def make_synthetic_yf(ticker: str, n_days: int = 1260, seed: int = 0) -> pd.DataFrame:
