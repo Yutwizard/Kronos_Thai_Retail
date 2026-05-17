@@ -215,13 +215,74 @@ class KronosTH:
         if pred_lens is None:
             pred_lens = [5, 20]
 
-        results: dict[str, ForecastResult] = {}
+        max_pred_len = max(pred_lens)
+
+        # 1. Resolve all inputs and prepare data
+        keys: list[str] = []
+        df_list: list[pd.DataFrame] = []
+        x_stamp_list: list[pd.Series] = []
+        y_stamp_list: list[pd.Series] = []
+        last_ts_list: list[pd.Timestamp] = []
+
         for i, item in enumerate(tickers_or_dfs):
             if isinstance(item, str):
+                from kth.data.loader import load_cached
+                try:
+                    df = load_cached(item, self.cache_dir)
+                except FileNotFoundError:
+                    continue
                 key = item
-                input_val = item
             else:
+                df = item.copy()
+                self._validate_columns(df)
                 key = f"df_{i}"
-                input_val = item
-            results[key] = self.forecast(input_val, pred_lens=pred_lens, n_samples=n_samples, lookback=lookback)
+
+            if len(df) < lookback:
+                continue
+
+            x_df = df.tail(lookback).reset_index(drop=True)
+            x_stamp = x_df["timestamps"]
+            x_ohlcva = x_df[["open", "high", "low", "close", "volume", "amount"]]
+            last_ts = x_stamp.iloc[-1]
+
+            y_stamp = pd.Series(
+                pd.bdate_range(start=last_ts + pd.Timedelta(days=1), periods=max_pred_len, freq="B")
+            )
+
+            keys.append(key)
+            df_list.append(x_ohlcva)
+            x_stamp_list.append(x_stamp)
+            y_stamp_list.append(y_stamp)
+            last_ts_list.append(last_ts)
+
+        if not keys:
+            return {}
+
+        # 2. Batched multi-sample forward pass
+        n_tickers = len(keys)
+        all_samples = np.zeros((n_tickers, n_samples, max_pred_len))
+        for s in range(n_samples):
+            pred_dfs = self._predictor.predict_batch(
+                df_list, x_stamp_list, y_stamp_list,
+                pred_len=max_pred_len, sample_count=1, verbose=False,
+            )
+            for t_idx in range(n_tickers):
+                all_samples[t_idx, s, :] = pred_dfs[t_idx]["close"].values
+
+        # 3. Build ForecastResults
+        results: dict[str, ForecastResult] = {}
+        for t_idx, key in enumerate(keys):
+            horizons = {}
+            for pl in pred_lens:
+                samples_for_len = all_samples[t_idx, :, :pl]
+                horizons[pl] = self._build_horizon(pl, samples_for_len)
+
+            results[key] = ForecastResult(
+                ticker=key,
+                model_name=self.model_name,
+                generated_at=pd.Timestamp.now(),
+                lookback_end=last_ts_list[t_idx],
+                horizons=horizons,
+            )
+
         return results

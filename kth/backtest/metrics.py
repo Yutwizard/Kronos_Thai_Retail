@@ -159,9 +159,12 @@ def compute_metrics(
     aligned = pd.concat([daily_returns, bm_rets], axis=1).dropna()
     if len(aligned) > 2:
         aligned.columns = ["strategy", "benchmark"]
-        slope, intercept, _, _, _ = stats.linregress(aligned["benchmark"], aligned["strategy"])
-        beta = slope
-        alpha = intercept * periods_per_year
+        if aligned["benchmark"].nunique() > 1:
+            slope, intercept, _, _, _ = stats.linregress(aligned["benchmark"], aligned["strategy"])
+            beta = slope
+            alpha = intercept * periods_per_year
+        else:
+            beta = alpha = 0.0
     else:
         beta = alpha = 0.0
 
