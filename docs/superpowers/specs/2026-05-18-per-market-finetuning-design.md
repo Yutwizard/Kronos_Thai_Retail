@@ -255,10 +255,10 @@ checkpoints/
 
 ---
 
-## 8. Remaining Open Questions
+## 8. Decisions
 
-1. **crypto trim from 20→12:** Agreed? Cut list: keep BTC, ETH, SOL, ADA, AVAX, LINK, DOGE, DOT, LTC, NEAR, VET, MATIC. Drop BNB, XRP, TRX, APT, SHIB, ARB, SEI, ATOM.
-2. **reit expansion:** Skip — existing 2 tickers (VNQ, CPNREIT.BK) are sufficient. Infrastructure funds have <1 year data and would overfit.
+- **Crypto trim 20→12:** ✅ Confirmed. Cut list: keep BTC, ETH, SOL, ADA, AVAX, LINK, DOGE, DOT, LTC, NEAR, VET, MATIC. Drop BNB, XRP, TRX, APT, SHIB, ARB, SEI, ATOM.
+- **REIT/infra expansion:** ❌ Dropped. Keep original 2 tickers (VNQ, CPNREIT.BK).
 
 ---
 
