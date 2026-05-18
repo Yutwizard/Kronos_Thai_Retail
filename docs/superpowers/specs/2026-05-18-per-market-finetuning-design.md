@@ -21,7 +21,7 @@ Training separate models per market allows each to learn its own distribution, i
 
 | Model | Tickers | Source |
 |-------|---------|--------|
-| `kronos-thai-equity` | 15 | SET blue chips (unchanged) |
+| `kronos-thai-equity` | 50 | Expanded SET stocks (15→50) |
 | `kronos-thai-index` | 2 | ^SET.BK + TDEX.BK (added) |
 | `kronos-us-equity` | 17 | 10 existing + 7 added |
 | `kronos-commodity` | 4 | Unchanged |
@@ -32,6 +32,20 @@ Training separate models per market allows each to learn its own distribution, i
 **Excluded from fine-tuning:** bond_proxy (not practical for Thai retail), etf_global (dropped).
 
 ### 2.2 Expanded Tickers
+
+#### thai_equity (15 → 50)
+
+| Sector | Tickers | Count |
+|--------|---------|-------|
+| Energy | PTT.BK, PTTEP.BK, BGRIM.BK, GPSC.BK, TOP.BK, IRPC.BK, BANPU.BK, BCP.BK, RATCH.BK | 9 |
+| Banking | KBANK.BK, SCB.BK, BBL.BK, KTB.BK, TISCO.BK, TCAP.BK, KKP.BK, MEGA.BK | 8 |
+| Property/Constr. | CPN.BK, LH.BK, QH.BK, AP.BK, ORI.BK, SCC.BK, HMPRO.BK, SIRI.BK, PSH.BK | 9 |
+| Commerce/Retail | CPALL.BK, CRC.BK, GLOBAL.BK, DOHOME.BK | 4 |
+| Food/Beverage | MINT.BK, CPF.BK, OSP.BK, ICHI.BK, SAPPE.BK | 5 |
+| Healthcare | BDMS.BK, BH.BK, BCH.BK, CHG.BK | 4 |
+| Telecom/Tech | ADVANC.BK, TRUE.BK, JMART.BK, HANA.BK, DELTA.BK, GULF.BK | 6 |
+| Tourism/Logistics | AOT.BK, CENTEL.BK, ERW.BK, BEM.BK, BTS.BK | 5 |
+| **Total** | | **50** |
 
 #### us_equity (+7)
 
