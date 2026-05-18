@@ -55,7 +55,12 @@ def compute_weights(
         return {t: ranks[t] / total_rank for t in selected}
 
     if mode == "inv_vol":
-        inv_vols = {t: 1.0 / max(recent_vols.get(t, 0.01), 1e-8) for t in selected}
+        inv_vols = {}
+        for t in selected:
+            vol = recent_vols.get(t, 0.01)
+            if vol is None or vol != vol or vol <= 0:
+                vol = 0.01
+            inv_vols[t] = 1.0 / max(vol, 1e-8)
         total = sum(inv_vols.values())
         return {t: inv_vols[t] / total for t in selected}
 

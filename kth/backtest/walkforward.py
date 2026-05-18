@@ -292,7 +292,11 @@ def run_walkforward(
                     if df_t is not None:
                         mask = df_t["timestamps"] <= day
                         vol_df = df_t[mask].tail(config.inv_vol_window)
-                        recent_vols[t] = float(vol_df["close"].pct_change().std())
+                        if len(vol_df) >= 2:
+                            vol = float(vol_df["close"].pct_change().std())
+                        else:
+                            vol = 0.02
+                        recent_vols[t] = vol if (vol is not None and vol == vol and vol > 0) else 0.02
                 except Exception:
                     recent_vols[t] = 0.02
 

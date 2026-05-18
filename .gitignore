@@ -4,6 +4,8 @@ __pycache__/
 data/raw/*.parquet
 data/forecast_cache/
 reports/*.html
+data/backtest_results/
+data/raw_synthetic_backup/
 checkpoints/
 kronos_repo/
 *.egg-info/
