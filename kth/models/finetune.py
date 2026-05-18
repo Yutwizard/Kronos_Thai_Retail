@@ -263,9 +263,10 @@ def finetune_predictor(
     output_path.mkdir(parents=True, exist_ok=True)
 
     train_data = dataset["train"]
-    val_data = dataset.get("val")
+    val_data = dataset.get("val") if "val" in dataset else None
     if val_data is not None and len(val_data) == 0:
         val_data = None
+        print("WARNING: val set is empty — skipping early stopping")
 
     predictor = KronosPredictor.from_pretrained(
         tokenizer_path, device="cuda"
