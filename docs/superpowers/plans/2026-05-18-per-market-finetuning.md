@@ -131,9 +131,9 @@ git commit -m "feat: expand universe — 35 Thai, 7 US, 12 crypto trimmed"
 **Files:**
 - Modify: `kth/models/finetune.py`
 
-- [ ] **Step 1: Update function signature**
+- [ ] **Step 1: Update function signature and add holdout support**
 
-Change `prepare_dataset()` to accept an optional `tickers` list and an optional pre-loaded `ticker_data` dict:
+Change `prepare_dataset()` to accept `tickers`, `ticker_data`, and a `holdout_start_date` parameter:
 
 ```python
 def prepare_dataset(
@@ -143,6 +143,7 @@ def prepare_dataset(
     fold: int = 0,
     n_folds: int = 3,
     fold_step_months: int = 6,
+    holdout_start_date: str | None = None,
     lookback: int = 400,
     pred_len: int = 20,
     class_weights: dict[str, float] | None = None,
@@ -151,9 +152,11 @@ def prepare_dataset(
 ) -> dict[str, KronosDataset]:
 ```
 
-- [ ] **Step 2: Load tickers conditionally**
+When `holdout_start_date` is provided, the function builds a single test split from data on or after that date, skipping train/val/fold logic entirely.
 
-Replace the hardcoded `get_all_tickers()` call:
+- [ ] **Step 2: Add holdout mode branching**
+
+After setting `target_tickers`, add holdout logic that bypasses the fold-based split:
 
 ```python
     from kth.data.loader import load_cached
@@ -162,10 +165,34 @@ Replace the hardcoded `get_all_tickers()` call:
     np.random.seed(seed)
     random.seed(seed)
 
-    # Use provided tickers or default to full universe
     target_tickers = tickers if tickers is not None else get_all_tickers()
     print(f"prepare_dataset: {len(target_tickers)} tickers, fold {fold}")
-```
+
+    # ── Holdout mode ──
+    if holdout_start_date is not None:
+        from datetime import datetime
+        holdout_since = pd.Timestamp(holdout_start_date)
+        samples = []
+        for ticker in target_tickers:
+            if ticker_data is not None and ticker in ticker_data:
+                df = ticker_data[ticker]
+            else:
+                try:
+                    df = load_cached(ticker, cache_dir)
+                except FileNotFoundError:
+                    skipped += 1
+                    continue
+            df = df.sort_values("timestamps").reset_index(drop=True)
+            holdout = df[df["timestamps"] >= holdout_since]
+            if len(holdout) < lookback + pred_len:
+                skipped += 1
+                continue
+            for i in range(0, len(holdout) - lookback - pred_len + 1, pred_len):
+                x, y = _make_window(holdout, i, lookback, pred_len, ohlcva_cols)
+                samples.append((x, y))
+        print(f"Holdout: {len(samples)} samples from {holdout_start_date}")
+        return {"test": KronosDataset(samples)}
+    # ── Normal fold-based split ──
 
 - [ ] **Step 3: Use ticker_data if provided**
 
@@ -416,6 +443,8 @@ git commit -m "fix: handle empty val set in finetune_predictor"
 
 - [ ] **Step 1: Run download script**
 
+`download_universe()` overwrites existing files with fresh data. If most ~83 untrimmed tickers are already cached, only the 9 new ones need downloading (~5 min). If re-running from empty, all ~92 tickers take ~15-30 min.
+
 ```bash
 venv/bin/python scripts/download_data.py
 ```
@@ -428,7 +457,7 @@ Run: `venv/bin/python -c "from kth.data.loader import list_cached; cached = list
 
 Expected: Thai count ~50, crypto count ~12.
 
-- [ ] **Step 3: Commit** (gitignore already covers `data/raw/*.parquet`)
+- [ ] **Step 3: Commit** (gitignore already covers `data/raw/*.parquet`; existing tickers are overwritten with fresh data, new tickers are added — ~15 min for a full re-download)
 
 ---
 
@@ -492,48 +521,24 @@ This notebook is designed to run on Colab T4. It takes a `MODEL_NAME` variable a
    ]
   },
 
-  # ── Cell 5: Prepare dataset ──
+   # ── Cell 5: Prepare dataset ──
   {"cell_type": "code", "execution_count": null, "metadata": {},
    "source": [
-    "import numpy as np\n",
-    "\n",
     "if MODE == \"train\":\n",
     "    dataset = prepare_dataset(\n",
     "        tickers=tickers,\n",
     "        cache_dir='/content/drive/MyDrive/kronos-th/data/raw',\n",
     "        fold=FOLD,\n",
     "    )\n",
+    "    print(f\"Train: {len(dataset['train'])}\")\n",
+    "    print(f\"Val:   {len(dataset['val'])}\")\n",
     "elif MODE == \"holdout\":\n",
-    "    # Build a holdout dataset: 2025-01 to present\n",
-    "    # Reuse prepare_dataset but override fold dates manually\n",
-    "    from kth.data.loader import load_cached\n",
-    "    from kth.data.universe import get_ticker_class\n",
-    "    from kth.models.finetune import KronosDataset\n",
-    "\n",
-    "    ohlcva_cols = [\"open\",\"high\",\"low\",\"close\",\"volume\",\"amount\"]\n",
-    "    lookback = 400\n",
-    "    pred_len = 20\n",
-    "    samples = []\n",
-    "    for t in tickers:\n",
-    "        try:\n",
-    "            df = load_cached(t, '/content/drive/MyDrive/kronos-th/data/raw')\n",
-    "        except:\n",
-    "            continue\n",
-    "        df = df.sort_values(\"timestamps\").reset_index(drop=True)\n",
-    "        holdout = df[df[\"timestamps\"] >= \"2025-01-01\"]\n",
-    "        if len(holdout) < lookback + pred_len:\n",
-    "            continue\n",
-    "        for i in range(0, len(holdout) - lookback - pred_len + 1, pred_len):\n",
-    "            x = holdout.iloc[i:i+lookback][ohlcva_cols].copy()\n",
-    "            close_w = holdout.iloc[i+lookback-1:i+lookback+pred_len][\"close\"]\n",
-    "            y = np.log(close_w.values[1:] / close_w.values[:-1])\n",
-    "            samples.append((x.reset_index(drop=True), pd.Series(y)))\n",
-    "    dataset = {\"test\": KronosDataset(samples)}\n",
-    "    print(f\"Holdout samples: {len(samples)}\")\n",
-    "\n",
-    "print(f\"Train: {len(dataset.get('train',[]))}\" if 'train' in dataset else \"\")\n",
-    "print(f\"Val:   {len(dataset.get('val',[]))}\")\n",
-    "print(f\"Test:  {len(dataset.get('test',[]))}\")"
+    "    dataset = prepare_dataset(\n",
+    "        tickers=tickers,\n",
+    "        cache_dir='/content/drive/MyDrive/kronos-th/data/raw',\n",
+    "        holdout_start_date='2025-01-01',\n",
+    "    )\n",
+    "print(f\"Test:  {len(dataset['test'])}\")"
    ]
   },
 
@@ -672,7 +677,14 @@ def main():
     r_zs = run_walkforward(config, k_zs, tickers)
 
     # Fine-tuned
-    k_ft = KronosTH.from_checkpoint(checkpoint_path, device="auto")
+    try:
+        k_ft = KronosTH.from_checkpoint(checkpoint_path, device="auto")
+    except Exception as e:
+        print(f"FAILED to load checkpoint: {e}")
+        print(f"Path: {checkpoint_path}")
+        print("Fine-tuned model not available — comparison skipped")
+        return
+
     precompute_forecasts(
         k_ft, tickers,
         start_date=config.start_date, end_date=config.end_date,
@@ -684,11 +696,20 @@ def main():
     print(f"\n=== {model_name}: Fine-Tuned vs Zero-Shot ===")
     print(f"{'Metric':20s} {'Zero-Shot':>12s} {'Fine-Tuned':>12s} {'Δ':>8s}")
     print("-" * 54)
-    for key in ["cagr", "sharpe", "max_drawdown", "hit_rate", "annualised_vol"]:
+    for key in ["cagr", "sharpe", "sortino", "max_drawdown", "calmar", "hit_rate"]:
         zs_v = r_zs.metrics.get(key, 0) or 0
         ft_v = r_ft.metrics.get(key, 0) or 0
         delta = ft_v - zs_v
         print(f"{key:20s} {zs_v:>+10.2%} {ft_v:>+10.2%} {delta:>+7.2%}")
+
+    # Statistical significance
+    zs_t = r_zs.metrics.get("t_stat", 0) or 0
+    zs_p = r_zs.metrics.get("p_value", 1) or 1
+    ft_t = r_ft.metrics.get("t_stat", 0) or 0
+    ft_p = r_ft.metrics.get("p_value", 1) or 1
+    print(f"\nStatistical Significance (vs equal-weight benchmark):")
+    print(f"  Zero-Shot:  t={zs_t:.2f} p={zs_p:.3f}")
+    print(f"  Fine-Tuned: t={ft_t:.2f} p={ft_p:.3f}")
 
     out_dir = Path(f"./data/backtest_results/{model_name}_ft")
     r_ft.save(str(out_dir))
@@ -712,10 +733,10 @@ git commit -m "feat: add fine-tuned vs zero-shot backtest comparison script"
 
 ### Self-Review
 
-1. **Spec coverage:** Every requirement from the spec has a corresponding task — universe expansion (Task 1), `tickers`/`ticker_data` params (Task 2), tokenizer caching (Task 3), `evaluate_model()` (Task 4), empty val handling (Task 5), training notebook (Task 6).
+1. **Spec coverage:** Every requirement from the spec has a corresponding task — universe expansion (Task 1), `tickers`/`ticker_data` params + holdout support (Task 2), tokenizer caching (Task 3), `evaluate_model()` (Task 4), empty val handling (Task 5), data download (Task 6), training notebook (Task 7), backtest comparison (Task 8).
 
 2. **Placeholder scan:** No TBDs, TODOs, or "implement later" patterns. Every code block is complete.
 
-3. **Type consistency:** `prepare_dataset()` signature changes match between Task 2 (definition) and Task 6 (usage in notebook). `evaluate_model()` signature in Task 4 matches the spec.
+3. **Type consistency:** `prepare_dataset()` signature changes match between Task 2 (definition) and Task 7 (usage in notebook). `evaluate_model()` signature in Task 4 matches the spec. `compare_finetune.py` imports match actual module paths.
 
 4. **Testing:** No test framework exists in this project (per AGENTS.md). Verification steps use `python -c` inline checks instead of pytest.
