@@ -24,8 +24,8 @@ Training separate models per market allows each to learn its own distribution, i
 | `kronos-thai-equity` | 50 | Expanded SET stocks (15→50) |
 | `kronos-thai-index` | 2 | ^SET.BK + TDEX.BK (added) |
 | `kronos-us-equity` | 17 | 10 existing + 7 added |
-| `kronos-commodity` | 4 | Unchanged |
-| `kronos-crypto` | 14 | 5 existing + 9 added |
+| `kronos-commodity` | 5 | GLD, GC=F, SLV, USO, BNO (TFEX proxies) |
+| `kronos-crypto` | 20 | 5 existing + 15 added |
 | `kronos-reit-infra` | 9 | Thai REITs + infrastructure |
 | `kronos-fx-macro` | 2 | Unchanged |
 
@@ -47,6 +47,16 @@ Training separate models per market allows each to learn its own distribution, i
 | Tourism/Logistics | AOT.BK, CENTEL.BK, ERW.BK, BEM.BK, BTS.BK | 5 |
 | **Total** | | **50** |
 
+#### commodity (+1)
+
+| Ticker | Name | Why |
+|--------|------|-----|
+| GLD | ✅ already in | Gold ETF |
+| GC=F | ✅ already in | Gold futures (TFEX proxy) |
+| SLV | ✅ already in | Silver ETF |
+| USO | ✅ already in | WTI crude oil |
+| **BNO** | United States Brent Oil | Brent crude (TFEX proxy) |
+
 #### us_equity (+7)
 
 | Ticker | Name |
@@ -59,19 +69,30 @@ Training separate models per market allows each to learn its own distribution, i
 | KO | Coca-Cola |
 | PEP | PepsiCo |
 
-#### crypto (+9)
+#### crypto (5 → 20)
 
-| Ticker | Name |
-|--------|------|
-| ADA-USD | Cardano |
-| DOGE-USD | Dogecoin |
-| AVAX-USD | Avalanche |
-| DOT-USD | Polkadot |
-| LINK-USD | Chainlink |
-| MATIC-USD | Polygon |
-| ATOM-USD | Cosmos |
-| TRX-USD | TRON |
-| APT-USD | Aptos |
+| Round | Ticker | Name |
+|-------|--------|------|
+| Existing (5) | BTC-USD | Bitcoin |
+| | ETH-USD | Ethereum |
+| | SOL-USD | Solana |
+| | BNB-USD | Binance Coin |
+| | XRP-USD | Ripple |
+| Round 1 (9) | ADA-USD | Cardano |
+| | DOGE-USD | Dogecoin |
+| | AVAX-USD | Avalanche |
+| | DOT-USD | Polkadot |
+| | LINK-USD | Chainlink |
+| | MATIC-USD | Polygon |
+| | ATOM-USD | Cosmos |
+| | TRX-USD | TRON |
+| | APT-USD | Aptos |
+| Round 2 (6) | LTC-USD | Litecoin |
+| | SHIB-USD | Shiba Inu |
+| | ARB-USD | Arbitrum |
+| | NEAR-USD | NEAR Protocol |
+| | VET-USD | VeChain |
+| | SEI-USD | Sei |
 
 #### thai_index (+1)
 
@@ -213,10 +234,9 @@ k = KronosTH.from_checkpoint("./checkpoints/crypto/fold2")
 
 ## 8. Open Questions
 
-1. **T4 session limit:** 7 models × ~7 hours each = ~49 hours total. Run sequentially (auto-resume across sessions) or in parallel (multiple Colab accounts)?
+1. **T4 session limit:** 8 models × ~7 hours each = ~56 hours total. Run sequentially (auto-resume across sessions) or in parallel (multiple Colab accounts)?
 2. **fx_macro (2 tickers):** Too small to fine-tune effectively. Keep as zero-shot only?
-3. **commodity (4 tickers):** Borderline. Should we add more commodity ETFs (UNG, DBC, COPX)?
-4. **thai_index (2 tickers):** TDEX.BK has only ~1 year history — will only contribute to fold 2 training. Acceptable?
+3. **thai_index (2 tickers):** TDEX.BK has only ~1 year history — will only contribute to fold 2 training. Acceptable?
 
 ---
 
