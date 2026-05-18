@@ -57,7 +57,7 @@ BTC-USD, ETH-USD, SOL-USD, ADA-USD, AVAX-USD, LINK-USD, DOGE-USD, DOT-USD, LTC-U
 |-------|---------|--------|
 | thai_index | ^SET.BK | Zero-shot |
 | commodity | GLD, GC=F, SLV, USO | Zero-shot |
-| reit | VNQ, CPNREIT.BK | Zero-shot (revert to original 2) |
+| reit | VNQ, CPNREIT.BK | Zero-shot (no expansion needed) |
 | fx_major | — | Zero-shot |
 | fx_thb | THB=X | Zero-shot |
 | bond_proxy | TLT, IEF, HYG | Zero-shot |
@@ -181,9 +181,11 @@ def from_checkpoint(cls, checkpoint_path: str, **kwargs):
 def evaluate_model(
     checkpoint_path: str,
     test_dataset: KronosDataset,
+    kronos_model_name: str = "NeoQuasar/Kronos-small",
 ) -> dict:
     """Returns {hit_rate, mae, sharpe, per_ticker_hit_rates}
-       for both fine-tuned and zero-shot on the same test set."""
+       for both fine-tuned and zero-shot on the same test set.
+       Zero-shot baseline is loaded internally from kronos_model_name."""
 ```
 
 Reports both absolute and relative improvement. Example output:
@@ -209,6 +211,8 @@ compare: CAGR, Sharpe, Max DD, hit-rate
 ### 5.3 Holdout Validation
 
 Must beat zero-shot on 2025 data (unseen in any fold) to be deployed. If holdout performance is worse, fine-tuned checkpoint is rejected and the model stays zero-shot.
+
+**Fallback:** if none of the 3 folds pass the success criteria (no fold improves hit-rate by ≥1.5pp, or <50% of tickers improve), the model stays zero-shot. No checkpoint is promoted.
 
 ### 5.4 Success Criteria
 
@@ -254,7 +258,7 @@ checkpoints/
 ## 8. Remaining Open Questions
 
 1. **crypto trim from 20→12:** Agreed? Cut list: keep BTC, ETH, SOL, ADA, AVAX, LINK, DOGE, DOT, LTC, NEAR, VET, MATIC. Drop BNB, XRP, TRX, APT, SHIB, ARB, SEI, ATOM.
-2. **reit revert:** Revert to original 2 tickers (VNQ, CPNREIT.BK) and skip infrastructure funds that have <1 year data?
+2. **reit expansion:** Skip — existing 2 tickers (VNQ, CPNREIT.BK) are sufficient. Infrastructure funds have <1 year data and would overfit.
 
 ---
 
