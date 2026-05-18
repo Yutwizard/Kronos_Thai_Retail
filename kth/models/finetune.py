@@ -294,3 +294,107 @@ def finetune_predictor(
 
     print(f"Predictor fine-tuned. Best checkpoint saved to {output_path}")
     return str(output_path)
+
+
+def evaluate_model(
+    checkpoint_path: str,
+    test_dataset: KronosDataset,
+    kronos_model_name: str = "NeoQuasar/Kronos-small",
+    max_samples: int = 100,
+) -> dict:
+    """
+    Compare fine-tuned vs zero-shot on the same test set.
+    Compares forecast-horizon return direction (sign of pct change
+    at pred_len) against actual horizon return direction.
+
+    Returns dict with per-metric comparison:
+      - hit_rate: direction accuracy
+      - mae: mean absolute error of predicted return vs actual return
+      - n_samples: number of test windows evaluated
+    """
+    from kth.models.kronos_wrapper import KronosTH
+
+    device = "cuda" if __import__("torch").cuda.is_available() else "cpu"
+
+    # Zero-shot baseline
+    k_zs = KronosTH.from_pretrained(kronos_model_name, device=device)
+    # Fine-tuned
+    k_ft = KronosTH.from_checkpoint(checkpoint_path, device=device)
+
+    n = min(max_samples, len(test_dataset))
+    zs_hits = 0
+    zs_total = 0
+    zs_errors: list[float] = []
+    ft_hits = 0
+    ft_total = 0
+    ft_errors: list[float] = []
+
+    for idx in range(n):
+        x_tensor, y_actual = test_dataset[idx]
+        lookback = x_tensor.shape[0]
+        pred_len = len(y_actual)
+
+        # Actual horizon return (total log-return over pred_len steps)
+        actual_return = float(y_actual.sum())
+
+        # Build DataFrame from tensor for Kronos input
+        x_df = pd.DataFrame(
+            x_tensor.numpy(),
+            columns=["open", "high", "low", "close", "volume", "amount"],
+        )
+        last_close = float(x_df["close"].iloc[-1])
+
+        # Build timestamps
+        x_stamp = pd.Series(
+            pd.bdate_range(
+                end=pd.Timestamp.now() - pd.Timedelta(days=1),
+                periods=lookback, freq="B",
+            )
+        )
+        y_stamp = pd.Series(
+            pd.bdate_range(
+                start=x_stamp.iloc[-1] + pd.Timedelta(days=1),
+                periods=pred_len, freq="B",
+            )
+        )
+
+        try:
+            r_zs = k_zs.forecast(
+                ticker_or_df=x_df, pred_lens=[pred_len],
+                n_samples=10, lookback=lookback,
+            )
+            zs_pred_close = float(
+                r_zs.horizons[pred_len].summary["p50"].iloc[-1]
+            )
+            zs_return = np.log(zs_pred_close / last_close)
+            if np.sign(zs_return) == np.sign(actual_return):
+                zs_hits += 1
+            zs_errors.append(abs(zs_return - actual_return))
+            zs_total += 1
+        except Exception:
+            pass
+
+        try:
+            r_ft = k_ft.forecast(
+                ticker_or_df=x_df, pred_lens=[pred_len],
+                n_samples=10, lookback=lookback,
+            )
+            ft_pred_close = float(
+                r_ft.horizons[pred_len].summary["p50"].iloc[-1]
+            )
+            ft_return = np.log(ft_pred_close / last_close)
+            if np.sign(ft_return) == np.sign(actual_return):
+                ft_hits += 1
+            ft_errors.append(abs(ft_return - actual_return))
+            ft_total += 1
+        except Exception:
+            pass
+
+    return {
+        "n_samples": max(zs_total, ft_total, 1),
+        "zero_shot_hit_rate": zs_hits / max(zs_total, 1),
+        "fine_tuned_hit_rate": ft_hits / max(ft_total, 1),
+        "zero_shot_mae": np.mean(zs_errors) if zs_errors else 0.0,
+        "fine_tuned_mae": np.mean(ft_errors) if ft_errors else 0.0,
+        "improvement_pp": (ft_hits / max(ft_total, 1)) - (zs_hits / max(zs_total, 1)),
+    }
