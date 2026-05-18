@@ -166,11 +166,11 @@ After setting `target_tickers`, add holdout logic that bypasses the fold-based s
     random.seed(seed)
 
     target_tickers = tickers if tickers is not None else get_all_tickers()
+    skipped = 0
     print(f"prepare_dataset: {len(target_tickers)} tickers, fold {fold}")
 
     # ── Holdout mode ──
     if holdout_start_date is not None:
-        from datetime import datetime
         holdout_since = pd.Timestamp(holdout_start_date)
         samples = []
         for ticker in target_tickers:
@@ -638,7 +638,6 @@ Usage: venv/bin/python scripts/compare_finetune.py <model_name> <checkpoint_path
 Example: venv/bin/python scripts/compare_finetune.py thai_equity ./checkpoints/thai_equity/fold2
 """
 import sys
-import time
 from pathlib import Path
 
 from kth.models.kronos_wrapper import KronosTH
