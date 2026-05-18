@@ -15,6 +15,9 @@ import torch
 import torch.utils.data
 
 
+_TOKENIZER_CACHE: dict[str, object] = {}
+
+
 # Module-level Dataset class (NOT inside a function — required for DataLoader pickle).
 # Must inherit torch.utils.data.Dataset so Kronos's fit() accepts it via isinstance check.
 class KronosDataset(torch.utils.data.Dataset):
@@ -204,9 +207,13 @@ def finetune_tokenizer(
     np.random.seed(seed)
     random.seed(seed)
 
-    from kronos import KronosTokenizer
-
-    tokenizer = KronosTokenizer.from_pretrained("NeoQuasar/Kronos-Tokenizer-base")
+    global _TOKENIZER_CACHE
+    if "base" not in _TOKENIZER_CACHE:
+        from kronos import KronosTokenizer
+        _TOKENIZER_CACHE["base"] = KronosTokenizer.from_pretrained(
+            "NeoQuasar/Kronos-Tokenizer-base"
+        )
+    tokenizer = _TOKENIZER_CACHE["base"]
     train_data = dataset["train"]
 
     output_path = Path(output_dir)
