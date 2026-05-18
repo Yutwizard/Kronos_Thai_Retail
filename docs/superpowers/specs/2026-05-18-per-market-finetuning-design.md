@@ -17,7 +17,7 @@ Training separate models per market allows each to learn its own distribution, i
 
 ### 2.1 Asset Classes and Model Count
 
-7 fine-tuned models, one per investable class:
+8 fine-tuned models, one per investable class:
 
 | Model | Tickers | Source |
 |-------|---------|--------|
@@ -27,7 +27,8 @@ Training separate models per market allows each to learn its own distribution, i
 | `kronos-commodity` | 5 | GLD, GC=F, SLV, USO, BNO (TFEX proxies) |
 | `kronos-crypto` | 20 | 5 existing + 15 added |
 | `kronos-reit-infra` | 9 | Thai REITs + infrastructure |
-| `kronos-fx-macro` | 2 | Unchanged |
+| `kronos-fx-major` | 8 | Major FX pairs |
+| `kronos-fx-thb` | 6 | THB crosses (TFEX futures) |
 
 **Excluded from fine-tuning:** bond_proxy (not practical for Thai retail), etf_global (dropped).
 
@@ -99,6 +100,21 @@ Training separate models per market allows each to learn its own distribution, i
 | Ticker | Name |
 |--------|------|
 | TDEX.BK | One Asset SET50 ETF |
+
+#### fx_major (8 major pairs)
+
+EURUSD=X, GBPUSD=X, USDJPY=X, USDCAD=X, AUDUSD=X, NZDUSD=X, USDCHF=X, USDSGD=X
+
+#### fx_thb (6 THB crosses — TFEX futures)
+
+| Ticker | Name |
+|--------|------|
+| THB=X | USD/THB |
+| EURTHB=X | Euro / THB |
+| JPYTHB=X | Japanese Yen / THB |
+| GBPTHB=X | British Pound / THB |
+| AUDTHB=X | Australian Dollar / THB |
+| SGDTHB=X | Singapore Dollar / THB |
 
 #### reit (+7, remove VNQ)
 
