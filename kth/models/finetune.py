@@ -41,10 +41,13 @@ def _validate_not_empty(dataset: dict, fold: int) -> None:
 
 
 def prepare_dataset(
+    tickers: list[str] | None = None,
+    ticker_data: dict[str, pd.DataFrame] | None = None,
     cache_dir: str = "./data/raw",
     fold: int = 0,
     n_folds: int = 3,
     fold_step_months: int = 6,
+    holdout_start_date: str | None = None,
     lookback: int = 400,
     pred_len: int = 20,
     class_weights: dict[str, float] | None = None,
@@ -83,19 +86,51 @@ def prepare_dataset(
         y = np.log(close_window.values[1:] / close_window.values[:-1])
         return x.reset_index(drop=True), pd.Series(y)
 
-    tickers = get_all_tickers()
+    target_tickers = tickers if tickers is not None else get_all_tickers()
     skipped = 0
+    print(f"prepare_dataset: {len(target_tickers)} tickers, fold {fold}")
+
+    # ── Holdout mode ──
+    if holdout_start_date is not None:
+        holdout_since = pd.Timestamp(holdout_start_date)
+        samples = []
+        for ticker in target_tickers:
+            if ticker_data is not None and ticker in ticker_data:
+                df = ticker_data[ticker]
+            else:
+                try:
+                    df = load_cached(ticker, cache_dir)
+                except FileNotFoundError:
+                    skipped += 1
+                    continue
+            df = df.sort_values("timestamps").reset_index(drop=True)
+            holdout = df[df["timestamps"] >= holdout_since]
+            if len(holdout) < lookback + pred_len:
+                skipped += 1
+                continue
+            for i in range(0, len(holdout) - lookback - pred_len + 1, pred_len):
+                x, y = _make_window(holdout, i, lookback, pred_len, ohlcva_cols)
+                samples.append((x, y))
+        print(f"Holdout: {len(samples)} samples from {holdout_start_date}")
+        if skipped:
+            print(f"  Skipped {skipped} tickers (insufficient data or missing cache)")
+        return {"test": KronosDataset(samples)}
+
+    # ── Normal fold-based split ──
 
     train_raw: list[tuple] = []  # (x, y, asset_class)
     val_samples: list[tuple[pd.DataFrame, pd.Series]] = []
     test_samples: list[tuple[pd.DataFrame, pd.Series]] = []
 
-    for ticker in tickers:
-        try:
-            df = load_cached(ticker, cache_dir)
-        except FileNotFoundError:
-            skipped += 1
-            continue
+    for ticker in target_tickers:
+        if ticker_data is not None and ticker in ticker_data:
+            df = ticker_data[ticker]
+        else:
+            try:
+                df = load_cached(ticker, cache_dir)
+            except FileNotFoundError:
+                skipped += 1
+                continue
 
         df = df.sort_values("timestamps").reset_index(drop=True)
         asset_cls = get_ticker_class(ticker) or "unknown"
