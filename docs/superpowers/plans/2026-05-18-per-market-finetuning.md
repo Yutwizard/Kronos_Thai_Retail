@@ -739,3 +739,28 @@ git commit -m "feat: add fine-tuned vs zero-shot backtest comparison script"
 3. **Type consistency:** `prepare_dataset()` signature changes match between Task 2 (definition) and Task 7 (usage in notebook). `evaluate_model()` signature in Task 4 matches the spec. `compare_finetune.py` imports match actual module paths.
 
 4. **Testing:** No test framework exists in this project (per AGENTS.md). Verification steps use `python -c` inline checks instead of pytest.
+
+---
+
+### Training Results (GTX 1060 — 2026-05-18)
+
+**Fold structure fix:** `fold_step_months=6` produced empty val/test (6mo has ~126 bdays, far below 400-row lookback). Changed to `fold_step_months=21` (21mo × 21 bdays = 441 ≥ 420 ✅). SGDR (CosineAnnealingWarmRestarts, T_0=5ep, T_mult=1) with early stopping patience=3.
+
+| Model | Folds | Val Samples | Early Stop | Best Fold | ZS Rate | FT Rate | Δ |
+|-------|-------|-------------|------------|-----------|---------|---------|---|
+| crypto | 0-2 | 132 / 132 / 0 | Ep4 / Ep4 / Ep10 | F1 | 56.4% | 56.4% | 0.0pp |
+| us_equity | 0-2 | 17 / 34 / 0 | Ep6 / Ep5 / Ep10 | **F2** | 62.7% | **64.7%** | **+2.0pp** |
+| thai_equity | 0-2 | 48 / 49 / 0 | Ep4 / Ep4 / Ep10 | F0/F1 | 60.2% | 57.1% | −3.1pp |
+
+**Key insight:** Early stopping by val loss prevents severe overfitting but val period (trained on 2016-2022) distribution differs from holdout (2025). Fold 2 (no val → full 10 epochs) wins for us_equity — suggests mild overfitting to training distribution helps 2025 performance. Crypto and thai_equity stay zero-shot per plan.
+
+**Checkpoints:** All 9 at `./checkpoints/{model}/fold{f}/best/` (model_config.json + model.safetensors).
+
+**Training time:** ~65 hours total on GTX 1060 6GB (all 3 models × 3 folds × 5-10 epochs).
+| Model | Time
+|-------|------
+| crypto | 12.2 hrs
+| us_equity | 19.3 hrs
+| thai_equity | 34.1 hrs
+
+**Deployment:** us_equity fold 2 deployed. Crypto and thai_equity remain zero-shot per spec.

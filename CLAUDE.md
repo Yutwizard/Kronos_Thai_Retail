@@ -53,7 +53,9 @@ Five-layer pipeline (bottom-up build order):
 Layer 5: Decision report        notebooks/05_decision_report.ipynb     ⬜ planned
 Layer 4: Backtest               notebooks/03_walkforward_backtest.ipynb ⬜ planned
 Layer 3: Kronos model           notebooks/02_kronos_zero_shot.ipynb     ⬜ planned
-                                notebooks/04_finetune_colab.ipynb       ⬜ planned
+                                notebooks/04_finetune_per_market.ipynb  🔄 built (Colab)
+                                scripts/train_per_market.py             ✅ local
+                                scripts/eval_holdout.py                 ✅ local
 Layer 2: Feature pipeline       kth/data/loader.py                      ✅ done
 Layer 1: Universe definition    kth/data/universe.py                    ✅ done
 ```
@@ -79,7 +81,7 @@ columns: timestamps, open, high, low, close, volume, amount
 - Gaps are **preserved**, not forward-filled — crypto trades 7 days/week, equities don't.
 
 ### Universe
-- Hardcoded 51 tickers across 9 asset classes in [kth/data/universe.py](kth/data/universe.py) — not a CSV. Adding a ticker is an intentional code change for version control.
+- Hardcoded 100 tickers across 9 asset classes in [kth/data/universe.py](kth/data/universe.py) — not a CSV. Adding a ticker is an intentional code change for version control.
 - `FRICTION` costs are per-class, not per-ticker. `fx_macro` class has zero friction (features only, not investable).
 - Key helpers: `get_all_tickers()`, `get_ticker_class(ticker)`, `get_display_name(ticker)`.
 
@@ -92,7 +94,9 @@ columns: timestamps, open, high, low, close, volume, amount
 | Module | Purpose |
 |---|---|
 | `kth/models/kronos_wrapper.py` | `KronosTH` class — loads Kronos-small/base, returns `ForecastResult` with P5/P50/P95 bands at 5d and 20d horizons; model weights pinned to local `./checkpoints/` after first HuggingFace download |
-| `kth/models/finetune.py` | `prepare_dataset`, `finetune_tokenizer`, `finetune_predictor` — 3-fold walk-forward fine-tune on log-returns with early stopping, cosine LR schedule, AdamW weight decay |
+| `kth/models/finetune.py` | `prepare_dataset`, `finetune_tokenizer` (stub — Kronos has no `fit()`), `finetune_predictor` (stub), `evaluate_model` — actual training uses `scripts/train_per_market.py` with custom training loop (tokenizer.encode → model forward → head.compute_loss → backprop) |
+| `scripts/train_per_market.py` | SGDR (CosineAnnealingWarmRestarts, 2 cycles), `fold_step_months=21` for ≥420-row val/test windows, early stopping patience=3, saves model_config.json + model.safetensors per fold |
+| `scripts/eval_holdout.py` | Loads fine-tuned checkpoints via `KronosTH._predictor` swap, evaluates direction accuracy on 2025 holdout per model, per fold |
 | `kth/backtest/walkforward.py` | `run_walkforward()` + `precompute_forecasts()` — forecasts cached per (date, ticker) to avoid re-running 38k forward passes; hysteresis buffer prevents whipsaw trades |
 | `kth/backtest/strategy.py` | `compute_signals()`, `select_positions()`, `compute_weights()` — pure stateless signal functions |
 | `kth/backtest/metrics.py` | Full professional metric set: Sharpe/Sortino/Calmar/Omega, historical VaR/CVaR, Ulcer Index, hit-rate, profit factor, t-stat, per-class attribution; gross and net side-by-side |

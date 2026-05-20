@@ -209,7 +209,7 @@ def finetune_tokenizer(
 
     global _TOKENIZER_CACHE
     if "base" not in _TOKENIZER_CACHE:
-        from kronos import KronosTokenizer
+        from kth.models._kronos_bridge import KronosTokenizer
         _TOKENIZER_CACHE["base"] = KronosTokenizer.from_pretrained(
             "NeoQuasar/Kronos-Tokenizer-base"
         )
@@ -257,7 +257,7 @@ def finetune_predictor(
     np.random.seed(seed)
     random.seed(seed)
 
-    from kronos import KronosPredictor
+    from kth.models._kronos_bridge import KronosPredictor
 
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)

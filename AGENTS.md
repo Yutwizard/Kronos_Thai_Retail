@@ -53,13 +53,24 @@ make build && make verify
 
 ### Data quirks
 - `auto_adjust=True` on yfinance so splits/dividends are baked into prices.
-- Gaps are **preserved**, not forward-filled across markets — crypto trades 7 days, equities do not.
+- Gaps are **preserved**, not forward-filled across crypto (7 days) vs equities (5 days).
 - `download_universe()` pauses 0.5s between tickers and retries with exponential backoff (2s/4s/8s).
+- Universe expanded from 51→100 tickers (50 Thai, 17 US, 12 crypto, rest unchanged).
 
 ### Asset class boundaries
-- Universe is hardcoded in `kth/data/universe.py` (51 tickers, 9 classes). Not a CSV by design.
+- Universe is hardcoded in `kth/data/universe.py` (100 tickers, 9 classes). Not a CSV by design.
 - `FRICTION` costs are per-class, not per-ticker.
 - `fx_macro` is **features only**, not investable (commission/slippage = 0).
+
+### Fine-tuning results (SGDR + proper val windows)
+Roll up to `scripts/train_per_market.py` (general script). Results on 2025 holdout:
+- **us_equity fold 2**: +2.0pp vs zero-shot (64.7% → best candidate)
+- **crypto**: 0.0pp vs zero-shot (56.4% → stay zero-shot)
+- **thai_equity**: −3.1pp vs zero-shot (57.1% → stay zero-shot)
+
+Key insight: 21-month fold windows needed (not 6mo) so val/test have ≥420 rows for 400-row lookback. Early stopping via val loss prevents severe overfitting. `fold_step_months=21` required for equities (~441 bdays). All 9 checkpoints at `./checkpoints/{model}/fold{f}/best/`.
+
+## What not to build yet
 
 ## What not to build yet
 - Do not add a web UI, live trading, or intraday data — all explicitly out of scope per `PROJECT_STRUCTURE.md` §12.

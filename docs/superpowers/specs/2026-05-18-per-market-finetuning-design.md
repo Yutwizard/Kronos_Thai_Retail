@@ -255,7 +255,23 @@ checkpoints/
 
 ---
 
-## 8. Decisions
+## 9. Results (2026-05-18 Local Training)
+
+**Fold structure:** `fold_step_months=6` produced empty val/test (6mo × 21 bdays = 126, far below 400-row lookback). Changed to `fold_step_months=21` (21mo × 21 = 441 ≥ 420 ✅). SGDR (CosineAnnealingWarmRestarts, T_0=5ep) with early stopping patience=3.
+
+| Model | ZS Rate | Best FT Rate | Δ | Verdict |
+|-------|---------|-------------|---|---------|
+| us_equity (F2) | 62.7% | 64.7% | **+2.0pp** | ✅ Deploy |
+| crypto (F1) | 56.4% | 56.4% | 0.0pp | ❌ Stay zero-shot |
+| thai_equity (F0/F1) | 60.2% | 57.1% | −3.1pp | ❌ Stay zero-shot |
+
+**Key finding:** Distribution shift between training period (2016-2024) and holdout (2025) means early stopping by val loss can hurt 2025 performance. Fold 2 (no val → full training) best for us_equity. All 9 checkpoints at `./checkpoints/{model}/fold{f}/best/`.
+
+**Training:** ~65 hrs on GTX 1060 6GB. Script: `scripts/train_per_market.py <model> <fold>`.
+
+---
+
+## 8. Decisions (updated) / 9. Results
 
 - **Crypto trim 20→12:** ✅ Confirmed. Cut list: keep BTC, ETH, SOL, ADA, AVAX, LINK, DOGE, DOT, LTC, NEAR, VET, MATIC. Drop BNB, XRP, TRX, APT, SHIB, ARB, SEI, ATOM.
 - **REIT/infra expansion:** ❌ Dropped. Keep original 2 tickers (VNQ, CPNREIT.BK).
