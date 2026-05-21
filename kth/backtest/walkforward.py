@@ -11,7 +11,12 @@ import pandas as pd
 
 
 def _get_calendar_for_tickers(tickers: list[str]) -> str:
-    """Return 'B' for equities (business days) or 'D' for crypto (calendar days)."""
+    """Return 'B' for equities (business days) or 'D' for crypto (calendar days).
+
+    Known limitation: returns "D" if ANY crypto ticker is present, applying the
+    crypto (7-day) calendar to ALL tickers in the run — including equities.
+    This is a design trade-off: a single backtest run uses one calendar.
+    Separate crypto-only and equity-only runs to avoid this."""
     from kth.data.universe import get_ticker_class
     classes = {get_ticker_class(t) for t in tickers}
     if "crypto" in classes:
@@ -220,8 +225,6 @@ def run_walkforward(
             f"Run precompute_forecasts() with model '{kronos_th.model_name}' first."
         )
 
-    trading_days = pd.bdate_range(start=config.start_date, end=config.end_date, freq="B")
-
     # Pre-filter eligible tickers
     eligible = []
     for t in tickers:
@@ -235,6 +238,10 @@ def run_walkforward(
             continue
     print(f"Eligible tickers: {len(eligible)} / {len(tickers)}")
 
+    freq = _get_calendar_for_tickers(eligible)
+    print(f"Calendar: {'7-day (crypto)' if freq == 'D' else '5-day (business)'}")
+    trading_days = pd.date_range(start=config.start_date, end=config.end_date, freq=freq)
+
     # ---- PRELOAD all ticker data into memory ONCE ----
     ticker_data: dict[str, pd.DataFrame] = {}
     for t in eligible:
@@ -244,7 +251,7 @@ def run_walkforward(
             continue
 
     # Compute benchmarks once
-    benchmarks = _compute_benchmarks(config, eligible, ticker_data)
+    benchmarks = _compute_benchmarks(config, eligible, ticker_data, freq=freq)
 
     # ---- Portfolio state (UNITS-BASED) ----
     cash = 1.0
@@ -452,12 +459,13 @@ def run_walkforward(
     )
 
 
-def _compute_benchmarks(config: BacktestConfig, tickers: list[str], ticker_data: dict[str, pd.DataFrame] | None = None) -> dict[str, pd.Series]:
+def _compute_benchmarks(config: BacktestConfig, tickers: list[str], ticker_data: dict[str, pd.DataFrame] | None = None, freq: str = "B") -> dict[str, pd.Series]:
     """Compute 4 benchmark equity curves: SET, SPY, 60_40, equal_weight.
-    Accepts preloaded ticker_data dict to avoid redundant parquet reads in equal-weight benchmark."""
+    Accepts preloaded ticker_data dict to avoid redundant parquet reads in equal-weight benchmark.
+    freq: "B" for equities (business days), "D" for crypto (calendar days)."""
     from kth.data.loader import load_cached
     benchmarks = {}
-    trading_days = pd.bdate_range(start=config.start_date, end=config.end_date, freq="B")
+    trading_days = pd.date_range(start=config.start_date, end=config.end_date, freq=freq)
     start_ts = pd.Timestamp(config.start_date)
 
     # SET buy-and-hold
