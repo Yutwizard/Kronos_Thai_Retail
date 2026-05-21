@@ -23,7 +23,7 @@ python verify_data_layer.py             # offline synthetic tests
 make build          # build CPU image
 make verify         # run offline tests inside container
 make notebook       # JupyterLab at http://localhost:8888 (CPU, all platforms)
-make download       # pull 51-ticker universe to ./data/raw/ (needs network)
+make download       # pull 100-ticker universe to ./data/raw/ (needs network)
 
 make build-gpu      # build GPU image (Windows WSL2 / Linux only)
 make notebook-gpu   # JupyterLab with CUDA (Windows WSL2 / Linux only)
@@ -108,7 +108,7 @@ Target model sizes: **Kronos-small** (24.7M params) for iteration, **Kronos-base
 ## Known quirks
 
 - Real yfinance access is only possible on Colab/Kaggle/local machines — `verify_data_layer.py` uses synthetic data specifically because yfinance is blocked in most sandboxes.
-- For real data verification, run `notebooks/01_data_layer.ipynb` on Colab, which downloads ~10 years of daily OHLCV for all 51 tickers and caches to `./data/raw/*.parquet`.
+- For real data verification, run `notebooks/01_data_layer.ipynb` on Colab, which downloads ~10 years of daily OHLCV for all 100 tickers and caches to `./data/raw/*.parquet`.
 
 ## Hard scope limits
 
@@ -134,4 +134,4 @@ Priority order: (1) user's explicit instructions, (2) superpowers skills, (3) de
 3. [AGENTS.md](AGENTS.md) — agent-specific conventions summary
 4. [docs/superpowers/specs/](docs/superpowers/specs/) — approved design specs for Layers 3–5 (A: inference wrapper, B: backtest, C: fine-tune, D: report)
 5. [kth/data/loader.py](kth/data/loader.py) — schema conversion and caching implementation
-6. [kth/data/universe.py](kth/data/universe.py) — 51-ticker universe and `FRICTION` dict
+6. [kth/data/universe.py](kth/data/universe.py) — 100-ticker universe and `FRICTION` dict

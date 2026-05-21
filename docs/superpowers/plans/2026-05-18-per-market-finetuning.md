@@ -775,10 +775,10 @@ Full project review identified 6 issues requiring fixes before claiming alpha:
 |---|----------|-------|--------|
 | 1 | CRITICAL | Signal doesn't translate: Thai equity ZS backtest shows 25% CAGR but 0.95% trade hit-rate, p=0.25, net loss after friction. No benchmark comparison executed. | ⬜ Not started |
 | 2 | HIGH | 0 fine-tuned backtests executed. Only holdout direction-accuracy evaluated. Need crypto + us_equity backtests. | 🔄 crypto spec approved, us_equity spec approved |
-| 3 | HIGH | `bdate_range(freq="B")` skips 28% of crypto data. Affects precompute, forecast horizon, volatility calibration, direction accuracy. Fix BEFORE any further crypto work. | ⬜ Not started |
-| 4 | MEDIUM | `finetune.py` stubs (`finetune_tokenizer`, `finetune_predictor`) call `.fit()` which doesn't exist on Kronos — dead code. Colab notebook imports them. | ⬜ Not started |
-| 5 | LOW | Multiple docs stale: PROJECT_STRUCTURE.md says 51 tickers/Layers planned. 6 open questions in §13 unanswered since 2026-05-16. | ⬜ Not started |
-| 6 | LOW | "Hit rate" in backtest outputs is trade win rate (gross_return > 0), not forecast direction accuracy. Misleading without context. Rename + add direction accuracy metric. | ⬜ Not started |
+| 3 | HIGH | bdate_range skips 28% crypto data | ✅ Fixed (Task 1) |
+| 4 | MEDIUM | Dead finetune.py stubs | ✅ Fixed (Task 3) |
+| 5 | LOW | Multiple docs stale | ✅ Fixed (Task 4) |
+| 6 | LOW | Misleading hit-rate naming | ✅ Fixed (Task 2) |
 
 **Implementation plan:** `docs/superpowers/plans/2026-05-21-hfm-review-fixes.md` (to be written)
 

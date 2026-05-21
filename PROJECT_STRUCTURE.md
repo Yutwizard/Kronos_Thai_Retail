@@ -61,16 +61,16 @@ These were debated and chosen earlier:
 
 ## 3. Investable universe
 
-**51 tickers across 9 asset classes.** Defined in `kth/data/universe.py`.
+**100 tickers across 9 asset classes.** Defined in `kth/data/universe.py`.
 
 | Asset class | # | Example tickers | Why included |
 |---|---|---|---|
-| `thai_equity` | 15 | PTT.BK, KBANK.BK, SCB.BK, CPALL.BK, DELTA.BK, ADVANC.BK, AOT.BK, BDMS.BK, GULF.BK, PTTEP.BK, CPN.BK, MINT.BK, BH.BK, IVL.BK, BBL.BK | SET top holdings — every Thai retail broker offers these |
+| `thai_equity` | 50 | PTT.BK, KBANK.BK, ... (50 SET stocks, 8 sectors) | Expanded from 15 |
 | `thai_index` | 1 | ^SET.BK | Benchmark for Thai equity strategies |
-| `us_equity` | 10 | AAPL, MSFT, NVDA, GOOGL, AMZN, META, TSLA, BRK-B, JPM, V | Accessible since 2022 via DIME!, Liberator, Jitta, Phillip, KS — fractional shares legal |
+| `us_equity` | 17 | AAPL, MSFT, NVDA, GOOGL, AMZN, META, TSLA, BRK-B, JPM, V, COST, WMT, NFLX, AMD, DIS, KO, PEP | Expanded from 10 |
 | `etf_global` | 9 | SPY, QQQ, VTI, VWO, VEA, IEMG, EWY, EWJ, FXI | Same brokers as US stocks; global/regional exposure |
 | `commodity` | 4 | GLD, GC=F, SLV, USO | Gold is huge in Thai retail; GLD is the cleanest daily price; GC=F is futures backup |
-| `crypto` | 5 | BTC-USD, ETH-USD, SOL-USD, BNB-USD, XRP-USD | Bitkub/Binance TH/Orbix; Thailand granted **capital gains tax exemption 2025–2029** for licensed exchange trades |
+| `crypto` | 12 | BTC-USD, ETH-USD, SOL-USD, ADA-USD, AVAX-USD, LINK-USD, DOGE-USD, DOT-USD, LTC-USD, NEAR-USD, VET-USD, MATIC-USD | Trimmed from 5 (BNB, XRP dropped) |
 | `bond_proxy` | 3 | TLT, IEF, HYG | Duration risk + credit risk benchmarks |
 | `reit` | 2 | VNQ, CPNREIT.BK | Property exposure (US + Thai) |
 | `fx_macro` | 2 | THB=X, DX-Y.NYB | Features only, not investable directly |
@@ -159,11 +159,23 @@ These were debated and chosen earlier:
 │    amount + timestamps). Quality checks. Parquet cache.        │
 ├────────────────────────────────────────────────────────────────┤
 │  LAYER 1: Universe definition (kth/data/universe.py)           │
-│    51 tickers, 9 asset classes, FRICTION per class             │
+│    100 tickers, 9 asset classes, FRICTION per class            │
 └────────────────────────────────────────────────────────────────┘
 ```
 
-**Layer 1 ✅ done. Layer 2 ✅ done. Layers 3–5: planned.**
+LAYER 5: Decision report      notebooks/05_decision_report.ipynb     ⬜ planned
+LAYER 4: Backtest             kth/backtest/walkforward.py            ✅ built
+                                kth/backtest/strategy.py               ✅ built
+                                kth/backtest/metrics.py                 ✅ built
+                                scripts/compare_finetune.py            ✅ built
+LAYER 3: Kronos model         kth/models/kronos_wrapper.py           ✅ built
+                                kth/models/finetune.py                  ✅ built
+                                kth/models/_kronos_bridge.py            ✅ built
+                                scripts/train_per_market.py             ✅ built (SGDR)
+                                scripts/eval_holdout.py                 ✅ built
+                                checkpoints/{model}/fold{f}/best/       ✅ 9 trained
+LAYER 2: Feature pipeline     kth/data/loader.py                       ✅ done
+LAYER 1: Universe definition  kth/data/universe.py                     ✅ done (100 tickers)
 
 ---
 
@@ -179,7 +191,7 @@ kronos-th/
 │   ├── __init__.py
 │   ├── data/
 │   │   ├── __init__.py
-│   │   ├── universe.py             ⚙️  51-ticker universe + FRICTION costs
+│   │   ├── universe.py             ⚙️  100-ticker universe + FRICTION costs
 │   │   └── loader.py               ⚙️  yfinance → Kronos schema + caching
 │   ├── models/                     [planned]
 │   │   ├── __init__.py
@@ -224,7 +236,7 @@ Cells:
 2. Reachability smoke test (download AAPL last 5 days)
 3. Probe each asset class with a few tickers
 4. Visual sanity check (plot 6 representative tickers)
-5. Download full 51-ticker universe to cache
+5. Download full 100-ticker universe to cache
 6. Persist to Google Drive (optional)
 7. Quality report by asset class
 8. Confirm one ticker loads into Kronos-expected schema
@@ -324,7 +336,7 @@ quality_report(df, ticker) -> dict
 ```
 
 **Design choices:**
-- Parquet, not CSV. Smaller and faster, important when we have 51 files × ~3000 rows each.
+- Parquet, not CSV. Smaller and faster, important when we have 100 files × ~3000 rows each.
 - One file per ticker, not one big merged file. Different tickers have different date ranges; merging would force NaN-padding and break the model.
 - We compute `amount = close × volume` ourselves because Yahoo doesn't expose it. Kronos's tokenizer uses it as a "turnover" channel; using close×volume is what the original Kronos repo also does for markets that don't publish turnover.
 - Exponential backoff (3 tries, 2s/4s/8s) for individual ticker failures — Yahoo's rate limit is unpredictable.
@@ -454,43 +466,60 @@ If our strategy doesn't beat all four after frictions, we say so plainly.
 
 ---
 
-## 13. Open questions for review
+## 13. Open questions — RESOLVED (2026-05-21)
 
-These need your decision before I build Notebooks 02–05.
+1. **Model size** → **Kronos-small (24.7M).** Confirmed by 65 hrs of training across 3 markets on GTX 1060 6GB. Kronos-base would require T4 or A100.
 
-1. **Model size for fine-tune**: Kronos-small (faster, ~30 min/epoch) or Kronos-base (slower but more capacity, ~2 hr/epoch)?
-2. **Pred horizon**: 5 days, 20 days, both? Longer = more useful signal but harder to predict accurately.
-3. **Forecast samples count**: 5 (fast), 20 (default), 50 (slower but smoother bands)?
-4. **Strategy aggressiveness**: long-only, or also short-the-weakest (only realistic for US ETFs via inverse ETFs like SH; can't short Thai stocks easily as retail)?
-5. **Universe trim**: keep all 51 tickers, or trim to top liquid 20–25 for cleaner backtests?
-6. **Benchmark set**: are the 4 benchmarks above the right comparison set, or do you want a Thai-specific one (e.g. KKP All-Markets fund)?
+2. **Pred horizon** → **20 days.** Longer = more useful signal. 5-day too noisy for daily-bar data. Confirmed by holdout evaluation showing 56-65% direction accuracy at 20-day horizon.
+
+3. **Forecast samples** → **10.** Fits 6GB VRAM. 20+ causes OOM on GTX 1060. 50 samples would require T4 16GB.
+
+4. **Strategy aggressiveness** → **Long-only.** Short selling not realistic for Thai retail (can't short SET stocks). US equities: possible via inverse ETFs (SH, SQQQ) — not yet implemented.
+
+5. **Universe trim** → **100 tickers, no trim.** Small-data tickers (GULF.BK with 268 rows, SCB.BK with 984 rows) are filtered at precompute time by walkforward.py's viable-check (minimum LOOKBACK rows required).
+
+6. **Benchmarks** → **4 benchmarks already computed** in walkforward.py (`_compute_benchmarks`): SET Index, SPY, 60/40 SPY/TLT, equal-weight. FX-adjusted returns: THB=X available — compute USD returns × THB=X for Thai investor P&L.
 
 ---
 
-## 14. Current status
+## 14. Current status (2026-05-21)
 
 ### ✅ Built and tested
 
-- `kth/data/universe.py` — 51-ticker universe, FRICTION dict
+- `kth/data/universe.py` — 100-ticker universe (50 Thai, 17 US, 12 crypto, rest unchanged), FRICTION dict
 - `kth/data/loader.py` — yfinance loader, Kronos-format conversion, parquet cache, quality checks
 - `verify_data_layer.py` — 5 offline tests, all pass against synthetic data
 - `notebooks/01_data_layer.ipynb` — Colab notebook for verifying real yfinance access
+- `kth/models/kronos_wrapper.py` — KronosTH wrapper (zero-shot inference)
+- `kth/models/finetune.py` — Dataset preparation, tokenizer caching, evaluate_model
+- `kth/models/_kronos_bridge.py` — Import bridge for local Kronos repo
+- `kth/backtest/walkforward.py` — Walk-forward backtest with benchmark comparison
+- `kth/backtest/strategy.py` — Signal → position translation
+- `kth/backtest/metrics.py` — Sharpe, MaxDD, Calmar, hit-rate, attribution
+- `scripts/train_per_market.py` — SGDR fine-tuning (3 markets × 3 folds)
+- `scripts/eval_holdout.py` — Holdout evaluation on 2025 data
+- `scripts/compare_finetune.py` — Fine-tuned vs zero-shot backtest comparison
 - `README.md` — project overview
 - `requirements.txt` — minimal pinned deps
 
-### ⏳ Next step (waiting on you)
+### Fine-tuning results
 
-1. Review this document end-to-end
-2. Answer the 6 open questions in section 13
-3. Run Notebook 01 on Colab against real Yahoo, report any ticker failures
-4. Then I build Notebook 02 (Kronos zero-shot inference)
+| Model | Best Fold | Zero-Shot | Fine-Tuned | Δ |
+|---|---|---|---|---|
+| us_equity | F2 | 62.7% | **64.7%** | **+2.0pp** |
+| crypto | F1 | 56.4% | 56.4% | 0.0pp |
+| thai_equity | F0/F1 | 60.2% | 57.1% | −3.1pp |
+
+**Deployment:** us_equity fold 2 deployed. Crypto and thai_equity remain zero-shot.
+
+All 9 checkpoints at `./checkpoints/{model}/fold{f}/best/`.
 
 ### Known unknowns
 
+- Backtest results for fine-tuned models (us_equity crypto) in progress (HFM review Issues 1-2)
 - Whether `^SET.BK` works on Yahoo (we have a backup plan: scrape from SET website if needed)
-- Whether Thai mid-caps have enough Yahoo history (if not, we'll trim the universe)
 - How well Kronos generalizes zero-shot to Thai mid-caps — this is the real research question
 
 ---
 
-*Document version: 2026-05-16. Review and reply with edits/questions/red flags before Notebook 02 starts.*
+*Document version: 2026-05-21. Updated: universe 100 tickers, layers 3-4 built, open questions resolved.*
