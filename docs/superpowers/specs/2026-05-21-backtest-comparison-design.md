@@ -103,7 +103,8 @@ Update `scripts/eval_holdout.py` to import from `kth.models.finetune` instead of
 - Zero-shot precompute once, cache to `data/forecast_cache/us_equity_zs/`
 - FT precompute per fold, cache to `data/forecast_cache/us_equity_ft_fold{f}/`
 - Delete FT cache between folds to prevent bleed
-- Freeze ZS model: verify and log `commit_hash.txt` from `checkpoints/NeoQuasar_Kronos-small/commit_hash.txt` (Review fix #5)
+- Freeze ZS model: verify and log `commit_hash.txt` from `checkpoints/NeoQuasar_Kronos-small/commit_hash.txt`. If missing, log `"unknown (pre-hash era)"` (Review fix #5, #6)
+- Release VRAM between folds: `del k_ft; torch.cuda.empty_cache()` before loading next fold's checkpoint
 
 ### 3.3 Output format (Review fixes #2, #3)
 
@@ -133,7 +134,7 @@ Update `scripts/eval_holdout.py` to import from `kth.models.finetune` instead of
   Calmar                  X.XX        X.XX      +X.XX
   Hit Rate               XX.X%       XX.X%     +XX.X%
 
-  Per-Ticker Hit Rate:
+  Per-Ticker Trade Hit Rate (computed from BacktestResult.trades: gross_return > 0):
   Ticker           ZS Rate      FT Rate          Δ
   --------------------------------------------------------
   AAPL             XX.X%        XX.X%        +XX.X%
@@ -152,11 +153,17 @@ Update `scripts/eval_holdout.py` to import from `kth.models.finetune` instead of
 === Final Comparison: All Folds ===
   ZS baseline commit: abc123def456
 
-  Fold    ZS CAGR   FT CAGR   Δ CAGR   ZS Sharpe  FT Sharpe  Δ Sharpe   Verdict
-  ---------------------------------------------------------------------------
-  F0      +X.XX%    +X.XX%    +X.XX%   X.XX       X.XX       +X.XX      ?
-  F1      +X.XX%    +X.XX%    +X.XX%   X.XX       X.XX       +X.XX      ?
-  F2      +X.XX%    +X.XX%    +X.XX%   X.XX       X.XX       +X.XX      ?
+  Fold  Tickers   ZS CAGR   FT CAGR   Δ CAGR   ZS Sharpe  FT Sharpe  Δ Sharpe   Verdict
+  -----------------------------------------------------------------------------------
+  F0      17      +X.XX%    +X.XX%    +X.XX%     X.XX       X.XX      +X.XX     Deploy
+  F1      17      +X.XX%    +X.XX%    +X.XX%     X.XX       X.XX      +X.XX     Marginal
+  F2      12      +X.XX%    +X.XX%    +X.XX%     X.XX       X.XX      +X.XX     PARTIAL
+
+  Verdict rules:
+    Deploy   = FT Sharpe ≥ ZS Sharpe + 0.05 AND FT CAGR ≥ ZS CAGR
+    Marginal = FT Sharpe > ZS Sharpe but CAGR not better
+    Pass     = FT Sharpe ≤ ZS Sharpe (zero-shot wins)
+    PARTIAL  = <14 tickers available (less than 80% of universe)
 ```
 
 Results saved to `data/backtest_results/us_equity_ft_fold{f}/` and `data/backtest_results/us_equity_zs/`.
@@ -229,8 +236,10 @@ Kronos-small inference on GTX 1060 6GB via `predict_batch`:
 - Gross AND net-of-friction metrics tables printed for each fold
 - Per-ticker hit-rate table appended to each fold output
 - Ratio metrics (Sharpe, Sortino, Calmar) formatted correctly (no % suffix)
-- ZS baseline commit hash printed and logged
-- Final fold comparison summary with `Δ CAGR` and `Δ Sharpe` columns
+- ZS baseline commit hash printed and logged (handles missing file: `"unknown (pre-hash era)"`)
+- VRAM released between folds (`del k_ft; torch.cuda.empty_cache()`)
+- Final fold comparison summary with `Δ CAGR`, `Δ Sharpe`, ticker count, and verdict
+- Minimum 14 tickers (≥80% of universe) for valid "Deploy"/"Marginal"/"Pass" verdict; below = "PARTIAL"
 - No forecast cache contamination between folds
 - ZS forecast cache reused across all folds (not recomputed)
 
@@ -262,6 +271,11 @@ Kronos-small inference on GTX 1060 6GB via `predict_batch`:
 | 7 | Single-process only (no PID in cache paths) | GTX 1060 can only run one model at a time anyway |
 | 8 | ZS cache reused across all folds | ZS predictions are identical — no need to recompute |
 | 9 | All 3 folds run | Even though F2 leads in hit-rate, backtest metrics may differ |
+| 10 | Verdict rule: Deploy = ΔSharpe≥0.05 + ΔCAGR>0 | Objective, quantitative — no eyeballing |
+| 11 | Minimum 14 tickers (≥80% of 17) for valid verdict | Fewer = different diversification, metrics not comparable |
+| 12 | VRAM cleanup between folds | GTX 1060 6GB — prevent silent OOM from CUDA cache |
+| 13 | Handle missing commit_hash.txt gracefully | Model may have been downloaded before hash-saving was added |
+| 14 | Trade hit rate from BacktestResult.trades | Existing per-class attribution; per-ticker computed post-hoc |
 
 ---
 
