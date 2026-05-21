@@ -77,8 +77,16 @@ def compute_var_cvar(daily_returns: pd.Series) -> dict:
 
 
 def compute_trade_metrics(trades: pd.DataFrame) -> dict:
+    """
+    NOTE: 'trade_win_rate' is the proportion of trades with gross_return > 0.
+    For a long-biased rolling strategy, this measures position-churn P&L,
+    NOT forecast direction accuracy. A low trade_win_rate (<5%) is expected
+    when the strategy holds positions continuously and only rebalances.
+
+    For forecast direction accuracy, see eval_holdout.py results.
+    """
     if trades.empty:
-        return {"hit_rate": 0.0, "payoff_ratio": 0.0, "profit_factor": 0.0,
+        return {"trade_win_rate": 0.0, "payoff_ratio": 0.0, "profit_factor": 0.0,
                 "avg_holding_period": 0.0, "avg_trade_return_gross": 0.0,
                 "avg_trade_return_net": 0.0, "max_win_streak": 0, "max_loss_streak": 0}
 
@@ -105,7 +113,7 @@ def compute_trade_metrics(trades: pd.DataFrame) -> dict:
             max_loss = max(max_loss, current_loss)
 
     return {
-        "hit_rate": hit_rate,
+        "trade_win_rate": hit_rate,
         "payoff_ratio": payoff,
         "profit_factor": profit_factor,
         "avg_holding_period": 0.0,  # filled by walkforward loop

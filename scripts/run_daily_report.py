@@ -45,7 +45,7 @@ def main():
         print(f"\nLoading backtest results from {OUTPUT_DIR}...")
         br = BacktestResult.load(str(OUTPUT_DIR))
         print(f"  Sharpe: {br.metrics.get('sharpe', 'N/A')}")
-        print(f"  Hit rate: {br.metrics.get('hit_rate', 'N/A')}")
+        print(f"  Trade win rate: {br.metrics.get('trade_win_rate', 'N/A')}")
     else:
         print("\nNo backtest results — using band-width confidence fallback.")
 

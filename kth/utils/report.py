@@ -61,7 +61,7 @@ def _get_confidence(
         cls = get_ticker_class(ticker) or "unknown"
         cls_row = attr[attr["asset_class"] == cls]
         if len(cls_row) > 0:
-            hit_rate = float(cls_row["hit_rate"].iloc[0])
+            hit_rate = float(cls_row["trade_win_rate"].iloc[0])
             if hit_rate >= 0.60:
                 return f"\U0001F7E2 ({hit_rate:.0%})", 1.0
             elif hit_rate >= 0.50:

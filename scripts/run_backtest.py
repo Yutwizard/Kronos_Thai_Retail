@@ -70,7 +70,7 @@ def main():
     print(f"  Sortino:           {m['sortino']:.2f}")
     print(f"  Max Drawdown:      {m['max_drawdown']:.2%}")
     print(f"  Calmar:            {m['calmar']:.2f}")
-    print(f"  Hit Rate:          {m['hit_rate']:.2%}")
+    print(f"  Trade Win Rate:    {m['trade_win_rate']:.2%}")
     print(f"  Profit Factor:     {m['profit_factor']:.2f}")
     print(f"  Total Friction:    {m['total_friction_paid']:.4f}")
     print(f"  Annual Turnover:   {m['annual_turnover']:.2f}")

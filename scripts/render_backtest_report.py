@@ -51,7 +51,7 @@ def _metrics_table(m: dict) -> str:
         ("Avg DD Duration", _fmt(m.get("avg_drawdown_duration"), ".0f") + "d"),
         ("VaR 95%", _fmt(m.get("var_95"), "+.4f")),
         ("CVaR 95%", _fmt(m.get("cvar_95"), "+.4f")),
-        ("Hit Rate", _fmt(m.get("hit_rate"), ".2%")),
+        ("Trade Win Rate", _fmt(m.get("trade_win_rate"), ".2%")),
         ("Profit Factor", _fmt(m.get("profit_factor"), ".2f")),
         ("Payoff Ratio", _fmt(m.get("payoff_ratio"), ".2f")),
         ("Alpha (vs EW)", _fmt(m.get("alpha"), "+.4f")),

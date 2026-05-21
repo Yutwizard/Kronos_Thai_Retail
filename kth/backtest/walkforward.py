@@ -539,15 +539,15 @@ def _compute_benchmarks(config: BacktestConfig, tickers: list[str], ticker_data:
 
 
 def _compute_attribution(trades: pd.DataFrame, tickers: list[str]) -> pd.DataFrame:
-    """Per-class attribution of P&L, hit-rate, friction."""
+    """Per-class attribution of P&L, trade-win-rate, friction."""
     from kth.data.universe import get_ticker_class
     if trades.empty:
-        return pd.DataFrame(columns=["asset_class", "pnl", "hit_rate", "friction_paid"])
+        return pd.DataFrame(columns=["asset_class", "pnl", "trade_win_rate", "friction_paid"])
     trades = trades.copy()
     trades["asset_class"] = trades["ticker"].apply(lambda t: get_ticker_class(t) or "unknown")
     attribution = trades.groupby("asset_class").agg(
         pnl=("gross_return", "sum"),
-        hit_rate=("gross_return", lambda x: (x > 0).mean()),
+        trade_win_rate=("gross_return", lambda x: (x > 0).mean()),
         friction_paid=("friction_cost", "sum"),
         trade_count=("ticker", "count"),
     ).reset_index()

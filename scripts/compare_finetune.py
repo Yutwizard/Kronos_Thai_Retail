@@ -62,7 +62,7 @@ def main():
     print(f"\n=== {model_name}: Fine-Tuned vs Zero-Shot ===")
     print(f"{'Metric':20s} {'Zero-Shot':>12s} {'Fine-Tuned':>12s} {'Δ':>8s}")
     print("-" * 54)
-    for key in ["cagr", "sharpe", "sortino", "max_drawdown", "calmar", "hit_rate"]:
+    for key in ["cagr", "sharpe", "sortino", "max_drawdown", "calmar", "trade_win_rate"]:
         zs_v = r_zs.metrics.get(key, 0) or 0
         ft_v = r_ft.metrics.get(key, 0) or 0
         delta = ft_v - zs_v
