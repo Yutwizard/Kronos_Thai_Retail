@@ -201,100 +201,40 @@ def finetune_tokenizer(
     lr: float = 1e-4,
     seed: int = 42,
 ) -> str:
-    """Fine-tune the Kronos VQ tokenizer. Returns output_dir path."""
-    import torch
-    torch.manual_seed(seed)
-    np.random.seed(seed)
-    random.seed(seed)
+    """
+    DEPRECATED: Kronos does not expose a fit() method. Use the pre-trained
+    tokenizer directly via:
 
-    global _TOKENIZER_CACHE
-    if "base" not in _TOKENIZER_CACHE:
         from kth.models._kronos_bridge import KronosTokenizer
-        _TOKENIZER_CACHE["base"] = KronosTokenizer.from_pretrained(
-            "NeoQuasar/Kronos-Tokenizer-base"
-        )
-    tokenizer = _TOKENIZER_CACHE["base"]
-    train_data = dataset["train"]
+        tokenizer = KronosTokenizer.from_pretrained("NeoQuasar/Kronos-Tokenizer-base")
 
-    output_path = Path(output_dir)
-    output_path.mkdir(parents=True, exist_ok=True)
-
-    tokenizer.fit(
-        train_data,
-        epochs=epochs,
-        batch_size=batch_size,
-        learning_rate=lr,
-        output_dir=str(output_path),
+    For full training with SGDR + early stopping, see:
+        scripts/train_per_market.py
+    """
+    raise NotImplementedError(
+        "Kronos Tokenizer has no fit() method. "
+        "Use KronosTokenizer.from_pretrained() directly. "
+        "See scripts/train_per_market.py for the working training pipeline."
     )
-
-    with open(output_path / "training_args.json", "w") as f:
-        json.dump({"lr": lr, "epochs": epochs, "seed": seed,
-                    "batch_size": batch_size, "timestamp": str(pd.Timestamp.now())}, f)
-
-    print(f"Tokenizer fine-tuned. Saved to {output_path}")
-    return str(output_path)
 
 
 def finetune_predictor(
     dataset: dict[str, KronosDataset],
     tokenizer_path: str,
     output_dir: str,
-    epochs: int = 5,
-    batch_size: int = 8,
-    grad_accum: int = 4,
-    fp16: bool = True,
-    lr: float = 5e-5,
-    lr_scheduler: str = "cosine",
-    weight_decay: float = 0.01,
-    loss: str = "mae",
-    early_stopping_patience: int = 2,
-    save_every_n_steps: int = 200,
-    seed: int = 42,
+    **hparams,
 ) -> str:
-    """Fine-tune the Kronos predictor. Returns path to best checkpoint."""
-    import torch
-    torch.manual_seed(seed)
-    np.random.seed(seed)
-    random.seed(seed)
-
-    from kth.models._kronos_bridge import KronosPredictor
-
-    output_path = Path(output_dir)
-    output_path.mkdir(parents=True, exist_ok=True)
-
-    train_data = dataset["train"]
-    val_data = dataset.get("val") if "val" in dataset else None
-    if val_data is not None and len(val_data) == 0:
-        val_data = None
-        print("WARNING: val set is empty — skipping early stopping")
-
-    predictor = KronosPredictor.from_pretrained(
-        tokenizer_path, device="cuda"
+    """
+    DEPRECATED: Kronos does not expose a fit() method. The actual training
+    pipeline is in scripts/train_per_market.py which uses:
+        tokenizer.encode() → model.forward() → model.head.compute_loss()
+    with SGDR (CosineAnnealingWarmRestarts) and early stopping.
+    """
+    raise NotImplementedError(
+        "Kronos Predictor has no fit() method. "
+        "Use scripts/train_per_market.py for training. "
+        "For inference on fine-tuned checkpoints, use load_finetuned_checkpoint()."
     )
-
-    predictor.fit(
-        train_data,
-        val_data=val_data,
-        epochs=epochs,
-        batch_size=batch_size,
-        gradient_accumulation_steps=grad_accum,
-        fp16=fp16,
-        learning_rate=lr,
-        lr_scheduler=lr_scheduler,
-        weight_decay=weight_decay,
-        loss=loss,
-        early_stopping_patience=early_stopping_patience,
-        save_every_n_steps=save_every_n_steps,
-        output_dir=str(output_path),
-    )
-
-    with open(output_path / "training_args.json", "w") as f:
-        json.dump({"lr": lr, "epochs": epochs, "seed": seed, "loss": loss,
-                    "lr_scheduler": lr_scheduler, "weight_decay": weight_decay,
-                    "timestamp": str(pd.Timestamp.now())}, f)
-
-    print(f"Predictor fine-tuned. Best checkpoint saved to {output_path}")
-    return str(output_path)
 
 
 def evaluate_model(
