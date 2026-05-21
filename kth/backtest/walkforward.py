@@ -10,6 +10,15 @@ import numpy as np
 import pandas as pd
 
 
+def _get_calendar_for_tickers(tickers: list[str]) -> str:
+    """Return 'B' for equities (business days) or 'D' for crypto (calendar days)."""
+    from kth.data.universe import get_ticker_class
+    classes = {get_ticker_class(t) for t in tickers}
+    if "crypto" in classes:
+        return "D"
+    return "B"
+
+
 @dataclass
 class BacktestConfig:
     start_date: str = "2022-01-01"
@@ -76,7 +85,9 @@ def precompute_forecasts(
         print(f"[precompute] Skipped {len(tickers) - len(viable)} tickers (insufficient history)")
     tickers = viable
 
-    trading_days = pd.bdate_range(start=start_date, end=end_date, freq="B")
+    freq = _get_calendar_for_tickers(tickers)
+    print(f"[precompute] Calendar: {'7-day (crypto)' if freq == 'D' else '5-day (business)'}")
+    trading_days = pd.date_range(start=start_date, end=end_date, freq=freq)
 
     for day in trading_days:
         day_str = day.strftime("%Y-%m-%d")
@@ -94,7 +105,8 @@ def precompute_forecasts(
             continue
 
         print(f"[{day_str}] {len(uncached)} tickers to forecast...")
-        results = kronos_th.forecast_batch(uncached, pred_lens=[pred_len], n_samples=n_samples, lookback=lookback)
+        results = kronos_th.forecast_batch(uncached, pred_lens=[pred_len], n_samples=n_samples,
+                                            lookback=lookback, calendar_freq=freq)
 
         for t, result in results.items():
             safe = t.replace("^", "_").replace("=", "_")

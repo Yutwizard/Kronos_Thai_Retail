@@ -120,6 +120,7 @@ class KronosTH:
         pred_lens: list[int] | None = None,
         n_samples: int = 50,
         lookback: int = 400,
+        calendar_freq: str = "B",
     ) -> ForecastResult:
         if pred_lens is None:
             pred_lens = [5, 20]
@@ -147,9 +148,9 @@ class KronosTH:
         x_ohlcva = x_df[["open", "high", "low", "close", "volume", "amount"]]
         last_ts = x_timestamps.iloc[-1]
 
-        # 3. Future timestamps (business days — Kronos uses .dt accessor for position encoding)
+        # 3. Future timestamps (asset-class-aware calendar)
         y_timestamps = pd.Series(
-            pd.bdate_range(start=last_ts + pd.Timedelta(days=1), periods=max_pred_len, freq="B")
+            pd.date_range(start=last_ts + pd.Timedelta(days=1), periods=max_pred_len, freq=calendar_freq)
         )
 
         # 4. Multi-sample forward pass (Kronos predict() is single-sample; loop n_samples times)
@@ -211,6 +212,7 @@ class KronosTH:
         pred_lens: list[int] | None = None,
         n_samples: int = 50,
         lookback: int = 400,
+        calendar_freq: str = "B",
     ) -> dict[str, ForecastResult]:
         if pred_lens is None:
             pred_lens = [5, 20]
@@ -246,7 +248,7 @@ class KronosTH:
             last_ts = x_stamp.iloc[-1]
 
             y_stamp = pd.Series(
-                pd.bdate_range(start=last_ts + pd.Timedelta(days=1), periods=max_pred_len, freq="B")
+                pd.date_range(start=last_ts + pd.Timedelta(days=1), periods=max_pred_len, freq=calendar_freq)
             )
 
             keys.append(key)
