@@ -21,6 +21,22 @@ MODEL_TICKERS = {
 }
 
 
+def compute_benchmark_metrics(r: "BacktestResult") -> dict:
+    from kth.backtest.metrics import compute_sharpe, compute_max_drawdown
+    bm_metrics = {}
+    for name, eq in r.benchmarks.items():
+        if len(eq) < 2:
+            continue
+        daily = eq.pct_change().dropna()
+        cagr = (eq.iloc[-1] / eq.iloc[0]) ** (252 / len(eq)) - 1 if len(eq) > 0 else 0
+        bm_metrics[name] = {
+            "cagr": cagr,
+            "sharpe": compute_sharpe(daily),
+            "max_drawdown": compute_max_drawdown(eq),
+        }
+    return bm_metrics
+
+
 def main():
     model_name = sys.argv[1]
     checkpoint_path = sys.argv[2]
@@ -76,6 +92,14 @@ def main():
     print(f"\nStatistical Significance (vs equal-weight benchmark):")
     print(f"  Zero-Shot:  t={zs_t:.2f} p={zs_p:.3f}")
     print(f"  Fine-Tuned: t={ft_t:.2f} p={ft_p:.3f}")
+
+    bm = compute_benchmark_metrics(r_zs)
+    print(f"\n  Benchmark Comparison (2022-2024):")
+    print(f"  {'Benchmark':<15} {'CAGR':>10} {'Sharpe':>10} {'Max DD':>10}")
+    print(f"  {'-'*45}")
+    for name, m in bm.items():
+        print(f"  {name:<15} {m['cagr']:>+9.2%} {m['sharpe']:>9.2f} {m['max_drawdown']:>9.2%}")
+    print(f"  {'Strategy':<15} {r_zs.metrics.get('cagr',0):>+9.2%} {r_zs.metrics.get('sharpe',0):>9.2f} {r_zs.metrics.get('max_drawdown',0):>9.2%}")
 
     out_dir = Path(f"./data/backtest_results/{model_name}_ft")
     r_ft.save(str(out_dir))
