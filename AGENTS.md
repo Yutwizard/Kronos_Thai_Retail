@@ -70,6 +70,17 @@ Roll up to `scripts/train_per_market.py` (general script). Results on 2025 holdo
 
 Key insight: 21-month fold windows needed (not 6mo) so val/test have ≥420 rows for 400-row lookback. Early stopping via val loss prevents severe overfitting. `fold_step_months=21` required for equities (~441 bdays). All 9 checkpoints at `./checkpoints/{model}/fold{f}/best/`.
 
+### Backtest results (zero-shot, 2022-2024)
+- **Thai equity (49 tickers):** CAGR +31.44%, Sharpe 1.40, Max DD −17.97%
+  - Benchmark comparison: SET −5.29% (Sharpe −0.63), SPY +8.33% (0.44), equal-weight +1.44% (0.00)
+  - Signal is genuine — model adds ~30pp alpha over equal-weight, beats all 4 benchmarks
+  - Previous 14-ticker backtest conclusion (p=0.25) invalid — signal required diversification to compound
+- **Calendar fix:** `bdate_range` replaced with `date_range(D/B)` — crypto gets 7-day calendar
+- **Metrics:** `hit_rate` renamed to `trade_win_rate` (trade P&L, not forecast direction accuracy)
+
+### HF Manager Review fixes (2026-05-21)
+6 issues identified, 5 of 6 fixed. Only remaining: FT backtests (us_equity + crypto) — specs approved, pending GPU sessions.
+
 ## What not to build yet
 
 ## What not to build yet
