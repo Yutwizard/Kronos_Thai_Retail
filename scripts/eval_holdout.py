@@ -13,8 +13,8 @@ from safetensors.torch import load_file
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "kronos_repo"))
 from kth.data.universe import UNIVERSE
 from kth.data.loader import load_cached
-from kth.models._kronos_bridge import KronosTokenizer, Kronos, KronosPredictor
 from kth.models.kronos_wrapper import KronosTH
+from kth.models.finetune import load_finetuned_checkpoint
 
 LOOKBACK = 400; PRED_LEN = 20; CACHE_DIR = "./data/raw"
 MODEL_TICKERS = {
@@ -22,22 +22,6 @@ MODEL_TICKERS = {
     "us_equity":   [t for t,_,_ in UNIVERSE["us_equity"]],
     "crypto":      [t for t,_,_ in UNIVERSE["crypto"]],
 }
-
-
-def build_th(ckpt_dir, device):
-    """Build KronosTH with fine-tuned predictor."""
-    ckpt = Path(ckpt_dir)
-    with open(ckpt / "model_config.json") as f:
-        cfg = json.load(f)
-    model = Kronos(**cfg)
-    sd = load_file(str(ckpt / "model.safetensors"), device=device)
-    model.load_state_dict(sd, strict=True)
-    model.eval().to(device)
-    tokenizer = KronosTokenizer.from_pretrained("NeoQuasar/Kronos-Tokenizer-base")
-    tokenizer.eval().to(device)
-    th = KronosTH(model_name=ckpt_dir, device=device)
-    th._predictor = KronosPredictor(model=model, tokenizer=tokenizer, device=device)
-    return th
 
 
 HOLDOUT_START = {"thai_equity": "2024-07-01", "us_equity": "2024-07-01", "crypto": "2025-01-01"}
@@ -94,7 +78,7 @@ def main():
             if not (Path(ckpt_dir) / "model_config.json").exists():
                 continue
             print(f"  Fold {f}...", end=" ", flush=True)
-            ft = build_th(ckpt_dir, device)
+            ft = load_finetuned_checkpoint(ckpt_dir, device)
             ft_h, ft_t = evaluate(ft, tickers, m)
             rate = ft_h / max(ft_t, 1)
             folds.append({"f": f, "h": ft_h, "t": ft_t, "r": rate})

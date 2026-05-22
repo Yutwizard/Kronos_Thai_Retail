@@ -60,7 +60,8 @@ def main():
 
     # Fine-tuned
     try:
-        k_ft = KronosTH.from_checkpoint(checkpoint_path, device="auto")
+        from kth.models.finetune import load_finetuned_checkpoint
+        k_ft = load_finetuned_checkpoint(checkpoint_path, device="auto")
     except Exception as e:
         print(f"FAILED to load checkpoint: {e}")
         print(f"Path: {checkpoint_path}")

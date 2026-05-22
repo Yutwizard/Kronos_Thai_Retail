@@ -339,3 +339,33 @@ def evaluate_model(
         "fine_tuned_mae": np.mean(ft_errors) if ft_errors else 0.0,
         "improvement_pp": (ft_hits / max(ft_total, 1)) - (zs_hits / max(zs_total, 1)),
     }
+
+
+def load_finetuned_checkpoint(checkpoint_dir: str, device: str = "auto"):
+    """
+    Reconstruct a KronosTH from fine-tuned checkpoint (model_config.json + model.safetensors).
+    Returns KronosTH with _predictor set to the fine-tuned KronosPredictor.
+    """
+    from pathlib import Path
+    from safetensors.torch import load_file
+    from kth.models._kronos_bridge import KronosTokenizer, Kronos, KronosPredictor
+    from kth.models.kronos_wrapper import KronosTH
+
+    if device == "auto":
+        device = "cuda" if __import__("torch").cuda.is_available() else "cpu"
+
+    ckpt = Path(checkpoint_dir)
+    with open(ckpt / "model_config.json") as f:
+        cfg = json.load(f)
+
+    model = Kronos(**cfg)
+    sd = load_file(str(ckpt / "model.safetensors"), device=device)
+    model.load_state_dict(sd, strict=True)
+    model.eval().to(device)
+
+    tokenizer = KronosTokenizer.from_pretrained("NeoQuasar/Kronos-Tokenizer-base")
+    tokenizer.eval().to(device)
+
+    th = KronosTH(model_name=checkpoint_dir, device=device)
+    th._predictor = KronosPredictor(model=model, tokenizer=tokenizer, device=device)
+    return th
