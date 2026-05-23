@@ -79,11 +79,13 @@ def main():
     print(f"\n=== {model_name}: Fine-Tuned vs Zero-Shot ===")
     print(f"{'Metric':20s} {'Zero-Shot':>12s} {'Fine-Tuned':>12s} {'Δ':>8s}")
     print("-" * 54)
+    ratio_keys = {"sharpe", "sortino", "calmar"}
     for key in ["cagr", "sharpe", "sortino", "max_drawdown", "calmar", "trade_win_rate"]:
         zs_v = r_zs.metrics.get(key, 0) or 0
         ft_v = r_ft.metrics.get(key, 0) or 0
         delta = ft_v - zs_v
-        print(f"{key:20s} {zs_v:>+10.2%} {ft_v:>+10.2%} {delta:>+7.2%}")
+        fmt = ">+10.2f" if key in ratio_keys else ">+10.2%"
+        print(f"{key:20s} {zs_v:{fmt}} {ft_v:{fmt}} {delta:>+7.2%}")
 
     # Statistical significance
     zs_t = r_zs.metrics.get("t_stat", 0) or 0

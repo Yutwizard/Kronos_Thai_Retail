@@ -75,6 +75,10 @@ Key insight: 21-month fold windows needed (not 6mo) so val/test have ≥420 rows
   - Benchmark comparison: SET −5.29% (Sharpe −0.63), SPY +8.33% (0.44), equal-weight +1.44% (0.00)
   - Signal is genuine — model adds ~30pp alpha over equal-weight, beats all 4 benchmarks
   - Previous 14-ticker backtest conclusion (p=0.25) invalid — signal required diversification to compound
+- **Crypto (12 tickers):** CAGR +16.45%, Sharpe 0.52, Max DD −68.58% (ZS)
+  - FT fold 0: CAGR +13.31%, Sharpe 0.46 — worse than ZS (−3.13%)
+  - Verdict: crypto stays zero-shot per spec (FT ≤ ZS)
+  - Both models NOT significant (p=0.64 ZS, p=0.70 FT) — high crypto volatility
 - **Calendar fix:** `bdate_range` replaced with `date_range(D/B)` — crypto gets 7-day calendar
 - **Metrics:** `hit_rate` renamed to `trade_win_rate` (trade P&L, not forecast direction accuracy)
 
