@@ -503,6 +503,8 @@ If our strategy doesn't beat all four after frictions, we say so plainly.
 - `requirements.txt` — minimal pinned deps
 - `docs/user-manual.md` — full user manual with methodology, backtest results, and usage instructions
 - `docs/user-manual.html` — HTML version with 7 embedded data visualization charts
+- `docs/operations-manual.html` — styled HTML operations manual
+- `docs/monthly-walkthrough.html` — 21-day simulated month with timeline and allocation graphics
 
 ### Backtest Results (2022-2024, 3 markets × 4 benchmarks)
 

@@ -103,11 +103,12 @@ Key insight: 21-month fold windows needed (not 6mo) so val/test have ≥420 rows
 2. `README.md` — project overview, caveats, quick start
 3. `docs/user-manual.md` — full methodology, backtest results, and usage instructions (also `docs/user-manual.html` with interactive charts)
 4. `docs/operations-manual.md` — daily/weekly/monthly step-by-step procedures
-5. `docs/superpowers/specs/` — approved design specs for all layers
-6. `docs/superpowers/plans/` — implementation plans (specs → bite-sized tasks)
-7. `docs/superpowers/specs/2026-05-16-local-testing-design.md` — local testing pipeline (CPU + GPU)
-8. `kth/data/loader.py` — actual implementation of schema conversion and caching
-9. `kth/data/universe.py` — universe + friction definitions
-10. `kth/models/kronos_wrapper.py` — KronosTH wrapper (adapted to real Kronos API)
-11. `kth/models/_kronos_bridge.py` — import bridge for non-pip-installable Kronos repo
+5. `docs/monthly-walkthrough.html` — 21-day simulated month with real trades and portfolio outcomes
+6. `docs/superpowers/specs/` — approved design specs for all layers
+7. `docs/superpowers/plans/` — implementation plans (specs → bite-sized tasks)
+8. `docs/superpowers/specs/2026-05-16-local-testing-design.md` — local testing pipeline (CPU + GPU)
+9. `kth/data/loader.py` — actual implementation of schema conversion and caching
+10. `kth/data/universe.py` — universe + friction definitions
+11. `kth/models/kronos_wrapper.py` — KronosTH wrapper (adapted to real Kronos API)
+12. `kth/models/_kronos_bridge.py` — import bridge for non-pip-installable Kronos repo
 
