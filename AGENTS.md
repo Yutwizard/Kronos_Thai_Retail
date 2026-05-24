@@ -79,11 +79,17 @@ Key insight: 21-month fold windows needed (not 6mo) so val/test have ≥420 rows
   - FT fold 0: CAGR +13.31%, Sharpe 0.46 — worse than ZS (−3.13%)
   - Verdict: crypto stays zero-shot per spec (FT ≤ ZS)
   - Both models NOT significant (p=0.64 ZS, p=0.70 FT) — high crypto volatility
+- **US equity (17 tickers):** CAGR +30.34%, Sharpe 0.97 (ZS) vs FT fold 2: CAGR +31.30%, Sharpe 0.94
+  - FT does NOT beat ZS (FT Sharpe ≤ ZS Sharpe). Both not significant (p=0.44-0.46)
+  - Verdict: us_equity stays zero-shot. FT +2.0pp direction accuracy didn't translate to backtest alpha
 - **Calendar fix:** `bdate_range` replaced with `date_range(D/B)` — crypto gets 7-day calendar
 - **Metrics:** `hit_rate` renamed to `trade_win_rate` (trade P&L, not forecast direction accuracy)
 
 ### HF Manager Review fixes (2026-05-21)
-6 issues identified, 5 of 6 fixed. Only remaining: FT backtests (us_equity + crypto) — specs approved, pending GPU sessions.
+6 issues identified, ALL 6 FIXED.
+- Thai equity ZS confirmed genuine alpha (Sharpe 1.40 vs SET −0.63)
+- Crypto + US equity FT backtests confirm: zero-shot wins in both markets
+- All FT backtests executed per approved specs
 
 ## What not to build yet
 

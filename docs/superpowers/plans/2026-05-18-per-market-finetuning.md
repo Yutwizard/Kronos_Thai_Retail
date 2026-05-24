@@ -774,7 +774,7 @@ Full project review identified 6 issues requiring fixes before claiming alpha:
 | # | Severity | Issue | Status |
 |---|----------|-------|--------|
 | 1 | CRITICAL | Signal doesn't translate: Thai equity ZS backtest shows 25% CAGR but 0.95% trade hit-rate, p=0.25, net loss after friction. No benchmark comparison executed. | ✅ Fixed (Task 5) — 49-ticker backtest with benchmarks |
-| 2 | HIGH | 0 fine-tuned backtests executed. Only holdout direction-accuracy evaluated. Need crypto + us_equity backtests. | 🔄 crypto done (FT loses to ZS), us_equity pending |
+| 2 | HIGH | 0 fine-tuned backtests executed. Only holdout direction-accuracy evaluated. Need crypto + us_equity backtests. | ✅ All executed — crypto FT loses, us_equity FT loses |
 | 3 | HIGH | `bdate_range(freq="B")` skips 28% of crypto data. Affects precompute, forecast horizon, volatility calibration, direction accuracy. Fix BEFORE any further crypto work. | ✅ Fixed (Task 1) |
 | 4 | MEDIUM | `finetune.py` stubs (`finetune_tokenizer`, `finetune_predictor`) call `.fit()` which doesn't exist on Kronos — dead code. Colab notebook imports them. | ✅ Fixed (Task 3) |
 | 5 | LOW | Multiple docs stale: PROJECT_STRUCTURE.md says 51 tickers/Layers planned. 6 open questions in §13 unanswered since 2026-05-16. | ✅ Fixed (Task 4) |
@@ -817,6 +817,33 @@ Full project review identified 6 issues requiring fixes before claiming alpha:
 | Equal-weight | −5.16% | 0.16 |
 
 **Verdict: FT loses to ZS (−3.13% CAGR). Crypto stays zero-shot.** Both models not statistically significant at 5% level — crypto volatility too high. ZS still beats equal-weight benchmark (+21.6pp), but the edge is noisy. Deploy ZS per spec.
+
+### US Equity Backtest Results — Fold 2 (ZS + FT)
+
+17 tickers, 5-day calendar, 2022-2024 walk-forward:
+
+| Model | CAGR | Sharpe | Max DD | p-value |
+|-------|------|--------|--------|---------|
+| ZS | +30.34% | 0.97 | −43.77% | 0.46 |
+| FT (Fold 2) | +31.30% | 0.94 | −43.81% | 0.44 |
+
+| Benchmark | CAGR | Sharpe |
+|-----------|------|--------|
+| SET | −5.29% | −0.63 |
+| SPY | +8.33% | 0.44 |
+| Equal-weight | +14.39% | 0.66 |
+
+**Verdict: FT does NOT beat ZS (FT Sharpe 0.94 ≤ ZS Sharpe 0.97). Both not significant.** FT's +2.0pp direction accuracy improvement on holdout did not translate to backtest alpha. us_equity stays zero-shot per spec.
+
+### FINAL DEPLOYMENT DECISIONS
+
+| Model | Backtest Sharpe | FT Best Sharpe | Δ | Verdict |
+|-------|----------------|----------------|---|---------|
+| Thai equity | 1.40 | — | — | ✅ ZS Deploy (genuine alpha) |
+| Crypto | 0.52 | 0.46 (F0) | −0.06 | ❌ ZS Deploy (FT loses) |
+| US equity | 0.97 | 0.94 (F2) | −0.03 | ❌ ZS Deploy (FT loses) |
+
+All 3 markets deploy zero-shot Kronos-small. Fine-tuning added no backtest alpha in any market.
 
 **Implementation plan:** `docs/superpowers/plans/2026-05-21-hfm-review-fixes.md` (Tasks 1-5 complete, Task 6 pending)
 
