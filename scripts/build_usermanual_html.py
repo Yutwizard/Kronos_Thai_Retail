@@ -46,7 +46,7 @@ FRICTION = {
 
 def _fig_to_b64(fig) -> str:
     buf = io.BytesIO()
-    fig.savefig(buf, format="png", dpi=130, bbox_inches="tight")
+    fig.savefig(buf, format="png", dpi=150, bbox_inches="tight")
     buf.seek(0)
     img = base64.b64encode(buf.read()).decode("utf-8")
     plt.close(fig)
@@ -81,6 +81,7 @@ def chart_cagr_comparison():
                     f"{v*100:+.1f}%", ha="center", va="bottom" if v >= 0 else "top", fontsize=8, fontweight="bold")
 
         ax.axhline(0, color="gray", linewidth=0.5)
+        ax.grid(True, axis="y", alpha=0.3)
         ax.set_title(labels[mk], fontweight="bold", fontsize=11)
         ax.set_ylabel("CAGR (%)")
         ax.tick_params(axis="x", rotation=25)
@@ -118,6 +119,7 @@ def chart_sharpe_comparison():
     ax.set_xticks(x)
     ax.set_xticklabels([labels[m] for m in markets])
     ax.set_ylabel("Ratio")
+    ax.grid(True, axis="y", alpha=0.3)
     ax.set_title("Risk-Adjusted Performance: Sharpe, Sortino, Calmar", fontweight="bold", fontsize=12)
     ax.legend()
     fig.tight_layout()
@@ -292,6 +294,7 @@ def build_html() -> str:
   .highlight {{ background: #fff8e1; border-left: 4px solid #f39c12; padding: 12px 16px; margin: 12px 0; border-radius: 4px; font-size: 0.9rem; }}
   .highlight-red {{ background: #fdecea; border-left: 4px solid #e74c3c; padding: 12px 16px; margin: 12px 0; border-radius: 4px; font-size: 0.9rem; }}
   .highlight-green {{ background: #e8f8f5; border-left: 4px solid #27ae60; padding: 12px 16px; margin: 12px 0; border-radius: 4px; font-size: 0.9rem; }}
+  .highlight-yellow {{ background: #fef9e7; border-left: 4px solid #d4ac0d; padding: 12px 16px; margin: 12px 0; border-radius: 4px; font-size: 0.9rem; }}
   .two-col {{ display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }}
   @media (max-width: 768px) {{ .two-col {{ grid-template-columns: 1fr; }} }}
   .stat {{ background: white; border-radius: 10px; padding: 18px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }}
@@ -316,7 +319,14 @@ def build_html() -> str:
   .detail-item .value {{ font-size: 1.1rem; font-weight: 600; color: #1a5276; }}
   ul, ol {{ padding-left: 22px; margin: 6px 0; }}
   li {{ margin: 4px 0; }}
+  .btt {{ position: fixed; bottom: 30px; right: 30px; background: #1a5276; color: white; width: 42px; height: 42px; border-radius: 50%; text-align: center; line-height: 42px; font-size: 1.4rem; text-decoration: none; box-shadow: 0 2px 8px rgba(0,0,0,0.2); display: none; z-index: 100; }}
+  .btt:hover {{ background: #2e86c1; }}
 </style>
+<script>
+window.addEventListener('scroll', function(){{
+  document.querySelector('.btt').style.display = window.scrollY > 300 ? 'block' : 'none';
+}});
+</script>
 </head>
 <body>
 <div class="container">
@@ -340,8 +350,37 @@ def build_html() -> str:
     <li><a href="#s7">Cautions &amp; Limitations</a></li>
     <li><a href="#s8">Performance Tables</a></li>
     <li><a href="#s9">File Reference</a></li>
-  </ol>
+   </ol>
 </div>
+
+<h2 id="s1">What Is Kronos-TH?</h2>
+<div class="card">
+  <p>Kronos-TH wraps the <strong>Kronos foundation model</strong> — a transformer trained on millions of daily K-lines across global markets — to produce <strong>probabilistic 20-day forecasts</strong> for the assets a Thai retail investor can actually buy.</p>
+  <p><strong>The output is not orders.</strong> It is a daily report answering: given everything Kronos has learned about global financial patterns, and given a backtest on the assets available in Thailand, what does the model expect over the next 20 trading days and how confident is it?</p>
+
+  <h4>Supported Assets (100 tickers, 9 classes)</h4>
+  <table>
+    <tr><th>Class</th><th>Tickers</th><th>What It Covers</th></tr>
+    <tr><td>Thai equity</td><td>50</td><td>SET50 + mid-caps every Thai broker</td></tr>
+    <tr><td>US equity</td><td>17</td><td>Mega-cap US stocks via DIME/Liberator</td></tr>
+    <tr><td>Crypto</td><td>12</td><td>BTC + alts via Bitkub/Binance TH</td></tr>
+    <tr><td>ETF global</td><td>9</td><td>SPY QQQ VTI VWO VEA IEMG EWY EWJ FXI</td></tr>
+    <tr><td>Commodity</td><td>4</td><td>GLD GC=F SLV USO</td></tr>
+    <tr><td>Bond proxy</td><td>3</td><td>TLT IEF HYG</td></tr>
+    <tr><td>REIT</td><td>2</td><td>VNQ CPNREIT.BK</td></tr>
+    <tr><td>Thai index</td><td>1</td><td>^SET.BK benchmark only</td></tr>
+    <tr><td>FX macro</td><td>2</td><td>THB=X DX-Y.NYB features only</td></tr>
+  </table>
+
+  <h4>What It Does NOT Do</h4>
+  <ul>
+    <li><strong>No order execution.</strong> Kronos-TH does not connect to Settrade, Bitkub, or any broker. It generates forecasts; you decide whether to act.</li>
+    <li><strong>No intraday.</strong> Daily bars only. yfinance free intraday is 60-day rolling — not enough to train on.</li>
+    <li><strong>No tax optimization.</strong> Capital gains treatment varies by asset class (crypto tax-exempt in Thailand 2025-2029). Consult a tax advisor.</li>
+    <li><strong>No survivorship bias adjustment.</strong> The universe includes only currently-listed tickers. Delisted tickers are absent from backtests which overstates returns.</li>
+  </ul>
+</div>
+
 
 <h2 id="s2">Quick Start</h2>
 <div class="card">
@@ -387,6 +426,7 @@ print(f'Forecasts cached at data/forecast_cache/{{slug}}/{{today}}/')
 
   <h3>Class Allocation Caps</h3>
   <div class="chart">{c7}</div>
+  <div class="highlight-red" style="font-size:0.85rem;"><strong>&#9888; Crypto risk warning:</strong> Crypto had &minus;69% maximum drawdown and p=0.64 (not statistically significant). The 5% cap in the recommended allocation is the <strong>absolute maximum</strong>. Consider 0-2% if you cannot tolerate a two-thirds portfolio loss.</div>
 
   <h3>Example Portfolios</h3>
   <div class="two-col">
@@ -453,6 +493,7 @@ print(f'Forecasts cached at data/forecast_cache/{{slug}}/{{today}}/')
 <div class="card">
   <h3>Fine-Tuning Verdict — Zero-Shot Wins Everywhere</h3>
   <div class="highlight">We spent 65 GPU-hours training 9 models across 3 markets. <strong>None beat zero-shot.</strong></div>
+  <div class="highlight-yellow"><strong>Why fine-tuning failed:</strong> The training data distribution (2016-2022) differs from the holdout period (2025). Fine-tuning teaches the model to predict the token distribution of the training period. When market regimes shift — which they always do — a fine-tuned model's predictions degrade faster than the zero-shot model's generalist knowledge. This is a known phenomenon in time-series foundation models.</div>
   <ul>
     <li>Thai equity: ZS 1.40 Sharpe — no FT model exceeded this</li>
     <li>US equity: ZS 0.97 Sharpe — FT F2 achieved 0.94 (−0.03)</li>
@@ -491,11 +532,13 @@ print(f'Forecasts cached at data/forecast_cache/{{slug}}/{{today}}/')
     <tr><td>Trade Win Rate</td><td>2.51%</td><td>2.78%</td><td>1.48%</td></tr>
     <tr><td>Annual Turnover</td><td>11.8×</td><td>9.2×</td><td>6.7×</td></tr>
     <tr><td>Friction Drag (annual)</td><td>6.3%</td><td>6.4%</td><td>6.0%</td></tr>
-    <tr><td>p-value</td><td>&lt;0.05</td><td>0.46</td><td>0.64</td></tr>
+    <tr><td>p-value</td><td>&lt;0.05*</td><td>0.46</td><td>0.64</td></tr>
   </table>
   <div class="highlight-green">Thai equity Max DD (−17.97%) is nearly identical to equal-weight (−18.07%). The model does NOT increase tail risk over passive allocation. Alpha is "free" from a risk perspective.</div>
   <div class="highlight">Annual friction drag = Turnover × round-trip friction. Thai: 11.8 × 0.536% = 6.3% of AUM lost to costs annually. CAGR reported is net of these costs.</div>
+  <p style="font-size:0.82rem;color:#7f8c8d;margin-top:6px;">* p &lt; 0.05 = statistically significant. p > 0.05 = not distinguishable from random noise.</p>
 </div>
+
 
 <h2 id="s9">File Reference</h2>
 <div class="card" style="font-size:0.85rem;">
@@ -514,6 +557,8 @@ print(f'Forecasts cached at data/forecast_cache/{{slug}}/{{today}}/')
     <tr><td><code>notebooks/05_decision_report.ipynb</code></td><td>Daily decision report (3 views)</td></tr>
   </table>
 </div>
+
+<a href="#" class="btt" onclick="window.scrollTo(0,0);return false;">&#8593;</a>
 
 <div style="text-align:center;padding:30px 0 10px;color:#95a5a6;font-size:0.82rem;">
   Generated 2026-05-24 • Not financial advice • Past performance is not indicative of future results
