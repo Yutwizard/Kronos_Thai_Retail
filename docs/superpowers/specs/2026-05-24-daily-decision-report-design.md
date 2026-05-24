@@ -14,7 +14,7 @@ REPORT_MODE = "morning"  # "morning" | "trader" | "quant"
   Cell 0: Config (MODEL_TYPE, REPORT_MODE, DATE)
   Cell 1: Load model (ZS or FT checkpoint)
   Cell 2: forecast_batch(100 tickers) → cache (idempotent, today invalidated)
-  Cell 3: Build report DataFrame (28 columns, all tickers)
+  Cell 3: Build report DataFrame (22 columns, all tickers)
   Cell 4: Filter + sort + display per REPORT_MODE
   Cell 5: Disclaimers
 ```
@@ -28,9 +28,19 @@ No new files in `kth/`. No new scripts. All dependencies exist: `KronosTH`, `For
 ### Cell 0: Config
 
 ```python
+import pandas as pd
+from pathlib import Path
+import shutil
+
 REPORT_MODE = "morning"   # "morning" | "trader" | "quant"
 MODEL_TYPE  = "zero-shot" # "zero-shot" | "fine-tuned"
 REPORT_DATE = pd.Timestamp.now().strftime("%Y-%m-%d")
+
+# Compute model slug once (used by Cells 2 and 3)
+if MODEL_TYPE == "zero-shot":
+    CACHE_SLUG = "NeoQuasar_Kronos-small"
+else:
+    CACHE_SLUG = "./checkpoints/us_equity/fold2/best".replace("/","_")
 ```
 
 ### Cell 1: Load Model
@@ -49,10 +59,7 @@ else:
 ### Cell 2: Generate Forecasts
 
 ```python
-# Invalidate today's cache (forecast uses latest data for lookback)
-from kth.models.kronos_wrapper import KronosTH
-slug = "NeoQuasar_Kronos-small" if MODEL_TYPE == "zero-shot" else th.model_name.replace("/","_").replace("\\","_")
-today_dir = Path(f"data/forecast_cache/{slug}/{REPORT_DATE}")
+today_dir = Path(f"data/forecast_cache/{CACHE_SLUG}/{REPORT_DATE}")
 if today_dir.exists():
     shutil.rmtree(today_dir)
 
@@ -64,7 +71,7 @@ if MODEL_TYPE == "fine-tuned":
 precompute_forecasts(th, tickers,
     start_date=REPORT_DATE, end_date=REPORT_DATE,
     pred_len=20, n_samples=10, lookback=400)
-print(f"Forecasts generated. Cache: data/forecast_cache/{slug}/{REPORT_DATE}/")
+print(f"Forecasts generated. Cache: data/forecast_cache/{CACHE_SLUG}/{REPORT_DATE}/")
 ```
 
 ### Cell 3: Build DataFrame
@@ -72,8 +79,7 @@ print(f"Forecasts generated. Cache: data/forecast_cache/{slug}/{REPORT_DATE}/")
 For each ticker with a cached forecast for `REPORT_DATE`:
 
 ```python
-slug = "NeoQuasar_Kronos-small" if MODEL_TYPE == "zero-shot" else th.model_name.replace("/","_").replace("\\","_")
-cache_dir = Path(f"data/forecast_cache/{slug}/{REPORT_DATE}")
+cache_dir = Path(f"data/forecast_cache/{CACHE_SLUG}/{REPORT_DATE}")
 
 rows = []
 skipped = []
@@ -84,7 +90,10 @@ for ticker in tickers:
         continue
     fc = pd.read_parquet(parquet_file)
     # fc columns: timestamps, p5, p25, p50, p75, p95, mean
-    current_close = float(load_cached(ticker)["close"].iloc[-1])
+
+    ticker_data = load_cached(ticker)  # load once, reuse
+    current_close = float(ticker_data["close"].iloc[-1])
+    hist_vol = float(ticker_data["close"].pct_change().tail(252).std())
     cls = get_ticker_class(ticker)
     bm = BACKTEST_METRICS.get(cls, {})
     frac = FRICTION.get(cls, {"commission_oneway":0,"slippage_oneway":0})
@@ -114,8 +123,8 @@ for ticker in tickers:
         "band_width": band_width,
         "confidence": "green" if band_width <= 0.10 else ("yellow" if band_width <= 0.30 else "red"),
         "direction": "up" if exp_return > 0 else "down",
-        "hist_vol_1y": float(load_cached(ticker)["close"].pct_change().tail(252).std()),
-        "risk_adj_return": exp_return / (float(load_cached(ticker)["close"].pct_change().tail(252).std()) + 1e-6),
+        "hist_vol_1y": hist_vol,
+        "risk_adj_return": exp_return / (hist_vol + 1e-6),
         "rank_score": exp_return / max(band_width, 0.001),
         "market_sharpe": bm.get("sharpe"),
         "market_cagr": bm.get("cagr"),
@@ -138,14 +147,16 @@ Each mode selects a column subset and sort order from the same DataFrame:
 
 | Mode | Columns | Sort | Filter |
 |------|---------|------|--------|
-| Morning | ticker, class, P50%, band, flag, rank, direction | rank_score desc (top 10) + rank_score asc (bottom 10) | Top/bottom 10 |
-| Trader | +P95/P5%, market_sharpe, friction, net_return | risk_adj_return desc | All, grouped by class |
+| Morning | ticker, current_close, P50%, band, flag, rank, direction | rank_score desc (top 10) + rank_score asc (bottom 10) | Top/bottom 10 |
+| Trader | +P95/P5%, market_sharpe, friction, net_return | net_return desc | All, grouped by class |
 | Quant | +mean_return%, market_cagr, market_maxdd, hist_vol | class, risk_adj_return desc | All |
 
 Confidence flags:
 - 🟢 Green: band width ≤ 10%
 - 🟡 Yellow: 10% < band width ≤ 30%
 - 🔴 Red: band width > 30%
+
+> Thresholds are initial first-pass calibration based on backtest band width distribution. Future: tie to per-class friction costs (green < 2× friction, yellow 2-5×, red >5×).
 
 Rank score: `expected_return_p50 / max(band_width, 0.001)` — higher return with tighter bands ranks higher.
 
