@@ -39,52 +39,117 @@ REPORT_DATE = pd.Timestamp.now().strftime("%Y-%m-%d")
 if MODEL_TYPE == "zero-shot":
     th = KronosTH.from_pretrained("NeoQuasar/Kronos-small", device="cuda")
 else:
+    # FT mode: only forecast tickers the checkpoint was trained on
+    # Per deployment decisions: us_equity fold 2 is the only FT candidate
     from kth.models.finetune import load_finetuned_checkpoint
-    # Per-market — pick checkpoint per asset class or single checkpoint
     th = load_finetuned_checkpoint("./checkpoints/us_equity/fold2/best", device="cuda")
+    FT_ONLY_CLASS = "us_equity"  # restricts ticker list in Cell 2
 ```
 
 ### Cell 2: Generate Forecasts
 
 ```python
 # Invalidate today's cache (forecast uses latest data for lookback)
-today_dir = Path(f"data/forecast_cache/NeoQuasar_Kronos-small/{REPORT_DATE}")
+from kth.models.kronos_wrapper import KronosTH
+slug = "NeoQuasar_Kronos-small" if MODEL_TYPE == "zero-shot" else th.model_name.replace("/","_").replace("\\","_")
+today_dir = Path(f"data/forecast_cache/{slug}/{REPORT_DATE}")
 if today_dir.exists():
     shutil.rmtree(today_dir)
 
 tickers = get_all_tickers()
+if MODEL_TYPE == "fine-tuned":
+    tickers = [t for t in tickers if get_ticker_class(t) == FT_ONLY_CLASS]
+    print(f"FT mode: restricted to {FT_ONLY_CLASS} ({len(tickers)} tickers)")
+
 precompute_forecasts(th, tickers,
     start_date=REPORT_DATE, end_date=REPORT_DATE,
     pred_len=20, n_samples=10, lookback=400)
+print(f"Forecasts generated. Cache: data/forecast_cache/{slug}/{REPORT_DATE}/")
 ```
 
 ### Cell 3: Build DataFrame
 
 For each ticker with a cached forecast for `REPORT_DATE`:
 
-- Load `{ticker}.parquet` from cache → extract P5/P25/P50/P75/P95/mean close columns
-- Join with `UNIVERSE` metadata (class, display name, sector, friction)
-- Join with backtest metrics per market (Sharpe, CAGR, Max DD)
-- Compute derived fields (expected return, band width, confidence, rank score)
+```python
+slug = "NeoQuasar_Kronos-small" if MODEL_TYPE == "zero-shot" else th.model_name.replace("/","_").replace("\\","_")
+cache_dir = Path(f"data/forecast_cache/{slug}/{REPORT_DATE}")
 
-Output: one DataFrame with 28 columns, one row per ticker.
+rows = []
+skipped = []
+for ticker in tickers:
+    parquet_file = cache_dir / f"{ticker.replace('^','_').replace('=','_')}.parquet"
+    if not parquet_file.exists():
+        skipped.append(ticker)
+        continue
+    fc = pd.read_parquet(parquet_file)
+    # fc columns: timestamps, p5, p25, p50, p75, p95, mean
+    current_close = float(load_cached(ticker)["close"].iloc[-1])
+    cls = get_ticker_class(ticker)
+    bm = BACKTEST_METRICS.get(cls, {})
+    frac = FRICTION.get(cls, {"commission_oneway":0,"slippage_oneway":0})
+    friction_rt = frac["commission_oneway"]*2 + frac["slippage_oneway"]*2
+
+    p50_close = float(fc["p50"].iloc[-1])
+    p5_close  = float(fc["p5"].iloc[-1])
+    p95_close = float(fc["p95"].iloc[-1])
+    mean_close = float(fc["mean"].iloc[-1])
+
+    exp_return = (p50_close - current_close) / current_close
+    band_width = (p95_close - p5_close) / current_close
+
+    rows.append({
+        "ticker": ticker,
+        "name": get_display_name(ticker),
+        "class": cls,
+        "current_close": current_close,
+        "p5_close": p5_close,
+        "p25_close": float(fc["p25"].iloc[-1]),
+        "p50_close": p50_close,
+        "p75_close": float(fc["p75"].iloc[-1]),
+        "p95_close": p95_close,
+        "mean_close": mean_close,
+        "expected_return_p50": exp_return,
+        "expected_return_mean": (mean_close - current_close) / current_close,
+        "band_width": band_width,
+        "confidence": "green" if band_width <= 0.10 else ("yellow" if band_width <= 0.30 else "red"),
+        "direction": "up" if exp_return > 0 else "down",
+        "hist_vol_1y": float(load_cached(ticker)["close"].pct_change().tail(252).std()),
+        "risk_adj_return": exp_return / (float(load_cached(ticker)["close"].pct_change().tail(252).std()) + 1e-6),
+        "rank_score": exp_return / max(band_width, 0.001),
+        "market_sharpe": bm.get("sharpe"),
+        "market_cagr": bm.get("cagr"),
+        "market_max_dd": bm.get("max_dd"),
+        "friction_rt": friction_rt,
+        "net_return": exp_return - friction_rt,
+        "report_date": REPORT_DATE,
+        "model": MODEL_TYPE,
+    })
+
+df = pd.DataFrame(rows)
+print(f"{len(df)}/{len(tickers)} tickers forecasted, {len(skipped)} skipped")
+if skipped:
+    print(f"  Skipped: {skipped}")
+```
 
 ### Cell 4: Display per Mode
 
 Each mode selects a column subset and sort order from the same DataFrame:
 
-| Mode | Columns | Sort | Filters |
-|------|---------|------|---------|
-| Morning | 7 cols (ticker, class, P50%, band, flag, rank, dir) | Rank score desc | Top 20 visible |
-| Trader | 10 cols (+ P95/P5%, consensus, Sharpe, friction, net return) | Consensus desc, net return desc | All, grouped by class |
-| Quant | 11 cols (+ mean return, CAGR, Max DD, trailing hit-rate) | Class, trailing hit-rate desc | All |
+| Mode | Columns | Sort | Filter |
+|------|---------|------|--------|
+| Morning | ticker, class, P50%, band, flag, rank, direction | rank_score desc (top 10) + rank_score asc (bottom 10) | Top/bottom 10 |
+| Trader | +P95/P5%, market_sharpe, friction, net_return | risk_adj_return desc | All, grouped by class |
+| Quant | +mean_return%, market_cagr, market_maxdd, hist_vol | class, risk_adj_return desc | All |
 
 Confidence flags:
 - 🟢 Green: band width ≤ 10%
 - 🟡 Yellow: 10% < band width ≤ 30%
 - 🔴 Red: band width > 30%
 
-Rank score: `P50_expected_return / band_width` — higher return with tighter bands ranks higher.
+Rank score: `expected_return_p50 / max(band_width, 0.001)` — higher return with tighter bands ranks higher.
+
+**All-red day fallback:** If median band_width > 30% (market turmoil — every ticker is uncertain), sort by `abs(expected_return_p50)` descending with a warning banner: `"High uncertainty day — sorting by return magnitude only."`
 
 ### Cell 5: Disclaimers
 
@@ -98,15 +163,19 @@ Forecasts generated at {REPORT_DATE} using {MODEL_TYPE} Kronos-small.
 
 ---
 
-## 3. SE Review Fixes Incorporated
+## 3. Review Fixes Incorporated (v2)
 
-| # | Issue | Fix |
-|---|-------|-----|
-| 1 | Stale cache on re-run | Delete today's cache directory before forecast_batch (Cell 2) |
-| 2 | Ticker failures | forecast_batch handles insufficient-history tickers internally; log skipped count |
-| 3 | Model selection | `MODEL_TYPE` variable in Cell 0 (Cell 1) |
-| 4 | 4-source join | pd.merge chain + `.map()` for per-class backtest metrics (Cell 3) |
-| 5 | Missing forecast summary | Print `"{N}/{100} tickers forecasted, {skipped} skipped"` (Cell 4 header) |
+| # | Issue | Severity | Fix |
+|---|-------|----------|-----|
+| 1 | FT model loads single checkpoint, used on all tickers | Critical | FT mode restricted to trained class only (us_equity); per-market FT if needed later |
+| 2 | Consensus column uncomputable from summary cache | Critical | Dropped from v1; doc notes sample paths not cached |
+| 3 | Trail hit-rate needs mini-backtest infrastructure | Medium | Dropped from v1; doc notes as future enhancement |
+| 4 | Rank score ÷ 0 when band_width = 0 | Critical | `max(band_width, 0.001)` guard |
+| 5 | Morning view: long-only, no exit signals | Critical | Top 10 bullish + bottom 10 bearish |
+| 6 | 0.0 ≠ N/A for untested backtest classes | Critical | Use `None`, display as `"—"` |
+| 7 | All-red day degrades sort to random | Medium | Fallback: sort by abs(return), show warning banner |
+| 8 | Cache directory path not explicit in Cell 3 | Medium | Build path from model slug; try/except for skipped tickers |
+| 9 | P&L tracking from prior signals | Medium | Dropped from v1; doc notes as future enhancement |
 
 ---
 
@@ -126,20 +195,21 @@ BACKTEST_METRICS = {
     "thai_equity": {"sharpe": 1.40, "cagr": 0.3144, "max_dd": -0.1797},
     "crypto":      {"sharpe": 0.52, "cagr": 0.1645, "max_dd": -0.6858},
     "us_equity":   {"sharpe": 0.97, "cagr": 0.3034, "max_dd": -0.4377},
-    "thai_index":  {"sharpe": -0.63,"cagr": -0.0529, "max_dd": -0.2564},
-    "etf_global":  {"sharpe": 0.44, "cagr": 0.0833, "max_dd": -0.2450},  # SPY proxy
-    "commodity":   {"sharpe": 0.0,  "cagr": 0.0,    "max_dd": 0.0},
-    "bond_proxy":  {"sharpe": 0.0,  "cagr": 0.0,    "max_dd": 0.0},
-    "reit":        {"sharpe": 0.0,  "cagr": 0.0,    "max_dd": 0.0},
-    "fx_macro":    {"sharpe": 0.0,  "cagr": 0.0,    "max_dd": 0.0},
+    "thai_index":  {"sharpe": -0.63,"cagr": -0.0529,"max_dd": -0.2564},  # SET benchmark
+    "etf_global":  {"sharpe": 0.44, "cagr": 0.0833, "max_dd": -0.2450},   # SPY proxy
+    # Classes NOT yet backtested — show "—" in report
+    "commodity":   {"sharpe": None, "cagr": None, "max_dd": None},
+    "bond_proxy":  {"sharpe": None, "cagr": None, "max_dd": None},
+    "reit":        {"sharpe": None, "cagr": None, "max_dd": None},
+    "fx_macro":    {"sharpe": None, "cagr": None, "max_dd": None},
 }
 ```
 
-Classes with no backtest (commodity, bond_proxy, reit, fx_macro) show metrics as `"N/A"` in the report.
+Classes with no backtest display metrics as `"—"` in the report (not `0.0`, which means "breakeven Sharpe").
 
 ---
 
-## 5. Derived Fields (28 Columns)
+## 5. Derived Fields (22 Columns)
 
 | # | Column | Formula |
 |---|--------|---------|
@@ -148,20 +218,22 @@ Classes with no backtest (commodity, bond_proxy, reit, fx_macro) show metrics as
 | 5-10 | P5/P25/P50/P75/P95/Mean close | Forecast cache |
 | 11 | Expected Return (P50) | (P50_close − current_close) / current_close |
 | 12 | Expected Return (Mean) | (mean_close − current_close) / current_close |
-| 13 | P5/P95 Spread | (P95_close − P5_close) / current_close |
-| 14 | Band Width | P95/P95 spread |
-| 15 | Confidence Flag | green ≤10%, yellow 10-30%, red >30% |
-| 16 | Direction | ↑ if P50 > close, ↓ otherwise |
-| 17 | Consensus | % of 10 sample paths with same direction sign |
-| 18 | Hist Vol (1Y) | rolling 252-day std of daily log returns |
-| 19 | Risk-Adj Return | Expected Return / Hist Vol |
-| 20 | Rank Score | Expected Return / Band Width |
-| 21-23 | Market Sharpe/CAGR/MaxDD | From BACKTEST_METRICS |
-| 24 | Friction (RT%) | From FRICTION: commission_oneway×2 + slippage_oneway×2 |
-| 25 | Net Return | Expected Return − Friction |
-| 26 | Last Forecast Date | REPORT_DATE |
-| 27 | Model | MODEL_TYPE |
-| 28 | Trail Hit-Rate (10d) | Direction accuracy over last 10 trading days |
+| 13 | Band Width | (P95_close − P5_close) / current_close |
+| 14 | Confidence Flag | green ≤10%, yellow 10-30%, red >30% |
+| 15 | Direction | ↑ if P50 > close, ↓ otherwise |
+| 16 | Hist Vol (1Y) | rolling 252-day std of daily log returns |
+| 17 | Risk-Adj Return | Expected Return / (Hist Vol + 1e-6) |
+| 18 | Rank Score | Expected Return / max(Band Width, 0.001) |
+| 19-21 | Market Sharpe/CAGR/MaxDD | From BACKTEST_METRICS |
+| 22 | Friction (RT%) | From FRICTION: commission_oneway×2 + slippage_oneway×2 |
+| 23 | Net Return | Expected Return − Friction |
+| 24 | Report Date | REPORT_DATE |
+| 25 | Model | MODEL_TYPE |
+
+**Dropped from v1 (cache dependency):**
+- Consensus (% of sample paths agreeing) — requires saving individual sample paths to cache
+- Trail Hit-Rate (10-day direction accuracy) — requires mini-backtest infrastructure
+- P&L tracking (prior signal returns) — requires historical forecast tracking
 
 ---
 
@@ -183,7 +255,7 @@ Classes with no backtest (commodity, bond_proxy, reit, fx_macro) show metrics as
 - `kth/backtest/walkforward.py` — `precompute_forecasts()` (idempotent cache)
 - `kth/data/universe.py` — `UNIVERSE`, `FRICTION`, `get_all_tickers()`
 - `kth/data/loader.py` — `load_cached()`
-- `data/forecast_cache/NeoQuasar_Kronos-small/` — existing ZS forecast cache
+- `data/forecast_cache/{slug}/{date}/` — per-model forecast cache
 - `data/raw/*.parquet` — 100 tickers cached data
 
 ---
