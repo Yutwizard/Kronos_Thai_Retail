@@ -5,7 +5,6 @@ Mirrors Kronos repo finetune/ structure but as importable functions for Colab.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
 import random
 import json
 
@@ -19,9 +18,8 @@ _TOKENIZER_CACHE: dict[str, object] = {}
 
 
 # Module-level Dataset class (NOT inside a function — required for DataLoader pickle).
-# Must inherit torch.utils.data.Dataset so Kronos's fit() accepts it via isinstance check.
 class KronosDataset(torch.utils.data.Dataset):
-    """PyTorch Dataset wrapping (x_df, y_series) samples for Kronos fine-tuning."""
+    """PyTorch Dataset wrapping (x_df, y_series) samples for Kronos training."""
     def __init__(self, samples: list[tuple[pd.DataFrame, pd.Series]]):
         self.samples = samples
 
@@ -287,13 +285,13 @@ def evaluate_model(
 
         # Build timestamps
         x_stamp = pd.Series(
-            pd.bdate_range(
+            pd.date_range(
                 end=pd.Timestamp.now() - pd.Timedelta(days=1),
                 periods=lookback, freq="B",
             )
         )
         y_stamp = pd.Series(
-            pd.bdate_range(
+            pd.date_range(
                 start=x_stamp.iloc[-1] + pd.Timedelta(days=1),
                 periods=pred_len, freq="B",
             )
