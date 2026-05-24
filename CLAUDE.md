@@ -103,6 +103,7 @@ columns: timestamps, open, high, low, close, volume, amount
 | `kth/backtest/metrics.py` | Full professional metric set: Sharpe/Sortino/Calmar/Omega, historical VaR/CVaR, Ulcer Index, hit-rate, profit factor, t-stat, per-class attribution; gross and net side-by-side |
 | `kth/utils/plot.py` | `plot_forecast_band`, `plot_equity_curve`, `plot_attribution`, `plot_drawdown` |
 | `kth/utils/report.py` | `build_report_table` (dual sort: confidence-adjusted + raw), `render_markdown`, `render_html` |
+| `scripts/build_usermanual_html.py` | Generates `docs/user-manual.html` with 7 embedded Matplotlib charts (CAGR comparisons, risk metrics, friction costs, allocation) |
 
 Target model sizes: **Kronos-small** (24.7M params) for iteration, **Kronos-base** (102.3M) for final fine-tune — both fit on a T4 16GB GPU.
 
@@ -132,7 +133,8 @@ Priority order: (1) user's explicit instructions, (2) superpowers skills, (3) de
 
 1. [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) — authoritative design doc with module specs, friction model, evaluation methodology, and open design questions
 2. [README.md](README.md) — project overview, honest caveats, quick start
-3. [AGENTS.md](AGENTS.md) — agent-specific conventions summary
-4. [docs/superpowers/specs/](docs/superpowers/specs/) — approved design specs for Layers 3–5 (A: inference wrapper, B: backtest, C: fine-tune, D: report)
-5. [kth/data/loader.py](kth/data/loader.py) — schema conversion and caching implementation
-6. [kth/data/universe.py](kth/data/universe.py) — 100-ticker universe and `FRICTION` dict
+3. [docs/user-manual.html](docs/user-manual.html) — styled HTML manual with 7 charts, methodology, and usage guide
+4. [AGENTS.md](AGENTS.md) — agent-specific conventions summary
+5. [docs/superpowers/specs/](docs/superpowers/specs/) — approved design specs for Layers 3–5 (A: inference wrapper, B: backtest, C: fine-tune, D: report)
+6. [kth/data/loader.py](kth/data/loader.py) — schema conversion and caching implementation
+7. [kth/data/universe.py](kth/data/universe.py) — 100-ticker universe and `FRICTION` dict

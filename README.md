@@ -46,7 +46,7 @@ Defined in `kth/data/universe.py`. 100 tickers across 9 asset classes:
 - ✅ **Backtest results**: Thai equity (CAGR +31%, Sharpe 1.40), US equity (+30%, 0.97), Crypto (+16%, 0.52).
 - ✅ **Fine-tuning**: 9 models trained across 3 markets. None beat zero-shot. All deploy zero-shot.
 - ✅ **Daily decision report** (`notebooks/05_decision_report.ipynb`): 3 toggleable views (morning/trader/quant), 22 columns, 100 tickers.
-- ✅ **User manual** (`docs/user-manual.md`): complete methodology, usage, cautions, and results.
+- ✅ **User manual** (`docs/user-manual.md` — text, `docs/user-manual.html` — interactive with charts): complete methodology, usage, cautions, and results.
 
 ## Quick start
 

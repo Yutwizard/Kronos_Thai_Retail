@@ -502,6 +502,7 @@ If our strategy doesn't beat all four after frictions, we say so plainly.
 - `README.md` — project overview
 - `requirements.txt` — minimal pinned deps
 - `docs/user-manual.md` — full user manual with methodology, backtest results, and usage instructions
+- `docs/user-manual.html` — HTML version with 7 embedded data visualization charts
 
 ### Backtest Results (2022-2024, 3 markets × 4 benchmarks)
 
