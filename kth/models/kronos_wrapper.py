@@ -127,11 +127,15 @@ class KronosTH:
 
         max_pred_len = max(pred_lens)
 
-        # 1. Input resolution
+        # 1. Input resolution + calendar detection
         if isinstance(ticker_or_df, str):
             from kth.data.loader import load_cached
             df = load_cached(ticker_or_df, self.cache_dir)
             ticker = ticker_or_df
+            if calendar_freq == "B":
+                from kth.data.universe import get_ticker_class
+                if get_ticker_class(ticker) == "crypto":
+                    calendar_freq = "D"
         else:
             df = ticker_or_df.copy()
             self._validate_columns(df)
@@ -218,6 +222,14 @@ class KronosTH:
             pred_lens = [5, 20]
 
         max_pred_len = max(pred_lens)
+
+        # Auto-detect calendar: if any ticker is crypto, use 7-day freq
+        if calendar_freq == "B":
+            from kth.data.universe import get_ticker_class
+            for item in tickers_or_dfs:
+                if isinstance(item, str) and get_ticker_class(item) == "crypto":
+                    calendar_freq = "D"
+                    break
 
         # 1. Resolve all inputs and prepare data
         keys: list[str] = []
