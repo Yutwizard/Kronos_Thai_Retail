@@ -799,7 +799,7 @@ Full project review identified 6 issues requiring fixes before claiming alpha:
 - Max DD comparable to equal-weight → no extra tail risk from model signals
 - 49 tickers (vs original 14) provide sufficient diversification for signal to compound
 
-**Deployment:** Crypto and thai_equity remain zero-shot per spec. us_equity FT backtest pending (Task 6).
+**Deployment:** All 3 markets deploy zero-shot Kronos-small. FT backtests completed (Task 6): crypto and us_equity both stay zero-shot.
 
 ### Crypto Backtest Results — Fold 0 (ZS + FT)
 
@@ -845,7 +845,7 @@ Full project review identified 6 issues requiring fixes before claiming alpha:
 
 All 3 markets deploy zero-shot Kronos-small. Fine-tuning added no backtest alpha in any market.
 
-**Implementation plan:** `docs/superpowers/plans/2026-05-21-hfm-review-fixes.md` (Tasks 1-5 complete, Task 6 pending)
+**Implementation plan:** `docs/superpowers/plans/2026-05-21-hfm-review-fixes.md` (All 6 HFM review fixes complete)
 
 **Specs created for this phase:**
 - `docs/superpowers/specs/2026-05-21-backtest-comparison-design.md` — us_equity backtest (all 3 folds)
