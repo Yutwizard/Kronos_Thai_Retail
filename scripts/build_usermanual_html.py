@@ -66,7 +66,7 @@ def chart_cagr_comparison():
     markets = list(BACKTEST_RESULTS.keys())
     labels = {"thai_equity": "Thai Equity", "us_equity": "US Equity", "crypto": "Crypto"}
 
-    fig, axes = plt.subplots(1, 3, figsize=(14, 4.5), facecolor="#fafafa")
+    fig, axes = plt.subplots(1, 3, figsize=(14, 4.5), facecolor="white")
 
     for ax, mk in zip(axes, markets):
         d = BACKTEST_RESULTS[mk]
@@ -74,21 +74,25 @@ def chart_cagr_comparison():
         names = ["Strategy"] + list(bm.keys())
         vals = [d["cagr"]] + list(bm.values())
         colors = [c["green"]] + [c["bh"]] * (len(names) - 1)
+        ax.set_facecolor("white")
 
         bars = ax.bar(names, [v * 100 for v in vals], color=colors, edgecolor="white", width=0.6)
         for bar, v in zip(bars, vals):
-            ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.5 if v >= 0 else bar.get_height() - 2.5,
+            y_pos = bar.get_height() + 0.8 if v >= 0 else bar.get_height() - 2.0
+            ax.text(bar.get_x() + bar.get_width() / 2, y_pos,
                     f"{v*100:+.1f}%", ha="center", va="bottom" if v >= 0 else "top", fontsize=8, fontweight="bold")
 
         ax.axhline(0, color="gray", linewidth=0.5)
         ax.grid(True, axis="y", alpha=0.3)
-        ax.set_title(labels[mk], fontweight="bold", fontsize=11)
+        ax.set_title(labels[mk], fontweight="bold", fontsize=11, pad=8)
         ax.set_ylabel("CAGR (%)")
         ax.tick_params(axis="x", rotation=25)
-        ax.set_ylim(min(min(vals * 100) - 5, -5), max(max(vals * 100) + 5, 5))
+        ymin = min(min(vals) * 100 - 3, -3)
+        ymax = max(max(vals) * 100 + 3, 5)
+        ax.set_ylim(ymin, ymax)
 
-    fig.suptitle("CAGR: Strategy vs Benchmarks (2022-2024)", fontweight="bold", fontsize=13, y=1.02)
-    fig.tight_layout()
+    fig.suptitle("CAGR: Strategy vs Benchmarks (2022-2024)", fontweight="bold", fontsize=13, y=0.98)
+    fig.subplots_adjust(top=0.88, bottom=0.12, wspace=0.3)
     return _fig_to_b64(fig)
 
 
@@ -122,7 +126,7 @@ def chart_sharpe_comparison():
     ax.grid(True, axis="y", alpha=0.3)
     ax.set_title("Risk-Adjusted Performance: Sharpe, Sortino, Calmar", fontweight="bold", fontsize=12)
     ax.legend()
-    fig.tight_layout()
+    pass
     return _fig_to_b64(fig)
 
 
@@ -149,7 +153,7 @@ def chart_max_drawdown():
         ax.set_xlabel("Max Drawdown (%)")
 
     fig.suptitle("Maximum Drawdown: Strategy vs Benchmarks", fontweight="bold", fontsize=13, y=1.02)
-    fig.tight_layout()
+    pass
     return _fig_to_b64(fig)
 
 
@@ -169,7 +173,7 @@ def chart_friction_cost():
 
     ax.set_title("Round-Trip Friction Cost by Asset Class", fontweight="bold", fontsize=12)
     ax.set_xlabel("Transaction Cost (% of trade value)")
-    fig.tight_layout()
+    pass
     return _fig_to_b64(fig)
 
 
@@ -203,7 +207,7 @@ def chart_annual_turnover():
                 f"{v:.1f}%", ha="center", fontsize=9, fontweight="bold")
 
     fig.suptitle("Turnover vs Friction Drag", fontweight="bold", fontsize=12, y=1.02)
-    fig.tight_layout()
+    pass
     return _fig_to_b64(fig)
 
 
@@ -229,7 +233,7 @@ def chart_allocation_donut():
         title="Asset Class", loc="center left", bbox_to_anchor=(1, 0, 0.5, 1), fontsize=9,
     )
     ax.set_title("Recommended Balanced Allocation", fontweight="bold", fontsize=13, pad=15)
-    fig.tight_layout()
+    pass
     return _fig_to_b64(fig)
 
 
@@ -250,7 +254,7 @@ def chart_confidence_sizing():
     ax.set_ylim(0, 120)
     ax.set_ylabel("Position Size (% of normal)")
     ax.set_title("Position Size by Confidence Flag", fontweight="bold", fontsize=11)
-    fig.tight_layout()
+    pass
     return _fig_to_b64(fig)
 
 
