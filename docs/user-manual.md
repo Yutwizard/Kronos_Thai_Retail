@@ -34,34 +34,36 @@ Kronos-TH wraps the [Kronos](https://github.com/shiyu-coder/Kronos) foundation m
 
 ---
 
-## 2. Quick Start (3 Minutes)
+## 2. Quick Start (Setup: 5 min | Daily runtime: 10-15 min)
 
 ### Prerequisites
 
 - Python 3.10+
 - NVIDIA GPU with ≥6GB VRAM (GTX 1060 minimum, T4 recommended)
-- Kronos repo cloned locally
-- 100 parquet files cached in `data/raw/`
+- Kronos repo cloned locally (`git clone https://github.com/shiyu-coder/Kronos.git kronos_repo`)
+- 100 parquet files cached in `data/raw/` (run `python scripts/download_data.py` once)
 
 ### Step 1: Install dependencies
 
 ```bash
-pip install -r requirements.txt
-pip install -r requirements-ml.txt
-pip install -e .
+python -m pip install -r requirements.txt
+python -m pip install -r requirements-ml.txt
+python -m pip install -e .
 ```
 
 ### Step 2: Verify GPU
 
 ```bash
-python -c "import torch; print(f'CUDA: {torch.cuda.is_available()}, Device: {torch.cuda.get_device_name(0)}')"
+python -c "import torch; assert torch.cuda.is_available(), 'GPU required. Free tier: Google Colab T4.'; print(f'CUDA: True, Device: {torch.cuda.get_device_name(0)}')"
 ```
-Expected: `CUDA: True, Device: NVIDIA GeForce GTX 1060` (or similar).
+Expected: `CUDA: True, Device: NVIDIA GeForce GTX 1060` (or similar). If this fails, use Google Colab (free T4 GPU).
 
-### Step 3: Generate today's forecasts
+### Option A: Command Line (Headless — Fast)
+
+Use this if you want to generate forecasts without opening a notebook.
 
 ```bash
-venv/bin/python -c "
+python -c "
 import pandas as pd; from pathlib import Path; import shutil, sys
 sys.path.insert(0, 'kronos_repo')
 from kth.data.universe import get_all_tickers
@@ -71,27 +73,28 @@ from kth.backtest.walkforward import precompute_forecasts
 th = KronosTH.from_pretrained('NeoQuasar/Kronos-small', device='cuda')
 today = pd.Timestamp.now().strftime('%Y-%m-%d')
 
-# Invalidate today's cache (we want fresh forecasts using latest close)
-slug = 'NeoQuasar_Kronos-small'
+# Invalidate today's cache (force fresh forecasts using latest close)
+slug = 'NeoQuasar_Kronos-small'  # notebook Cell 0 auto-derives this for FT mode
 today_dir = Path(f'data/forecast_cache/{slug}/{today}')
 if today_dir.exists(): shutil.rmtree(today_dir)
 
-# Forecast all 100 tickers (idempotent — subsequent runs skip cached dates)
 precompute_forecasts(th, get_all_tickers(), start_date=today, end_date=today,
                      pred_len=20, n_samples=10, lookback=400)
 print(f'Forecasts cached at data/forecast_cache/{slug}/{today}/')
 "
 ```
 
-**Time estimate:** ~3 minutes on GPU (100 tickers × ~2s each via batch inference). First run slower if downloading model weights from HuggingFace (~1 GB download).
+**Time estimate:** 3-4 minutes on T4, 12-15 minutes on GTX 1060. First run slower (~20 min) if downloading model weights from HuggingFace (~1 GB). Subsequent days: ~20 seconds per ticker (most dates skip if cached).
 
-### Step 4: Read the daily report
+### Option B: Notebook (Visual — Recommended)
 
 Open `notebooks/05_decision_report.ipynb` in Jupyter or VS Code. Set `REPORT_MODE = "morning"` (or `"trader"`/`"quant"`). Run all cells.
 
-**Time estimate:** First run: ~5 minutes (generates forecasts + builds DataFrame). Subsequent runs: ~10 seconds (cache hit).
+**Time estimate:** Same as Option A for Cell 2 (forecast generation). Cells 0, 1, 3, 4, 5: ~5 seconds total. Re-running on the same day: ~3 seconds (cache hit).
 
-### Step 5: Interpret the output
+> **Note:** Options A and B do the same thing. Choose one — don't run both. Option B is recommended for first-time users. Option A is for headless/cron setups.
+
+### Step 3: Interpret the output
 
 ```
 === Morning Brief — 2026-05-24 ===
@@ -111,15 +114,55 @@ Open `notebooks/05_decision_report.ipynb` in Jupyter or VS Code. Set `REPORT_MOD
 ```
 
 **Reading the flags:**
-- 🟢 Green: high conviction — uncertainty is ≤10% of current price
-- 🟡 Yellow: moderate conviction — uncertainty 10-30%
-- 🔴 Red: low conviction — uncertainty >30%
+- 🟢 Green: high confidence — uncertainty (P95−P5 range) is ≤10% of current price
+- 🟡 Yellow: moderate confidence — uncertainty 10-30%
+- 🔴 Red: low confidence — uncertainty >30%
 - **↑ Direction**: model expects the price to rise over the next 20 days
 - **↓ Direction**: model expects the price to fall
 
+> **Important:** Flag color = model **confidence**, not direction. 🟢 on a ↓ signal means the model is **confidently bearish** (high conviction sell). 🔴 means the model is unsure either way — wide bands, noisy forecast. Do not confuse green flag with "green means buy."
+
 ---
 
-## 3. The Three Report Views
+## 3. From Report to Action
+
+The report is a decision-support tool, not a trading bot. Here's how to translate signals into investment decisions:
+
+### General Rules
+
+| Signal | Action | Rationale |
+|--------|--------|-----------|
+| 🟢 Green + ↑ + P50% > 2× friction | Consider a position | Model is confident AND expected return survives costs |
+| 🟢 Green + ↓ + abs(P50%) > 2× friction | Consider reducing existing position | Confidently bearish — time to exit |
+| 🟡 Yellow + any direction | Reduce position size by half | Moderate uncertainty — bet smaller |
+| 🔴 Red + any direction | Stay in cash or hold | Model is unsure — don't trade on noise |
+| All signals 🔴 red (all-red day) | Stay in cash entirely | Market turmoil — the model's bands are wide everywhere |
+
+### Position Sizing
+
+- **Single ticker:** No more than 5% of portfolio per signal. A 20-day forecast with 🟡 flag means the model is only 60-70% confident. Don't bet the farm.
+- **Class allocation:** Never allocate >30% to a single asset class. Crypto's −69% max drawdown means a 30% allocation can wipe 20% of your portfolio.
+- **Rebalance monthly, not daily.** The backtest's 11.8× annual turnover pays 6.3% annual friction on Thai equity. Trading every signal destroys returns. Accumulate signals over a month, then rebalance once.
+- **Crypto sizing:** Max 10% of portfolio total. The model is not statistically significant for crypto (p=0.64). Treat crypto forecasts as exploratory, not actionable.
+
+### What the Model Is Good At
+
+| Market | Signal Quality | Trust Level | Best Use |
+|--------|---------------|-------------|----------|
+| Thai equity | Strong (Sharpe 1.40, significant) | **High** | Core holding — direction signals |
+| US equity | Moderate (Sharpe 0.97, not significant) | **Medium** | Direction signals with smaller sizing |
+| Crypto | Weak (Sharpe 0.52, not significant) | **Low** | Exploratory only — BTC direction |
+| ETF, Commodity, Bond, REIT, FX | Untested | **None** | Benchmarks only — do not trade |
+
+### Daily Routine
+
+1. **Morning:** Open the Morning Brief view. Scan bullish top-10 and bearish bottom-10. Note any tickers you hold that appear in the bearish list.
+2. **Weekly:** Open the Quant PM view. Check if any asset class's historical volatility has spiked (regime change). Check if the trailing hit-rate on Thai equity has dropped below 50% (model degradation).
+3. **Monthly:** Open the Trader's Desk view. Build a rebalancing plan: add positions showing high net_return with 🟢 flags, reduce positions showing consistent bearish signals over the month.
+
+---
+
+## 4. The Three Report Views
 
 ### A: Morning Brief (Morning coffee scan)
 
@@ -138,7 +181,7 @@ Open `notebooks/05_decision_report.ipynb` in Jupyter or VS Code. Set `REPORT_MOD
 | Column | Why Added |
 |--------|-----------|
 | `P5%` / `P95%` | Best/worst case scenarios |
-| `Sharpe` | Per-market backtest Sharpe (see §5) |
+| `Sharpe` | Per-market backtest Sharpe (see §6) |
 | `Frict` | Round-trip transaction cost for this market |
 | `NetRet` | P50% return minus friction = what you actually keep |
 
@@ -150,7 +193,7 @@ Adds trailing 1-year historical volatility, risk-adjusted return, per-market CAG
 
 ---
 
-## 4. Backtest Methodology
+## 5. Backtest Methodology
 
 ### Walk-Forward Design
 
@@ -212,7 +255,7 @@ Per `kth/data/universe.py`:
 
 ---
 
-## 5. Backtest Results (2022–2024)
+## 6. Backtest Results (2022–2024)
 
 ### Thai Equity (49 tickers)
 
@@ -228,29 +271,33 @@ Per `kth/data/universe.py`:
 
 ### US Equity (17 tickers)
 
-| Metric | Strategy | SPY | Equal-Weight |
-|--------|----------|-----|-------------|
-| CAGR | **+30.34%** | +8.33% | +14.39% |
-| Sharpe | **0.97** | 0.44 | 0.66 |
-| Max DD | −43.77% | −24.50% | −32.95% |
+| Metric | Strategy | SET | SPY | 60/40 | Equal-Weight |
+|--------|----------|-----|-----|-------|-------------|
+| CAGR | **+30.34%** | −5.29% | +8.33% | −0.27% | +14.39% |
+| Sharpe | **0.97** | −0.63 | 0.44 | −0.11 | 0.66 |
+| Max DD | −43.77% | −25.64% | −24.50% | −27.18% | −32.95% |
 
-**Interpretation:** Strong absolute returns (30% CAGR) and beats SPY (22pp alpha). But the max drawdown (−44%) is higher than SPY — this portfolio concentrates on 17 mega-cap names, so drawdowns are worse than well-diversified benchmarks.
+**Interpretation:** Strong absolute returns (30% CAGR) and beats SPY (22pp alpha). But max drawdown (−44%) is worse than SPY (−25%) — this portfolio concentrates 17 mega-cap names; drawdowns are steeper than the benchmark.
 
-**Caveat:** Both equal-weight and SPY comparison show the model beats the market. But neither the strategy nor equal-weight is statistically significant at 5% (p ≈ 0.45). The 2022-2024 period was a strong bull run for US mega-caps — the strategy captured it well, but we cannot distinguish from beta noise.
+**Caveat:** Neither the strategy nor equal-weight is statistically significant at 5% (p ≈ 0.46). The 2022-2024 period was a strong bull run for US mega-caps — the strategy captured it well, but we cannot distinguish from beta noise.
+
+**Currency note:** US equity returns are in USD. For THB-equivalent returns, multiply by USDTHB exchange rate. The `fx_macro` class tracks THB=X for this purpose. In 2022-2024, USDTHB moved ~33→36 (~9% USD appreciation), so THB-denominated returns are higher than USD returns.
 
 ### Crypto (12 tickers)
 
-| Metric | Strategy | SPY | Equal-Weight |
-|--------|----------|-----|-------------|
-| CAGR | **+16.45%** | +8.33% | −5.16% |
-| Sharpe | **0.52** | 0.44 | 0.16 |
-| Max DD | −68.58% | −24.50% | −76.60% |
+| Metric | Strategy | SET | SPY | 60/40 | Equal-Weight |
+|--------|----------|-----|-----|-------|-------------|
+| CAGR | **+16.45%** | −5.29% | +8.33% | −0.27% | −5.16% |
+| Sharpe | **0.52** | −0.63 | 0.44 | −0.11 | 0.16 |
+| Max DD | −68.58% | −25.64% | −24.50% | −27.18% | −76.60% |
 
 **Interpretation:** Crypto was in a bear market (equal-weight down 5%). The model beat it by 22pp. But volatility is extreme — a −69% drawdown means the portfolio dropped by two-thirds. The p-value is 0.64 (not significant).
 
 **Reality check:** Crypto's 0.52 Sharpe with 22pp alpha sounds impressive, but the max drawdown of −69% means most investors would have panic-sold long before. This is NOT suitable for a large allocation.
 
-### Fine-Tuning Verdict
+### Fine-Tuning Verdict — ZERO-SHOT WINS IN ALL MARKETS
+
+**This is the second most important finding in the project.** We spent 65 GPU-hours training 9 models across 3 markets (3 folds each). None beat zero-shot. The entire effort produced zero deployed checkpoints.
 
 | Market | ZS Sharpe | Best FT Sharpe | Δ | Verdict |
 |--------|-----------|---------------|---|---------|
@@ -258,13 +305,13 @@ Per `kth/data/universe.py`:
 | US equity | 0.97 | 0.94 (F2) | −0.03 | ✅ Stay ZS |
 | Crypto | 0.52 | 0.46 (F0) | −0.06 | ✅ Stay ZS |
 
-**Fine-tuning did not help in any market.** All 3 markets use zero-shot Kronos-small. The 9 fine-tuned checkpoints (3 markets × 3 folds) are saved but not deployed. Direction accuracy improved slightly (+2.0pp for US equity) but did not translate to backtest alpha.
+**Fine-tuning did not help in any market.** All 3 markets use zero-shot Kronos-small. The 9 fine-tuned checkpoints are saved at `./checkpoints/{model}/fold{f}/best/` but not deployed. Direction accuracy improved slightly (+2.0pp for US equity) but did not translate to backtest alpha (FT Sharpe 0.94 vs ZS 0.97).
 
-This is a known phenomenon in time-series forecasting: fine-tuning on recent data teaches the model to predict the training period's token distribution, which may not match future distributions. Zero-shot Kronos-generalist outperforms everywhere.
+**Do not attempt fine-tuning again without a different approach:** larger model (Kronos-base), longer training epochs, different prediction horizon, or a different dataset construction method. The current approach (21-month folds, SGDR, 10 epochs) was correct — the signal simply wasn't there.
 
 ---
 
-## 6. Cautions & Limitations
+## 7. Cautions & Limitations
 
 ### Read Before Trading
 
@@ -293,7 +340,7 @@ This is a known phenomenon in time-series forecasting: fine-tuning on recent dat
 
 ---
 
-## 7. Performance Tables (Reference)
+## 8. Performance Tables (Reference)
 
 ### Strategy Metrics (Net of Frictions, 2022-2024)
 
@@ -306,8 +353,12 @@ This is a known phenomenon in time-series forecasting: fine-tuning on recent dat
 | Calmar | 1.75 | 0.69 | 0.24 |
 | Trade Win Rate | 2.51% | 2.78% | 1.48% |
 | Annual Turnover | 11.8× | 9.2× | 6.7× |
-| Total Friction | 13.9% | 8.4% | 5.1% |
-| p-value (vs equal) | <0.05 | 0.46 | 0.64 |
+| Annual Friction Drag | 6.3% | 6.4% | 6.0% |
+| p-value | <0.05 | 0.46 | 0.64 |
+
+> **Annual Friction Drag** = Annual Turnover × Round-trip Friction. Example: Thai equity 11.8× × 0.536% = 6.3% of AUM lost to costs annually. On a 31.4% CAGR, that's a 20% haircut. The backtest's CAGR is AFTER friction — these numbers are net.
+
+> **Thai equity risk note:** The strategy's Max DD (−17.97%) is nearly identical to equal-weight (−18.07%). The model's active selection does NOT increase tail risk over passive allocation. This is a positive finding — the alpha is "free" from a risk perspective.
 
 ### Benchmark Comparison Matrix
 
@@ -322,7 +373,7 @@ This is a known phenomenon in time-series forecasting: fine-tuning on recent dat
 
 ---
 
-## 8. File Reference
+## 9. File Reference
 
 | File | Purpose |
 |------|---------|
