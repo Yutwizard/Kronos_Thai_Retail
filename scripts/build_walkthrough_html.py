@@ -23,6 +23,7 @@ def build_html() -> str:
   .hero { background: linear-gradient(135deg, #1a5276 0%, #2e86c1 100%); color: white; padding: 35px 30px; border-radius: 12px; margin: 20px 0 30px; text-align: center; }
   .hero h1 { color: white; font-size: 2rem; font-weight: 800; margin: 0; }
   .hero .subtitle { color: rgba(255,255,255,0.85); font-size: 1rem; margin: 8px 0 0; }
+  .badge { display: inline-block; background: rgba(255,255,255,0.2); padding: 4px 14px; border-radius: 20px; font-size: 0.8rem; margin: 10px 4px 0; }
   h2 { font-size: 1.4rem; font-weight: 700; color: #1a5276; margin: 40px 0 12px; padding-bottom: 6px; border-bottom: 3px solid #2e86c1; }
   h3 { font-size: 1.1rem; font-weight: 600; color: #2c3e50; margin: 24px 0 8px; }
   h4 { font-weight: 600; color: #34495e; margin: 16px 0 6px; }
@@ -100,23 +101,12 @@ p.style.position='relative'; p.appendChild(b); }); });
   <h3 style="margin-top:0; border:none; padding:0;">Contents</h3>
   <ol>
     <li><a href="#start">Starting Position</a></li>
-    <li><a href="#day1">Day 1 &mdash; Setup &amp; First Forecast</a></li>
-    <li><a href="#day2">Day 2 &mdash; Bullish Signals</a></li>
-    <li><a href="#day3">Day 3 &mdash; Bearish on Holding</a></li>
-    <li><a href="#day4">Day 4 &mdash; Same-Day Urgent Exit</a></li>
-    <li><a href="#day5">Day 5 &mdash; Moderate Conviction</a></li>
-    <li><a href="#day6">Day 6 &mdash; High Uncertainty</a></li>
-    <li><a href="#day7">Day 7 &mdash; Weekend Review</a></li>
-    <li><a href="#day8">Day 8 &mdash; New Week</a></li>
-    <li><a href="#day9">Day 9 &mdash; Signal Reversal</a></li>
-    <li><a href="#day10">Day 10 &mdash; Strengthening</a></li>
-    <li><a href="#day11">Day 11 &mdash; Crypto Warning</a></li>
-    <li><a href="#day12">Day 12 &mdash; Red Flag Day</a></li>
-    <li><a href="#day13">Day 13 &mdash; 3-Day Streak</a></li>
-    <li><a href="#day14">Day 14 &mdash; All-Clear</a></li>
-    <li><a href="#day15">Day 15 &mdash; Regime Change</a></li>
-    <li><a href="#day16">Days 16-20 &mdash; Quiet Week</a></li>
-    <li><a href="#day21">Day 21 &mdash; Month-End Rebalance</a></li>
+    <li><a href="#day1">Day 1 &mdash; First Forecast</a></li>
+    <li><a href="#day3">Day 3 &mdash; Bearish Exit (KBANK)</a></li>
+    <li><a href="#day9">Day 9 &mdash; Signal Reversal (AAPL)</a></li>
+    <li><a href="#day13">Day 13 &mdash; 3-Day Streak Trigger</a></li>
+    <li><a href="#day15">Weekend Review &amp; Plan Update</a></li>
+    <li><a href="#day21">Day 21 &mdash; Month-End Summary</a></li>
   </ol>
 </div>
 
@@ -135,27 +125,27 @@ p.style.position='relative'; p.appendChild(b); }); });
 </div>
 
 <div class="timeline-bar">
-  <div class="seg seg-green" style="width:20%"></div>
-  <div class="seg seg-green" style="width:20%"></div>
-  <div class="seg seg-green" style="width:14%"></div>
-  <div class="seg seg-green" style="width:6%"></div>
-  <div class="seg seg-yellow" style="width:6%"></div>
-  <div class="seg seg-yellow" style="width:6%"></div>
-  <div class="seg seg-green" style="width:6%"></div>
-  <div class="seg seg-green" style="width:6%"></div>
-  <div class="seg seg-green" style="width:6%"></div>
-  <div class="seg seg-yellow" style="width:6%"></div>
-  <div class="seg seg-red" style="width:6%"></div>
-  <div class="seg seg-red" style="width:6%"></div>
-  <div class="seg seg-red" style="width:6%"></div>
-  <div class="seg seg-yellow" style="width:6%"></div>
-  <div class="seg seg-yellow" style="width:6%"></div>
-  <div class="seg seg-green" style="width:6%"></div>
-  <div class="seg seg-green" style="width:6%"></div>
-  <div class="seg seg-green" style="width:6%"></div>
-  <div class="seg seg-green" style="width:6%"></div>
-  <div class="seg seg-green" style="width:6%"></div>
-  <div class="seg seg-green" style="width:6%"></div>
+  <div class="seg seg-green" style="width:4.76%"></div>
+  <div class="seg seg-green" style="width:4.76%"></div>
+  <div class="seg seg-green" style="width:4.76%"></div>
+  <div class="seg seg-green" style="width:4.76%"></div>
+  <div class="seg seg-yellow" style="width:4.76%"></div>
+  <div class="seg seg-yellow" style="width:4.76%"></div>
+  <div class="seg seg-green" style="width:4.76%"></div>
+  <div class="seg seg-green" style="width:4.76%"></div>
+  <div class="seg seg-green" style="width:4.76%"></div>
+  <div class="seg seg-yellow" style="width:4.76%"></div>
+  <div class="seg seg-red" style="width:4.76%"></div>
+  <div class="seg seg-red" style="width:4.76%"></div>
+  <div class="seg seg-red" style="width:4.76%"></div>
+  <div class="seg seg-yellow" style="width:4.76%"></div>
+  <div class="seg seg-yellow" style="width:4.76%"></div>
+  <div class="seg seg-green" style="width:4.76%"></div>
+  <div class="seg seg-green" style="width:4.76%"></div>
+  <div class="seg seg-green" style="width:4.76%"></div>
+  <div class="seg seg-green" style="width:4.76%"></div>
+  <div class="seg seg-green" style="width:4.76%"></div>
+  <div class="seg seg-green" style="width:4.76%"></div>
 </div>
 <div class="legend">
   <span class="legend-item"><span class="legend-dot" style="background:#27ae60;"></span> Normal (green signals)</span>
@@ -168,62 +158,62 @@ p.style.position='relative'; p.appendChild(b); }); });
   <div class="stat-card up"><div class="stat-num" style="color:#27ae60;">7</div><div class="stat-label">Trades Executed</div></div>
   <div class="stat-card down"><div class="stat-num" style="color:#e74c3c;">4,655</div><div class="stat-label">Friction Paid (THB)</div></div>
   <div class="stat-card up"><div class="stat-num" style="color:#1a5276;">3</div><div class="stat-label">Exits (bearish signals)</div></div>
-  <div class="stat-card up"><div class="stat-num" style="color:#1a5276;">81%</div><div class="stat-label">Cash at Month End</div></div>
+  <div class="stat-card up"><div class="stat-num" style="color:#1a5276;">81%</div><div class="stat-label">Cash After Streak (Day 13)</div></div>
 </div>
 
 <!-- Day 1 -->
 <div class="day-box" id="day1">
-<div class="day-label">Trading Day 1</div>
+<div class="day-label">Trading Day 1 of 21</div>
 <div class="day-title">Setup &amp; First Forecast</div>
 <div class="brief-box">=== Morning Brief &mdash; 2026-05-01 ===
 
 GREEN BULLISH (top 10):
-  PTT.BK     PTT            31.80   +2.10%   6.8%   O    up
-  SCC.BK     Siam Cement   246.00   +1.90%   7.2%   O    up
-  AAPL       Apple         180.50   +1.30%   8.5%   O    up
-  GLOBAL.BK  Siam Global    18.20   +1.60%   7.5%   O    up
+  PTT.BK     PTT            31.80   +2.10%   6.8%   🟢    up
+  SCC.BK     Siam Cement   246.00   +1.90%   7.2%   🟢    up
+  AAPL       Apple         180.50   +1.30%   8.5%   🟢    up
+  GLOBAL.BK  Siam Global    18.20   +1.60%   7.5%   🟢    up
 
 RED BEARISH (bottom 10):
-  DELTA.BK   Delta Electron.  90.00  -1.50%   5.5%   O   down
+  DELTA.BK   Delta Electron.  90.00  -1.50%   5.5%   🟢   down
 
 Median band: 16%  |  Green signals: 6  |  Red flags: 8</div>
-  <p><strong>Signal checks:</strong> PTT (+2.10%, O) &rarr; hold. AAPL (+1.30%, O) &rarr; hold. BTC (+3.20%, =) &rarr; hold at half-conviction. KBANK not in bearish list &rarr; hold.</p>
+  <p><strong>Signal checks:</strong> PTT (+2.10%, 🟢) &rarr; hold. AAPL (+1.30%, 🟢) &rarr; hold. BTC (+3.20%, 🟡) &rarr; hold at half-conviction. KBANK not in bearish list &rarr; hold.</p>
   <p><strong>Action:</strong> None. All holdings acceptable. No new entries early in the month.</p>
 </div>
 
 <!-- Day 3 -->
 <div class="day-box" id="day3">
-<div class="day-label">Trading Day 3</div>
+<div class="day-label">Trading Day 3 of 21</div>
 <div class="day-title">Bearish Signal on a Holding</div>
 <div class="brief-box">GREEN BULLISH:
-  PTT.BK     PTT            32.00   +1.60%   6.2%   O    up
-  GLOBAL.BK  Siam Global    18.50   +1.80%   6.8%   O    up
+  PTT.BK     PTT            32.00   +1.60%   6.2%   🟢    up
+  GLOBAL.BK  Siam Global    18.50   +1.80%   6.8%   🟢    up
 
 RED BEARISH:
-  KBANK.BK   Kasikornbank  141.00   -1.70%   5.0%   O   down   &lt;- NEW
-  DELTA.BK   Delta Electron. 89.00  -2.00%   5.8%   O   down</div>
+  KBANK.BK   Kasikornbank  141.00   -1.70%   5.0%   🟢   down   &lt;- NEW
+  DELTA.BK   Delta Electron. 89.00  -2.00%   5.8%   🟢   down</div>
   <div class="alert">
     <div class="alert-title">KBANK is in the bearish list. You hold KBANK.</div>
-    <p>Band: 5.0% (O narrow). P50 forecast: -1.70%. Net return: -1.70% - 0.536% = <strong>-2.24%</strong>. Confidently bearish (O down).</p>
+    <p>Band: 5.0% (🟢 NARROW). P50 forecast: -1.70%. Net return: -1.70% - 0.536% = <strong>-2.24%</strong>. Confidently bearish (🟢 down).</p>
     <p>Decision: <strong>EXIT KBANK today</strong> per same-day urgent rule. Sell 571 shares at ~141 THB. Net proceeds: ~80,069 THB &rarr; cash.</p>
   </div>
 </div>
 
 <!-- Day 9 -->
 <div class="day-box" id="day9">
-<div class="day-label">Trading Day 9 &mdash; Signal Reversal</div>
+<div class="day-label">Trading Day 9 of 21 day-label">Trading Day 9 &mdash; Signal Reversal<mdash; Signal Reversal</div>
 <div class="day-title">AAPL Flips Bearish</div>
 <div class="brief-box">GREEN BULLISH:
-  GLOBAL.BK  Siam Global    19.20   +2.30%   5.2%   O    up
-  SCC.BK     Siam Cement   249.00   +1.60%   5.8%   O    up
-  CHG.BK     Chularat Hosp. 14.95   +1.80%   8.5%   O    up
-  PTT.BK     PTT            32.50   +0.90%   4.8%   O    up
+  GLOBAL.BK  Siam Global    19.20   +2.30%   5.2%   🟢    up
+  SCC.BK     Siam Cement   249.00   +1.60%   5.8%   🟢    up
+  CHG.BK     Chularat Hosp. 14.95   +1.80%   8.5%   🟢    up
+  PTT.BK     PTT            32.50   +0.90%   4.8%   🟢    up
 
 RED BEARISH:
-  AAPL       Apple         179.00   -0.80%   7.0%   O   down   &lt;- NEW</div>
+  AAPL       Apple         179.00   -0.80%   7.0%   🟢   down   &lt;- NEW</div>
   <div class="alert">
     <div class="alert-title">AAPL flips bearish. You hold AAPL.</div>
-    <p>Band: 7.0% (O narrow). Net return if held: -0.80% - 0.70% = <strong>-1.50%</strong>. Same-day urgent exit.</p>
+    <p>Band: 7.0% (🟢 NARROW). Net return if held: -0.80% - 0.70% = <strong>-1.50%</strong>. Same-day urgent exit.</p>
     <p>Sell ~18.5 shares at $179 &times; 36 = <strong>118,379 THB</strong> net after friction. Cash becomes 701,789 THB (70%). PTT holds at 100,000 THB (10%). BTC holds at 100,000 THB (10%).</p>
   </div>
   <p style="font-size:0.85rem;color:#7f8c8d;">The monthly rebalance plan is updated: CHG, HMPRO, SCC on buy list; AAPL removed (exited).</p>
@@ -231,7 +221,7 @@ RED BEARISH:
 
 <!-- Day 13 -->
 <div class="day-box" id="day13">
-<div class="day-label">Trading Day 13</div>
+<div class="day-label">Trading Day 13 of 21</div>
 <div class="day-title">3-Day Streak Trigger &mdash; Reduce to 75% Cash</div>
 <div class="brief-box">GREEN BULLISH: (none)
 YELLOW MODERATE: GLOBAL (+0.90%), SCC (+0.60%)
@@ -259,7 +249,7 @@ Median band: 33% (Day 11: 35%, Day 12: 32%, Day 13: 33%)</div>
     <tr><td>Crypto</td><td>5% (BTC only)</td><td>5%</td><td style="color:#27ae60;">Within range</td></tr>
     <tr><td>Cash</td><td>90%</td><td>20%</td><td style="color:#e74c3c;">Over-allocated</td></tr>
   </table>
-  <p><strong>Monthly buy plan for Day 21:</strong> GLOBAL 10%, SCC 10%, CHG 5%, PTT add 5%, HMPRO 5% (all Thai equity). BTC hold at 5% (crypto still O down).</p>
+  <p><strong>Monthly buy plan for Day 21:</strong> GLOBAL 10%, SCC 10%, CHG 5%, PTT add 5%, HMPRO 5% (all Thai equity). BTC hold at 5% (crypto still 🟡 down).</p>
 </div>
 
 <!-- Final Summary -->
