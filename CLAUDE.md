@@ -106,6 +106,7 @@ columns: timestamps, open, high, low, close, volume, amount
 | `scripts/build_usermanual_html.py` | Generates `docs/user-manual.html` with 7 embedded Matplotlib charts |
 | `scripts/build_operations_html.py` | Generates `docs/operations-manual.html` |
 | `scripts/build_walkthrough_html.py` | Generates `docs/monthly-walkthrough.html` with timeline visualization |
+| `scripts/build_backtest_html.py` | Generates `docs/backtest-methodology.html` with 4 data visualizations |
 
 Target model sizes: **Kronos-small** (24.7M params) for iteration, **Kronos-base** (102.3M) for final fine-tune — both fit on a T4 16GB GPU.
 

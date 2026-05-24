@@ -505,6 +505,9 @@ If our strategy doesn't beat all four after frictions, we say so plainly.
 - `docs/user-manual.html` — HTML version with 7 embedded data visualization charts
 - `docs/operations-manual.html` — styled HTML operations manual
 - `docs/monthly-walkthrough.html` — 21-day simulated month with timeline and allocation graphics
+- `docs/backtest-methodology.html` — styled HTML with 4 charts, Gantt timeline, and "What This Means" section
+- `docs/superpowers/specs/2026-05-24-expanded-backtest-design.md` — design spec for 2020-2024 Thai equity expansion
+- `docs/superpowers/plans/2026-05-24-expanded-backtest.md` — implementation plan (~10.5 hrs GPU, regime decomposition)
 
 ### Backtest Results (2022-2024, 3 markets × 4 benchmarks)
 

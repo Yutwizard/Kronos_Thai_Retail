@@ -102,10 +102,10 @@ Key insight: 21-month fold windows needed (not 6mo) so val/test have ≥420 rows
 1. `PROJECT_STRUCTURE.md` — authoritative design doc, module specs, open questions
 2. `README.md` — project overview, caveats, quick start
 3. `docs/user-manual.md` — full methodology, backtest results, and usage instructions (also `docs/user-manual.html` with interactive charts)
-4. `docs/operations-manual.md` — daily/weekly/monthly step-by-step procedures
+4. `docs/operations-manual.md` — daily/weekly/monthly step-by-step procedures (also `docs/operations-manual.html`)
 5. `docs/monthly-walkthrough.html` — 21-day simulated month with real trades and portfolio outcomes
 6. `docs/superpowers/specs/` — approved design specs for all layers
-7. `docs/superpowers/plans/` — implementation plans (specs → bite-sized tasks)
+7. `docs/superpowers/plans/` — implementation plans (specs → bite-sized tasks). Expanded backtest plan at `2026-05-24-expanded-backtest.md`
 8. `docs/superpowers/specs/2026-05-16-local-testing-design.md` — local testing pipeline (CPU + GPU)
 9. `kth/data/loader.py` — actual implementation of schema conversion and caching
 10. `kth/data/universe.py` — universe + friction definitions
