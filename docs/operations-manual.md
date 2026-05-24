@@ -50,7 +50,7 @@ MODEL_TYPE  = "zero-shot"  # always "zero-shot" (FT did not improve backtest)
 
 Do **not** use `"fine-tuned"` — all 9 fine-tuned checkpoints underperform zero-shot in backtest.
 
-#### Step 1.3 — Run all cells (Cell 1 → Cell 5)
+#### Step 1.3 — Run all cells (Cell 1 → Cell 4)
 
 | Cell | What it does | Time |
 |------|-------------|------|
