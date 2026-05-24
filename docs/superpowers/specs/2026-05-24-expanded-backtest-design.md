@@ -1,6 +1,6 @@
 # Expanded Backtest — 2020–2024 Thai Equity Design
 
-> Scope: Extend the Thai equity backtest from 3 years (2022-2024) to 5 years (2020-2024), adding COVID crash and recovery periods. Single GPU run (~7.5 hrs), regime decomposition via post-processing.
+> Scope: Extend the Thai equity backtest from 3 years (2022-2024) to 5 years (2020-2024), adding COVID crash and recovery periods. Single GPU run (~10.5 hrs), regime decomposition via `scripts/run_expanded_backtest.py`.
 
 ---
 
@@ -17,7 +17,7 @@ Expanding to 2020-2024 answers: *"Does the Kronos model add alpha across ALL mar
 
 ## 2. Architecture
 
-Single GPU run, single precompute pass, single walk-forward. No changes to `walkforward.py`, `metrics.py`, or `compare_finetune.py`. The regime decomposition is a post-processing step that computes metrics on sub-slices of the already-computed equity curve.
+Single GPU run, single precompute pass, single walk-forward. No changes to existing scripts. A new one-off script `scripts/run_expanded_backtest.py` handles the full pipeline: precompute + walkforward + period decomposition + output. The regime decomposition is a post-processing step that computes metrics on sub-slices of the already-computed equity curve.
 
 ```
 precompute_forecasts(2020-01-01 → 2024-12-31)  ← ~7.5 hrs
@@ -56,7 +56,7 @@ The crash began Jan 2020 (SET started falling from ~1,580). March 2020 was the b
 
 ### Period Breakdown Table
 
-The new section appended to `compare_finetune.py` output:
+The new one-off script `scripts/run_expanded_backtest.py` output:
 
 ```
 === Thai Equity — Walk-Forward Backtest (2020-2024) ===
@@ -66,25 +66,25 @@ Tickers: 49 | Calendar: 5-day (business) | Equal weight
     CAGR: +X.XX%  Sharpe: X.XX  Max DD: -XX.XX%  Alpha vs EW: +XX.Xpp
 
   Period Breakdown:
-  Period               CAGR     Sharpe     Max DD     Alpha vs EW      Verdict
-  -------------------------------------------------------------------------------
-  Stress  (2020 H1)    +X.XX%    X.XX      -XX.XX%    +XX.Xpp          Survive/Thrive
-  Rebound (2020-2021)  +X.XX%    X.XX      -XX.XX%    +XX.Xpp          Thrive/Flat
-  Current (2022-2024)  +31.44%   1.40      -17.97%    +30.0pp          Already known
+  Period               CAGR     Sharpe     Max DD     Alpha vs EW    SET CAGR     Trades   Verdict
+  -----------------------------------------------------------------------------------------------
+  Stress  (2020 H1)    +X.XX%    X.XX      -XX.XX%    +XX.Xpp        -XX.XX%      ~30     Thrive
+  Rebound (2020-2021)  +X.XX%    X.XX      -XX.XX%    +XX.Xpp        +XX.XX%     ~90     Thrive
+  Current (2022-2024)  +31.44%   1.40      -17.97%    +30.0pp        -5.29%      ~380    Already known
 
-  → Stress period: does the model survive a -30% crash?
-  → Rebound period: does the model capture the recovery?
-  → Alpha positive in all 3 periods = model works everywhere.
+  * Stress period: ~125 trading days (~30 trades) — limited sample size.
+  → Lower 5-year CAGR does NOT mean the model is worse. The COVID crash (−30%) is included.
+    Alpha per period is the relevant metric. If alpha is positive in all 3, the model works everywhere.
 ```
 
-### Per-Period Verdict Rules
+### Per-Period Verdict Rules (priority order — first match wins)
 
-| Condition | Verdict |
-|-----------|---------|
-| Alpha > 0 AND Sharpe > 0.5 | Survive |
-| Alpha > 0 AND CAGR > 0 | Thrive |
-| Alpha > 0 AND CAGR < 0 | Mitigate (reduces losses vs equal-weight) |
-| Alpha ≤ 0 | Struggle (model adds no value in this regime) |
+| Priority | Condition | Verdict |
+|----------|-----------|---------|
+| 1 | Alpha > 0 AND CAGR > 0 | **Thrive** (model captures up-markets) |
+| 2 | Alpha > 0 AND Sharpe > 0.5 | **Survive** (model protects in turmoil) |
+| 3 | Alpha > 0 AND CAGR < 0 | **Mitigate** (model reduces losses vs equal-weight) |
+| 4 | Alpha ≤ 0 | **Struggle** (model adds no value in this regime) |
 
 ### Note for Lower 5-Year CAGR
 
@@ -98,22 +98,23 @@ If the 5-year CAGR is lower than the current 31.44%, the output will include:
 
 | Step | Time | Notes |
 |------|------|-------|
-| D1: Delete old forecast cache | 1 min | Cache covers 2022-2024 only; must regenerate for 2020-2024 |
-| D1: ZS precompute (49 tkrs × 1,260 days) | ~7.5 hrs | Idempotent — can be stopped and resumed |
+| D1: Delete 2020-2021 date dirs from cache only | 1 min | Only `2020-*` and `2021-*` subdirs; 2022-2024 cached data preserved |
+| D1: ZS precompute (49 tkrs × 1,260 days) | ~10.5 hrs | ~30 sec per trading day for 49 tickers via batch inference |
 | D2: Walk-forward | ~90 sec | Negligible |
 | D2: Period decomposition computation | ~10 sec | Post-processing on equity curve slices |
 | D2: Output + save | ~30 sec | — |
-| **Total** | **~7.5 hrs** | 1 overnight session |
+| **Total** | **~10.5 hrs** | 1 overnight session |
 
 ---
 
 ## 5. Dependencies
 
+- NEW: `scripts/run_expanded_backtest.py` — orchestrates precompute + walkforward + period decomposition
 - `kth/backtest/walkforward.py` — `precompute_forecasts()`, `run_walkforward()`, `BacktestConfig`
 - `kth/backtest/metrics.py` — `compute_sharpe()`, `compute_max_drawdown()`, `compute_metrics()`
 - `kth/data/universe.py` — `UNIVERSE`, `get_all_tickers()`
 - `kth/data/loader.py` — `load_cached()`
-- `data/forecast_cache/NeoQuasar_Kronos-small/` — existing ZS cache (will be rebuilt for new date range)
+- `data/forecast_cache/NeoQuasar_Kronos-small/` — ZS cache (2022-2024 preserved; 2020-2021 added)
 - `data/raw/*.parquet` — 49 Thai equity tickers cached (goes back to 2016)
 
 ---
@@ -128,6 +129,11 @@ If the 5-year CAGR is lower than the current 31.44%, the output will include:
 | 4 | Single GPU run | Precompute is the bottleneck (7.5 hrs). Walk-forward and decomposition are negligible |
 | 5 | Alpha per period is the key metric | Absolute CAGR depends on market direction. Alpha controls for that |
 | 6 | Stress/Thrive/Mitigate/Struggle labels | Actionable — tells a trader whether to trust the model in each regime |
+| 7 | Create `scripts/run_expanded_backtest.py` | Leaves existing compare_finetune.py untouched; one-off analysis |
+| 8 | 10.5 hrs estimated (not 7.5) | Measured: ~30 sec per trading day for 49 tickers via batch inference |
+| 9 | Delete only 2020-2021 cache dirs | Preserves existing 2022-2024 forecasts for all markets |
+| 10 | Verdict priority: Thrive first, then Survive | CAGR > 0 is always better than Sharpe > 0.5 with negative CAGR |
+| 11 | Stress period warning for small sample | ~125 days / ~30 trades — limited statistical power |
 
 ---
 
