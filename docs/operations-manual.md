@@ -57,8 +57,7 @@ Do **not** use `"fine-tuned"` — all 9 fine-tuned checkpoints underperform zero
 | Cell 1 | Loads Kronos-small model into GPU memory | ~5 seconds |
 | Cell 2 | Deletes yesterday's cache, generates fresh forecasts for 100 tickers | **~12 minutes on GTX 1060** (~3 min on T4) |
 | Cell 3 | Builds a 25-column DataFrame from forecast cache + universe + backtest metrics | ~3 seconds |
-| Cell 4 | Renders the morning brief, trader desk, or quant view depending on REPORT_MODE | ~2 seconds |
-| Cell 5 | Disclaims (auto-appended to Cell 4) | — |
+| Cell 4 | Renders the morning brief (or trader/quant view) with disclaimers appended | ~2 seconds |
 
 > **First run of the day:** 12-15 minutes. **Subsequent runs on the same day:** ~3 seconds (cache hit — Cell 2 skips already-cached dates).
 
@@ -90,7 +89,8 @@ After Cell 4 finishes, you'll see:
 
 | Signal | Meaning | Action |
 |--------|---------|--------|
-| 🟢 + ↑ + P50% > friction | High conviction bullish | Consider entering or adding to position |
+| 🟢 + ↑ + P50% > 2× friction | High conviction bullish | Full position (net return safely above costs) |
+| 🟢 + ↑ + P50% > 1× friction but < 2× friction | Moderate conviction bullish | Half-size — net return positive but thin |
 | 🟢 + ↓ + abs(P50%) > friction | High conviction bearish | Consider exiting or reducing position |
 | 🟡 + any direction | Moderate conviction | Halve position size if you enter |
 | 🔴 + any direction | Low conviction | Skip — model is unsure |
@@ -205,7 +205,7 @@ If `HistVol` for any asset class > warning threshold, **halve that class's alloc
 
 Compare the week's average P50% against the actual returns from last week's forecasts. If the model was bullish on a ticker and the ticker went down, note it. If more than 40% of last week's predictions had the wrong direction, the model may be degrading.
 
-**Quick diagnostic:**
+**Quick diagnostic — direction accuracy check:**
 
 ```bash
 python -c "
@@ -215,18 +215,35 @@ from pathlib import Path
 ticker = 'PTT.BK'
 today = '2026-05-24'
 safe = ticker.replace('^','_').replace('=','_')
-# Load forecast from 5 days ago
+
+hits = 0
+total = 0
 for i in range(5, 15):
     d = (pd.Timestamp(today) - pd.Timedelta(days=i)).strftime('%Y-%m-%d')
     f = Path(f'data/forecast_cache/NeoQuasar_Kronos-small/{d}/{safe}.parquet')
-    if f.exists():
-        fc = pd.read_parquet(f)
-        old_p50 = float(fc['p50'].iloc[-1])
-        # Get actual close
-        df = pd.read_parquet(f'data/raw/{safe}.parquet')
-        actual = float(df[df['timestamps'] == d]['close'].iloc[0]) if len(df[df['timestamps'] == d]) > 0 else 0
-        print(f'{d}: Predicted P50={old_p50:.2f}, Actual close={actual:.2f}')
-        break
+    if not f.exists():
+        continue
+    fc = pd.read_parquet(f)
+    old_p50 = float(fc['p50'].iloc[-1])
+    df = pd.read_parquet(f'data/raw/{safe}.parquet')
+
+    # Close price 5 days before forecast date (= 400 days back, roughly)
+    close_before = float(df[df['timestamps'] == d]['close'].iloc[0]) if len(df[df['timestamps'] == d]) > 0 else 0
+    # Close today
+    close_now = float(df['close'].iloc[-1])
+    if close_before == 0 or close_now == 0:
+        continue
+
+    pred_dir = 'up' if old_p50 > close_before else 'down'
+    actual_dir = 'up' if close_now > close_before else 'down'
+    hit = pred_dir == actual_dir
+    if hit:
+        hits += 1
+    total += 1
+    print(f'{d}: Predicted {pred_dir} (P50={old_p50:.2f}), Actual {actual_dir} (close={close_now:.2f}) -> {\"HIT\" if hit else \"MISS\"}')
+
+print(f'\nDirection accuracy for {ticker}: {hits}/{total} = {hits/max(total,1):.0%}')
+print(f'If accuracy < 50%, the model may be degrading for this ticker.')
 "
 ```
 
@@ -304,6 +321,8 @@ Use the example template:
 - Confidence scaling: PTT 🟢 → 25%, AAPL 🟢 → 25%, BTC 🟡 → 12.5%
 - Remaining: 100% - 25% - 25% - 12.5% = **37.5% cash**
 
+> **Note on cash drag:** The backtest always deploys 100% of capital (equal-weight across all positions). Confidence-based sizing in real trading leaves more cash — 50-80% deployment is normal. This is intentional: sitting in cash when conviction is low prevents you from trading on noise. The backtest's CAGR already accounts for friction, not for cash drag. Expect 1-3% of CAGR to come from cash allocation drag in real trading.
+
 #### Step 4.4 — Execute over 2-3 days
 
 **Do not execute all trades on one day.** Spread over 2-3 days to reduce market impact:
@@ -337,30 +356,63 @@ End of March, June, September, December.
 
 ### Steps
 
-#### Step 5.1 — Compute actual CAGR
+#### Step 5.1 — Compute total portfolio value (MTM)
 
-From your trading log:
+From your trading log + remaining positions:
 
 ```bash
 python -c "
 import pandas as pd
+from pathlib import Path
+
+# Load trades and current holdings from log
 trades = pd.read_csv('data/trade_log.csv')
-# Calculate actual P&L (simplified)
-initial_portfolio = 1000000  # 1M THB
-pnl = trades.apply(lambda r: r['size'] * r['price'] * initial_portfolio, axis=1)
-print(f'Trades executed this quarter: {len(trades)}')
-print(f'Gross P&L: {pnl.sum():.2f} THB')
+initial_cash = 1_000_000  # 1M THB starting portfolio
+
+# Compute net cash from closed trades (+ sell, - buy)
+cash_flow = 0
+for _, row in trades.iterrows():
+    sign = 1 if row['direction'] == 'sell' else -1
+    cash_flow += sign * row['size'] * row['price'] * initial_cash
+
+# Compute mark-to-market of remaining holdings
+mtm_value = 0
+holdings = trades[trades['direction'] == 'buy']['ticker'].unique()
+for t in holdings:
+    # Check if still held (no corresponding sell)
+    buys = trades[(trades['ticker'] == t) & (trades['direction'] == 'buy')]
+    sells = trades[(trades['ticker'] == t) & (trades['direction'] == 'sell')]
+    net_units = buys['size'].sum() - sells['size'].sum()
+    if net_units > 0:
+        # Get current close price
+        safe = t.replace('^','_').replace('=','_')
+        try:
+            df = pd.read_parquet(f'data/raw/{safe}.parquet')
+            current_price = float(df['close'].iloc[-1])
+            mtm_value += net_units * current_price * initial_cash
+        except:
+            pass
+
+total = initial_cash + cash_flow + mtm_value
+cagr = (total / initial_cash) ** (252 / len(trades['date'].unique())) - 1 if len(trades) > 0 else 0
+print(f'Initial capital: {initial_cash:,.0f} THB')
+print(f'Cash from trades: {cash_flow:+,.0f} THB')
+print(f'Mark-to-market (open positions): {mtm_value:+,.0f} THB')
+print(f'Total portfolio value: {total:,.0f} THB')
+print(f'Estimated CAGR: {cagr:+.2%}')
 "
 ```
 
 #### Step 5.2 — Compare to benchmarks
 
-| Benchmark | CAGR (backtest) | Reasonable Range |
-|-----------|----------------|-----------------|
-| Strategy (backtest) | +31.44% | 20-35% in real trading |
-| SET Index | −5.29% | ±10% |
-| SPY | +8.33% | ±12% |
-| Equal-weight | +1.44% | ±8% |
+| Benchmark | CAGR (backtest) | 1σ Range (68% of outcomes) |
+|-----------|----------------|---------------------------|
+| Strategy (backtest) | +31.44% | 14% to 48% |
+| SET Index | −5.29% | −28% to +18% |
+| SPY | +8.33% | −16% to +33% |
+| Equal-weight | +1.44% | −19% to +22% |
+
+> Ranges are backtest CAGR ± 1.5 × annualized vol. If your actual CAGR is below the range for 2 consecutive quarters, review the §5.2 checklist below.
 
 If your actual CAGR is within the "Reasonable Range" of the strategy backtest, you're executing correctly. If it's below the range consistently for 2 quarters, review:
 1. Are you over-trading? (friction > 6% of AUM/year)
@@ -376,7 +428,7 @@ Check your `trade_log.csv` for compliance with position sizing rules:
 | Trades per month | ≤ 10 | count / 3 months |
 | Average position size | ≤ 20% | mean |
 | Friction per trade | 0.5-0.9% | mean |
-| Win rate | 2-5% | — |
+| Win rate | 1.5-3% | — (matches backtest: Thai 2.5%, US 2.8%, Crypto 1.5%) |
 
 ---
 
@@ -399,7 +451,7 @@ HistVol: Thai 18% (normal), BTC 52% (normal)
 - AAPL: Hold. Net return +0.50% > US friction (0.35%). Keep.
 - Cash: Slightly increase from exit proceeds.
 
-**Trade today:** Sell 1% KBANK at market open. Execute KBANK sell immediately (bearish urgent).
+**Trade today:** Sell 1% KBANK at market open. Exits for positions you hold are **same-day urgent** — the model is confidently bearish, don't wait for month-end new entries (PTT add, AAPL buy) wait for the monthly rebalance in §4.
 
 ---
 
@@ -416,6 +468,11 @@ Median band width: 38%
 - **Stay in cash.** The model's confidence is low across all 100 tickers. Trading in this environment is gambling.
 - Exception: If a position you hold shows 🟢↓ (confidently bearish) with a band narrower than the median, consider reducing.
 - Come back tomorrow and re-run.
+
+**If 3+ consecutive days of all-🔴 or median band width > 30%:**
+- The model has entered a regime it does not understand (earnings season, policy surprise, macro shock).
+- Reduce all positions by 50% and go to 75% cash.
+- Do not re-enter until median band width drops below 20% for 2 consecutive days.
 
 ---
 
