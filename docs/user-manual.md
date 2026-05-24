@@ -126,28 +126,97 @@ Open `notebooks/05_decision_report.ipynb` in Jupyter or VS Code. Set `REPORT_MOD
 
 ---
 
-## 3. From Report to Action
+## 3. Position Sizing Methodology
 
-The report is a decision-support tool, not a trading bot. Here's how to translate signals into investment decisions:
+Position sizing is the bridge between a forecast and an investment decision. The backtest uses one approach (for historical evaluation), and real trading should use another (for risk management and cost efficiency).
 
-### General Rules
+### 3A. How the Backtest Sizes Positions
 
-| Signal | Action | Rationale |
-|--------|--------|-----------|
-| 🟢 Green + ↑ + P50% > 2× friction | Consider a position | Model is confident AND expected return survives costs |
-| 🟢 Green + ↓ + abs(P50%) > 2× friction | Consider reducing existing position | Confidently bearish — time to exit |
-| 🟡 Yellow + any direction | Reduce position size by half | Moderate uncertainty — bet smaller |
-| 🔴 Red + any direction | Stay in cash or hold | Model is unsure — don't trade on noise |
-| All signals 🔴 red (all-red day) | Stay in cash entirely | Market turmoil — the model's bands are wide everywhere |
+The walk-forward backtest (`kth/backtest/walkforward.py`) uses the following logic at each trading day. This serves as the baseline against which any real-world sizing improvement should be compared:
 
-### Position Sizing
+**Step 1 — Compute raw signals:**
+Forecast return > `long_threshold` (default 1%) → eligible to enter. Returns below threshold → skip.
 
-- **Single ticker:** No more than 5% of portfolio per signal. A 20-day forecast with 🟡 flag means the model is only 60-70% confident. Don't bet the farm.
-- **Class allocation:** Never allocate >30% to a single asset class. Crypto's −69% max drawdown means a 30% allocation can wipe 20% of your portfolio.
-- **Rebalance monthly, not daily.** The backtest's 11.8× annual turnover pays 6.3% annual friction on Thai equity. Trading every signal destroys returns. Accumulate signals over a month, then rebalance once.
-- **Crypto sizing:** Max 10% of portfolio total. The model is not statistically significant for crypto (p=0.64). Treat crypto forecasts as exploratory, not actionable.
+**Step 2 — Filter exits with hysteresis:**
+An existing position does NOT close just because its return dropped below 1%. It only closes when return drops below `long_threshold − entry_buffer` (1% − 0.5% = 0.5%) AND holding period exceeds `min_holding_days` (5 days). This prevents flip-flopping on small price changes.
 
-### What the Model Is Good At
+**Step 3 — Rank and cap positions:**
+Eligible tickers ranked by forecast return. Only top `max_positions` (default 5) are selected. This prevents over-diversification into weak signals.
+
+**Step 4 — Compute weights:**
+The selected positions are weighted by `position_sizing` mode:
+
+| Mode | Formula | Behaviour |
+|------|---------|-----------|
+| `"equal"` | 1/N | Every position gets the same weight |
+| `"signal"` | rank-based | Highest forecast return gets largest weight (linear rank) |
+| `"inv_vol"` | 1 / volatility | Lower-volatility assets get larger weight (portfolio risk-parity) |
+
+**Step 5 — Execute at next day's open:**
+Trades are filled at the next trading day's OPEN price (not close — prevents look-ahead). Friction costs are deducted as per the per-class rates.
+
+> **The backtest's sizing is intentionally simple.** It is a benchmark for comparison — if your real-world sizing beats equal-weight 1/N on test data, you have found genuine alpha. If it doesn't, your sizing choices are destroying value.
+
+### 3B. How to Size Positions in Real Trading
+
+Real trading has constraints the backtest doesn't model: odd-lot costs, multi-day execution slippage, tax timing, and personal risk tolerance. Use the backtest's 3 modes as starting points, then layer on these rules:
+
+#### Step 1 — Pick a base allocation mode
+
+| Mode | Use If | Expected Outcome |
+|------|--------|------------------|
+| **Equal-weight 1/N** | You want simplicity; the backtest's baseline | Lowest turnover, most friction-efficient |
+| **Signal-weighted (rank)** | You trust the model's strongest signals most | Higher concentration, higher CAGR if right, deeper DD if wrong |
+| **Inverse volatility** | You want risk-parity across assets | Lower max DD, smoother equity curve, lower CAGR |
+
+#### Step 2 — Scale by confidence flag
+
+The model's confidence flag (`🟢🟡🔴` from the report's `Band` column) tells you how tight the forecast uncertainty is relative to current price. Size your position proportionally:
+
+| Flag | Band Width | Target Position Size | Reasoning |
+|------|-----------|---------------------|-----------|
+| 🟢 Green | ≤10% | 100% of normal | The model's P95−P5 range is tightly concentrated. Trade at full conviction. |
+| 🟡 Yellow | 10-30% | 50% of normal | The range is moderate. Half-size reduces risk while capturing the signal. |
+| 🔴 Red | >30% | 0% (skip) | The model is unsure — don't trade on noise. |
+
+**Normal position:** `1 / max_positions` (e.g., 1/5 = 20% of portfolio per ticker if max 5 positions).
+
+**Example:** If you run 5 positions signal-weighted and a Thai equity ticker has +3% P50 return with 🟢 band, allocate 20% × 100% = 20% of portfolio to that ticker. Same ticker with 🟡 band: 20% × 50% = 10%.
+
+#### Step 3 — Apply friction haircut
+
+Every position's expected return must survive trading costs. Compute **net expected return**:
+
+```
+Net Return = P50% − (Friction × 2)
+
+Where Friction = commission_oneway + slippage_oneway
+```
+
+| Class | Commission | Slippage | One-way | Round-trip | Minimum P50% to survive |
+|-------|-----------|----------|---------|------------|------------------------|
+| Thai equity | 0.168% | 0.10% | 0.268% | 0.536% | >0.268% (entry only) |
+| US equity | 0.30% | 0.05% | 0.35% | 0.70% | >0.35% |
+| Crypto | 0.25% | 0.20% | 0.45% | 0.90% | >0.45% |
+
+**Rule:** If `Net Return ≤ 0.0%`, skip the trade entirely. The position must survive friction just to break even.
+
+#### Step 4 — Cap by asset class
+
+The backtest's 1.40 Sharpe for Thai equity does not mean you should be 100% in Thai stocks. Apply class-level limits to protect against regime-specific tail risk:
+
+| Class | Max Allocation | Rationale |
+|-------|---------------|-----------|
+| Thai equity | 40% | Core holding — best Sharpe, lowest DD |
+| US equity | 30% | Strong returns but −44% DD risk |
+| ETF global | 20% | Untested — use as benchmark only |
+| Commodity | 10% | Untested — treat as hedge |
+| Bond proxy | 20% | Untested — treat as safe haven |
+| REIT | 10% | Untested |
+| Crypto | 10% | Model not significant (p=0.64) |
+| FX macro | 0% | Features only — not investable directly |
+
+**Trust levels by market for sizing decisions:**
 
 | Market | Signal Quality | Trust Level | Best Use |
 |--------|---------------|-------------|----------|
@@ -156,11 +225,64 @@ The report is a decision-support tool, not a trading bot. Here's how to translat
 | Crypto | Weak (Sharpe 0.52, not significant) | **Low** | Exploratory only — BTC direction |
 | ETF, Commodity, Bond, REIT, FX | Untested | **None** | Benchmarks only — do not trade |
 
-### Daily Routine
+**Total must sum to ≤100%.** Cash is always an option. The remaining allocation sits in a Thai savings account or short-term bond fund.
+
+#### Step 5 — Protect against volatility spikes
+
+If a class's historical volatility (from the Quant PM review view) has doubled in the past month (e.g., Thai equity went from 15% to 30% annualized vol), halve its allocation until vol normalizes. This prevents the model from over-trading into a crash.
+
+### 3C. Three Complete Example Portfolios
+
+#### Conservative (Income-Focused)
+
+```
+max_positions: 5
+position_sizing: equal
+rebalance: monthly
+classes: thai_equity 40%, bond_proxy 20%, cash 40%
+min P50% to enter: >2× friction (1.07% for Thai)
+confidence flag: only 🟢 green
+```
+
+**Expected behaviour:** Low turnover (~3×/year), low DD (~−10%), CAGR likely 10-15%. Most of the time sits in cash. Only enters when model is highly confident and the expected return far exceeds costs. Designed for a retiree who can't afford a −44% US equity drawdown.
+
+#### Balanced (Growth-Oriented)
+
+```
+max_positions: 8
+position_sizing: inv_vol
+rebalance: monthly
+classes: thai_equity 30%, US equity 20%, ETF global 10%, crypto 5%, cash 35%
+confidence flag: 🟢=full, 🟡=half, 🔴=skip
+min P50% to enter: >1× friction
+```
+
+**Expected behaviour:** Moderate turnover (~6×/year), moderate DD (−20% to −25%), CAGR ~15-25%. Uses risk-parity to keep crypto and US equity allocations small relative to their high volatility. Matches most retail investors' risk profile.
+
+#### Aggressive (Alpha-Seeking)
+
+```
+max_positions: 10
+position_sizing: signal (rank-based)
+rebalance: biweekly
+classes: thai_equity 40%, US equity 30%, crypto 10%, cash 20%
+confidence flag: 🟢=full, 🟡=full, 🔴=skip (takes yellow at full size)
+min P50% to enter: >0.5× friction
+```
+
+**Expected behaviour:** High turnover (~15×/year), high DD (−35% to −40%), CAGR ~30-40%. Concentrates on the model's top-ranked signals regardless of band width (except 🔴). Mirrors the backtest's approach most closely, including its friction drag problem. Only suitable for investors who can tolerate a −40% drawdown.
+
+### 3D. From Report to Action — The Daily Routine
+
+The daily report gives you the raw material. Here's how to turn signals into trades:
 
 1. **Morning:** Open the Morning Brief view. Scan bullish top-10 and bearish bottom-10. Note any tickers you hold that appear in the bearish list.
-2. **Weekly:** Open the Quant PM view. Check if any asset class's historical volatility has spiked (regime change). Check if the trailing hit-rate on Thai equity has dropped below 50% (model degradation).
-3. **Monthly:** Open the Trader's Desk view. Build a rebalancing plan: add positions showing high net_return with 🟢 flags, reduce positions showing consistent bearish signals over the month.
+
+2. **Weekly:** Open the Quant PM view. Check if any asset class's historical volatility has spiked (regime change). Cross-check against the Green/Yellow/Red flags — if volatility has doubled but flags are still green, the model hasn't caught up to the regime shift yet.
+
+3. **Monthly:** Open Trader's Desk. Build a rebalancing plan: add positions with high `NetRet` and 🟢 flags, reduce positions with consistent bearish signals over the past month. Execute the plan over 2-3 days to avoid market impact.
+
+4. **Quarterly:** Compare your actual returns against the backtest's benchmark. If your equal-weight portfolio underperforms the backtest's equal-weight by >5% CAGR, you're over-trading (excess friction) or mis-timing signals. Review your sizing choices.
 
 ---
 
