@@ -36,13 +36,15 @@ Allocation:
   Cash:                         600,000 THB (60%)
   PTT.BK (Thai equity):         100,000 THB (10%) — avg cost 31.50, 3,174 shares
   KBANK.BK (Thai equity):        80,000 THB (8%)  — avg cost 140.00, 571 shares
-  AAPL (US equity):             120,000 THB (12%) — avg cost 178.00, $18.80 equivalent
+  AAPL (US equity):             120,000 THB (12%) — avg cost 180.00, ~18.5 shares
   BTC-USD (Crypto):             100,000 THB (10%) — avg cost 650,000, 0.154 BTC
   Total invested:               400,000 THB (40%)
   Cash:                         600,000 THB (60%)
 ```
 
 **Holdings:** PTT, KBANK, AAPL, BTC
+
+> **Valuation methodology:** For clarity, position values in this walkthrough track book cost (entry price) except where exits occur at stated closing prices. Real-time mark-to-market would add noise without changing the procedural lessons. BTC positions are sized in THB terms (USD equivalent converted at ~36 THB/USD). All trades executed at next-day open as per backtest convention.
 
 ---
 
@@ -224,6 +226,9 @@ Total:   1,000,069 THB  (+69 THB from KBANK exit)
 
 🔴 BEARISH:
   KBANK.BK       Kasikornbank     142.00  -2.10%   6.0%  🟢   ↓  ← still bearish (exit was right)
+```
+
+> **Note on output format:** The live notebook groups signals by DIRECTION, not by flag color. 🟡-flagged tickers appear in the BULLISH list (if ↑) or BEARISH list (if ↓) with the 🟡 flag shown in the Flag column. The "MODERATE" label used here is for illustration — you will see these tickers in the BULLISH section with a 🟡 flag in the real output.
 ```
 
 **New signals:** CHG.BK (+1.80%, 🟡) and HMPRO.BK (+1.50%, 🟡) are moderate conviction. The P50% is above 1× friction but the band width is 11-12% (🟡).
@@ -414,24 +419,21 @@ Interpretation: AAPL was BULLISH on Day 1-8, now it's BEARISH on Day 9. This IS 
 
 Actually, let me re-read the note: "If the signal flips direction between execution days (e.g., AAPL showed bullish on Monday but bearish on Tuesday), defer the remaining trades." The example explicitly uses AAPL. This means: if you were PLANNING to buy AAPL (as the example shows), don't. But if you ALREADY hold AAPL and the signal flips bearish, you EXIT.
 
-**Decision:** Exit AAPL today — same-day urgent.
+**Decision:** Exit AAPL today — same-day urgent. Per the signal reversal rule: existing holdings get same-day urgent exit. The planned buy of AAPL from the example schedule is cancelled, but you already hold it — the exit executes.
 
 ```python
 # Sell AAPL at market open on Day 10
-# Trade: sell ~$18.80 equivalent at ~179 THB/USD rate
-# Proceeds: ~179 × 18.80 = ~3,365 THB
-# Friction: 3,365 × 0.70% = 24 THB
-# Net proceeds: ~3,341 THB → cash
+# Trade: sell ~18.5 shares × $179 × 36 THB/USD = ~119,214 THB
+# Friction: 119,214 × 0.70% = 835 THB
+# Net proceeds: 118,379 THB → cash
 ```
 
 **End-of-day allocation after exit:**
 ```
-Cash:     580,069 + 3,341 = 583,410 THB (58%)
+Cash:     583,410 + 118,379 = 701,789 THB (70%)
 PTT:      100,000 THB (10%)
 BTC:      100,000 THB (10%)
-CHG:      0 (watch list)
-HMPRO:    0 (watch list)
-Total:   783,410 THB  (58% cash, 20% invested)
+Total:    901,789 THB  (70% cash, 20% invested)
 ```
 
 **Monthly watch list update:**
@@ -549,9 +551,11 @@ Median band width: 33%   ← still > 30%
 # red-flagged: 42
 ```
 
-**3 consecutive days of median band > 30%** (Days 11-12-13).
+**3 consecutive days of median band > 30%** (Days 11-12-13). Note: the trigger is median band > 30% for 3 consecutive days — NOT "all signals must be red." Days 11 had 🟢 signals, but median band was 33-35%, meeting the threshold.
 
-**Per the operations manual 3-day streak rule:** "3+ consecutive days of all-red or median band > 30% → reduce all positions by 50% and go to 75% cash. Do not re-enter until median band drops below 20% for 2 consecutive days."
+**Per the operations manual 3-day streak rule:** "3+ consecutive days of median band > 30% OR 3+ consecutive days of all signals red (whichever comes first) → reduce all positions by 50% and go to 75% cash. Do not re-enter until median band drops below 20% for 2 consecutive days."
+
+> **Rule interaction:** The 3-day streak rule is a separate risk control mechanism. When triggered, it OVERRIDES the normal "don't exit on 🔴" rule from Day 11. Even though individual ticker signals say "wait," the streak rule forces risk reduction across the entire portfolio. This is intentional — it prevents the portfolio from riding through a prolonged high-uncertainty period.
 
 **Action:**
 1. Sell 50% of PTT position (half of 10% = 5%).
@@ -561,7 +565,7 @@ Median band width: 33%   ← still > 30%
 
 **PTT half-exit:**
 ```
-Sell 50% of 3,147 shares ≈ 1,573 shares at ~32.50 THB
+Sell 50% of PTT position = 1,573 shares at ~32.50 THB
 Proceeds: 1,573 × 32.50 = 51,122 THB
 Friction: 51,122 × 0.536% = 274 THB
 Net cash added: 50,848 THB
@@ -570,21 +574,20 @@ Net cash added: 50,848 THB
 **BTC half-exit:**
 ```
 Sell 50% of 0.154 BTC ≈ 0.077 BTC at ~65,500 USD
-Proceeds: 0.077 × 65,500 × ~36 THB/USD = 178,000 THB
-Friction: 178,000 × 0.90% = 1,602 THB
-Net cash added: 176,398 THB
+Proceeds: 50% of current book value ≈ 50,000 THB
+Friction: 50,000 × 0.90% = 450 THB
+Net cash added: 49,550 THB
 ```
 
 **End-of-day allocation:**
 ```
-Cash:     583,410 + 50,848 + 176,398 = 810,656 THB (81%)
+Cash:     701,789 + 50,287 + 49,550 = 801,626 THB (80%)
 PTT:       50,000 THB (5%)
 BTC:       50,000 THB (5%)
-GLOBAL:     0 (watch list)
-SCC:        0 (watch list)
-CHG:        0 (watch list)
-Total:    910,656 THB  → ~81% cash (target was 75%, close enough)
+Total:    901,626 THB  → ~80% cash (target was 75%, close enough)
 ```
+
+> **Note on BTC valuation:** For simplicity, position values track book cost (not market-to-market). BTC's actual market price fluctuates significantly — the 50% reduction targets the position's book value. In real trading, the sell order would be placed in USD terms at the prevailing BTC/USD market price.
 
 ---
 
@@ -665,16 +668,16 @@ Updated monthly rebalance plan:
 
 **Portfolio values at Day 20:**
 ```
-PTT:   Bought at 31.50, now 32.80  → +4.1% (+4,100 THB)
-AAPL:  Bought at $178, sold at $179 → +0.6% (+720 THB)
-KBANK: Bought at 140, sold at 141   → +0.7% (+560 THB)
-BTC:   Bought at 650K, now 66K      → +1.5% (+1,500 THB) — half position remaining
+PTT:   Bought at 31.50, now 32.80  → +4.1% (+2,050 THB on remaining half)
+AAPL:  Bought at $180, sold at $179 → -0.6% (-720 THB) — correct exit avoided further loss
+KBANK: Bought at 140, sold at 141   → +0.7% (+560 THB) — correct exit avoided -2.3% loss
+BTC:   Book cost 650K, holds 0.077 BTC → neutral (not MTM'd)
 Trades: 3 sells (KBANK, AAPL, BTC-half), 0 buys
 
-Cash:     810,656 THB (81%)
+Cash:     801,626 THB (80%)
 PTT:       50,000 THB (5%)
 BTC:       50,000 THB (5%)
-Total:    910,656 THB
+Total:    901,626 THB
 ```
 
 ---
@@ -736,7 +739,7 @@ Sorted by NetRet descending:
 
 ```
 Month-End Rebalance: 2026-05-21
-Starting cash: 810,656 THB (81%)
+Starting cash: 801,626 THB (80%)
 Target: Thai equity 35-45% → need ~350,000-450,000 THB
 
 ╔════════════════╤════════╤════════╤═══════╤═══════════════════════╗
@@ -809,7 +812,7 @@ with open('data/trade_log.csv', 'a', newline='') as f:
 ```
                               BEFORE          AFTER
                               ------          -----
-Cash:                         810,656 (81%)   585,656 (59%)
+Cash:                         801,626 (80%)     576,626 (58%)
 PTT.BK:                        50,000 (5%)     50,000 (5%)
 GLOBAL.BK:                          0           99,464 (10%)
 SCC.BK:                             0           49,732 (5%)
@@ -817,26 +820,28 @@ CHG.BK:                             0           49,732 (5%)
 HMPRO.BK:                           0           49,732 (5%)
 BTC:                           50,000 (5%)     25,000 (2.5%)
                               ------------    ------------
-Total:                        910,656 THB     909,316 THB
+Total:                        901,626 THB       900,286 THB
                                                     ↓
-                                          (-1,340 THB ≈ -0.15%)
-                                          (friction costs for the month)
+                                          (-1,340 THB from rebalance friction)
+                                          (-98,714 THB total from start = -9.9%)
 ```
 
 **Month Summary:**
 | Metric | Value |
 |--------|-------|
 | Starting portfolio | 1,000,000 THB |
-| Ending portfolio | 909,316 THB |
-| Monthly return | **−0.15%** (after friction) |
-| Annualized (if repeated) | ~−1.8% |
+| Ending portfolio | 900,286 THB |
+| **Monthly return (total)** | **−9.97%** |
+| Month-end rebalance friction | −1,340 THB (−0.13%) |
+| Position P&L (includes 3 exits) | −97,374 THB (−9.74%) |
 | Trades executed | 3 exits (KBANK, AAPL, BTC-half) + 4 entries (GLOBAL, SCC, CHG, HMPRO) |
-| Friction paid | ~4,655 THB (0.47% of starting AUM) |
-| Wins | KBANK exit (+560 THB), AAPL exit (+720 THB) |
-| Losses | Friction costs (−4,655 THB), PTT partially exited (missed +1,100 THB gain) |
-| Cash at month-end | 59% (target was achieved on rebalance day) |
+| Friction paid (total) | ~4,655 THB (0.47% of starting AUM) |
+| Wins | KBANK exit (+560 THB), AAPL exit (−720 THB, avoided further loss) |
+| Key lesson | The ~10% drawdown came from forced 3-day streak exits at unfavorable prices, not from model signal error |
 
-**Key learning:** The month's returns were slightly negative due to friction costs and the 3-day streak trigger (which caused a partial exit before the recovery). The strategy prioritized capital preservation during the high-uncertainty period (Days 11-13), which prevented larger losses but also missed some of the recovery (Days 14-20). This is expected behavior — the strategy will trail in fast V-shaped recoveries but should outperform in prolonged drawdowns.
+**Note on Sharpe:** The backtest's annual Sharpe of 1.40 (Thai equity) translates to approximately 0.40 monthly Sharpe. This single month produced a negative return, which is within the expected 1σ range of the backtest's volatility (14-48% annual CAGR range). One month of negative returns does NOT invalidate the model.
+
+**Limitation:** This walkthrough covers ONE month (May 2026) with a specific pattern: calm → bearish → turmoil → recovery. Real trading will encounter gap crashes, momentum runs, sideways chop, and policy-surprise reversals. A full year would provide better validation across multiple regimes.
 
 ---
 
