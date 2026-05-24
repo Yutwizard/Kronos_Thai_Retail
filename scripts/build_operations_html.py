@@ -1,0 +1,542 @@
+"""
+Generate a styled HTML operations manual.
+Usage: venv/bin/python scripts/build_operations_html.py
+Output: docs/operations-manual.html
+"""
+from pathlib import Path
+
+def build_html() -> str:
+    return """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kronos-TH — Operations Manual</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1a1a2e; background: #f5f6fa; line-height: 1.6; }
+  .container { max-width: 960px; margin: 0 auto; padding: 20px; }
+  .hero { background: linear-gradient(135deg, #1a5276 0%, #2e86c1 100%); color: white; padding: 40px 30px; border-radius: 12px; margin: 20px 0 30px; text-align: center; }
+  .hero h1 { color: white; font-size: 2.2rem; font-weight: 800; margin: 0; }
+  .hero .subtitle { color: rgba(255,255,255,0.85); font-size: 1.05rem; margin: 8px 0 0; }
+  .hero .badge { display: inline-block; background: rgba(255,255,255,0.2); padding: 4px 14px; border-radius: 20px; font-size: 0.8rem; margin: 10px 4px 0; }
+  h2 { font-size: 1.5rem; font-weight: 700; color: #1a5276; margin: 45px 0 12px; padding-bottom: 6px; border-bottom: 3px solid #2e86c1; }
+  h3 { font-size: 1.15rem; font-weight: 600; color: #2c3e50; margin: 28px 0 10px; }
+  h4 { font-weight: 600; color: #34495e; margin: 20px 0 8px; }
+  p { margin: 8px 0; }
+  .card { background: white; border-radius: 10px; padding: 25px; margin: 16px 0; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  .toc { background: white; border-radius: 10px; padding: 20px 25px; margin: 20px 0; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  .toc ol { padding-left: 20px; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #2e86c1; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.9rem; }
+  th { background: #1a5276; color: white; padding: 8px 10px; text-align: left; font-weight: 600; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.5px; }
+  td { padding: 7px 10px; border-bottom: 1px solid #eee; }
+  tr:hover td { background: #f0f4f8; }
+  tr:nth-child(even) td { background: #fafbfc; }
+  tr:nth-child(even):hover td { background: #f0f4f8; }
+  code, pre { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; background: #f0f4f8; border-radius: 4px; }
+  code { padding: 2px 5px; }
+  pre { padding: 14px; overflow-x: auto; border-left: 3px solid #2e86c1; margin: 10px 0; position: relative; border-radius: 0 6px 6px 0; }
+  .copy-btn { position: absolute; top: 6px; right: 6px; background: rgba(255,255,255,0.85); border: 1px solid #ddd; border-radius: 4px; padding: 2px 8px; font-size: 0.72rem; cursor: pointer; color: #555; font-family: 'Inter', sans-serif; }
+  .copy-btn:hover { background: #e8f0fe; color: #1a5276; }
+  .copy-btn.copied { background: #27ae60; color: white; border-color: #27ae60; }
+  .highlight { background: #fff8e1; border-left: 4px solid #f39c12; padding: 12px 16px; margin: 12px 0; border-radius: 4px; font-size: 0.9rem; }
+  .highlight-green { background: #e8f8f5; border-left: 4px solid #27ae60; padding: 12px 16px; margin: 12px 0; border-radius: 4px; font-size: 0.9rem; }
+  .highlight-red { background: #fdecea; border-left: 4px solid #e74c3c; padding: 12px 16px; margin: 12px 0; border-radius: 4px; font-size: 0.9rem; }
+  .highlight-blue { background: #eaf2f8; border-left: 4px solid #2e86c1; padding: 12px 16px; margin: 12px 0; border-radius: 4px; font-size: 0.9rem; }
+  .step-box { background: white; border-radius: 8px; padding: 18px 22px; margin: 10px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.06); border-left: 4px solid #2e86c1; }
+  .step-box .step-num { font-size: 0.75rem; color: #7f8c8d; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .step-box .step-title { font-size: 1.05rem; font-weight: 600; color: #1a5276; margin-bottom: 6px; }
+  .step-box p, .step-box ul { font-size: 0.92rem; }
+  .signal-table td:first-child { white-space: nowrap; font-weight: 500; }
+  .trade-grid { background: #f8f9fa; border-radius: 8px; padding: 16px; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; line-height: 1.8; overflow-x: auto; white-space: pre; }
+  .quick-ref { background: #1a5276; color: white; border-radius: 10px; padding: 25px 30px; margin: 20px 0; }
+  .quick-ref table { width: 100%; border-collapse: collapse; }
+  .quick-ref td { padding: 7px 10px; border-bottom: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.9); font-size: 0.88rem; }
+  .quick-ref td:first-child { font-weight: 600; color: white; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+  .quick-ref h3 { color: white; font-size: 1.2rem; margin-top: 0; margin-bottom: 15px; border: none; padding: 0; }
+  ul, ol { padding-left: 22px; margin: 6px 0; }
+  li { margin: 4px 0; }
+  .btt { position: fixed; bottom: 30px; right: 30px; background: #1a5276; color: white; width: 42px; height: 42px; border-radius: 50%; text-align: center; line-height: 42px; font-size: 1.4rem; text-decoration: none; box-shadow: 0 2px 8px rgba(0,0,0,0.2); display: none; z-index: 100; }
+  .btt:hover { background: #2e86c1; }
+  @media (max-width: 768px) {
+    .container { padding: 10px; }
+    h2 { font-size: 1.3rem; }
+    pre { font-size: 0.75rem; }
+  }
+</style>
+<script>
+window.addEventListener('scroll', function(){
+  var btn = document.querySelector('.btt');
+  if (btn) btn.style.display = window.scrollY > 300 ? 'block' : 'none';
+});
+document.addEventListener('DOMContentLoaded', function(){
+  document.querySelectorAll('pre').forEach(function(pre){
+    if (pre.querySelector('.copy-btn')) return;
+    var btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.textContent = 'Copy';
+    btn.onclick = function(){
+      navigator.clipboard.writeText(pre.textContent).then(function(){
+        btn.textContent = 'Copied!';
+        btn.classList.add('copied');
+        setTimeout(function(){ btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+      }).catch(function(){ btn.textContent = 'Failed'; });
+    };
+    pre.style.position = 'relative';
+    pre.appendChild(btn);
+  });
+});
+</script>
+</head>
+<body>
+<div class="container">
+
+<div class="hero">
+  <h1>Kronos-TH — Operations Manual</h1>
+  <p class="subtitle">Daily, weekly, monthly, and quarterly procedures for using the Kronos forecasting system</p>
+  <span class="badge">Not financial advice</span>
+  <span class="badge">Research output only</span>
+</div>
+
+<div class="toc">
+  <h3 style="margin-top:0; border:none; padding:0;">Contents</h3>
+  <ol>
+    <li><a href="#daily">Daily Morning Routine (12-15 minutes)</a></li>
+    <li><a href="#evening">Daily Evening Check (2 minutes)</a></li>
+    <li><a href="#weekly">Weekly Portfolio Review (15-20 minutes)</a></li>
+    <li><a href="#monthly">Monthly Rebalancing (30-45 minutes)</a></li>
+    <li><a href="#quarterly">Quarterly Performance Review (30 minutes)</a></li>
+    <li><a href="#scenarios">Example Scenarios</a></li>
+    <li><a href="#troubleshooting">Troubleshooting</a></li>
+    <li><a href="#quickref">Quick Reference Card</a></li>
+  </ol>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="daily">1. Daily Morning Routine</h2>
+<div class="card">
+  <p><strong>Objective:</strong> Generate fresh forecasts for all 100 tickers and identify actionable signals for the day ahead.</p>
+  <p><strong>Prerequisites:</strong> GPU (GTX 1060 or better), <code>data/raw/*.parquet</code> files up to date.</p>
+
+  <div class="step-box">
+    <div class="step-num">Step 1.1</div>
+    <div class="step-title">Open the report notebook</div>
+    <pre>cd /path/to/kronos-th
+python -m pip install -e .
+jupyter notebook notebooks/05_decision_report.ipynb</pre>
+    <p style="font-size:0.85rem;color:#7f8c8d;">If you prefer command-line (no GUI), use Option A from the user manual instead.</p>
+  </div>
+
+  <div class="step-box">
+    <div class="step-num">Step 1.2</div>
+    <div class="step-title">Set the report mode</div>
+    <p>In Cell 0 of the notebook, set:</p>
+    <pre>REPORT_MODE = "morning"   # <- change to "morning"
+MODEL_TYPE  = "zero-shot"  # always "zero-shot"</pre>
+    <div class="highlight-red" style="margin-bottom:0;"><strong>Do not use <code>"fine-tuned"</code>.</strong> All 9 FT checkpoints underperform zero-shot in backtest.</div>
+  </div>
+
+  <div class="step-box">
+    <div class="step-num">Step 1.3</div>
+    <div class="step-title">Run all cells (Cell 1 → Cell 4)</div>
+    <table>
+      <tr><th>Cell</th><th>What it does</th><th>Time</th></tr>
+      <tr><td>Cell 1</td><td>Loads Kronos-small model into GPU memory</td><td>~5 seconds</td></tr>
+      <tr><td>Cell 2</td><td>Deletes yesterday's cache, generates fresh forecasts for 100 tickers</td><td><strong>~12 min on GTX 1060</strong> (~3 min on T4)</td></tr>
+      <tr><td>Cell 3</td><td>Builds a 25-column DataFrame from forecast cache + universe + backtest metrics</td><td>~3 seconds</td></tr>
+      <tr><td>Cell 4</td><td>Renders the morning brief with disclaimers appended</td><td>~2 seconds</td></tr>
+    </table>
+    <div class="highlight-blue" style="margin-bottom:0;"><strong>First run:</strong> 12-15 min. <strong>Re-runs same day:</strong> ~3 seconds (cache hit).</div>
+  </div>
+
+  <div class="step-box">
+    <div class="step-num">Step 1.4</div>
+    <div class="step-title">Read the Morning Brief output</div>
+    <div class="trade-grid">=== Morning Brief - 2026-05-24 ===
+
+BULLISH (top 10 by conviction):
+  Ticker      Name                Class         Close    P50%   Band Flag Dir
+  PTT.BK      PTT                 thai_equity   32.50  +2.31%  6.50%  O   up
+  SCC.BK      Siam Cement         thai_equity  248.00  +1.80%  8.20%  O   up
+  AAPL        Apple               us_equity    180.20  +1.20%  7.10%  O   up
+  BTC-USD     Bitcoin             crypto     67200.00  +3.50% 12.50%  =   up
+
+BEARISH (bottom 10 by conviction):
+  KBANK.BK    Kasikornbank        thai_equity  142.00  -1.80%  5.20%  O  down
+  DELTA.BK    Delta Electronics   thai_equity   88.50  -2.10%  6.80%  O  down</div>
+
+    <h4>Interpretation</h4>
+    <table class="signal-table">
+      <tr><th>Signal</th><th>Meaning</th><th>Action</th></tr>
+      <tr><td>Green + up + P50 > 2x friction</td><td>High conviction bullish</td><td><strong>Full position</strong> (net return safely above costs)</td></tr>
+      <tr><td>Green + up + P50 > 1x but < 2x friction</td><td>Moderate bullish</td><td><strong>Half-size</strong> -- net return positive but thin</td></tr>
+      <tr><td>Green + down + abs(P50) > friction</td><td>High conviction bearish</td><td><strong>Exit or reduce</strong> existing position</td></tr>
+      <tr><td>Yellow + any direction</td><td>Moderate conviction</td><td>Halve position size if you enter</td></tr>
+      <tr><td>Red + any direction</td><td>Low conviction</td><td>Skip -- model is unsure</td></tr>
+      <tr><td>All signals red</td><td>Market turmoil</td><td>Stay in cash entirely</td></tr>
+      <tr><td>No actionable (all yellow/dim)</td><td>Model sees no clear edges</td><td>Hold existing positions -- no new entries</td></tr>
+    </table>
+
+    <h4>Example walkthrough</h4>
+    <p><strong>PTT.BK at 32.50 THB:</strong> +2.31% P50, 6.5% band. Net return: 2.31% - 0.536% = <strong>+1.77%</strong>. Beats "enter if > 2x friction" (1.07%). <span style="color:#27ae60;font-weight:600;">Consider a position.</span></p>
+    <p><strong>KBANK.BK at 142.00 THB:</strong> -1.80% P50, 5.2% band. Net return: -1.80% - 0.536% = <strong>-2.34%</strong>. Confidently bearish. <span style="color:#e74c3c;font-weight:600;">If you hold KBANK, consider exiting.</span></p>
+    <p><strong>BTC-USD:</strong> +3.50% P50, yellow band (12.5%). Strong net return (+2.60%) but wide uncertainty. <span style="color:#d4ac0d;font-weight:600;">Allocate 50% of normal BTC position.</span></p>
+  </div>
+
+  <div class="step-box">
+    <div class="step-num">Step 1.5</div>
+    <div class="step-title">Check your holdings against the bearish list</div>
+    <div class="trade-grid">Your holdings: PTT, SCC, KBANK, AAPL, BTC
+Bearish list:  KBANK, DELTA, BBL, ...
+-> KBANK is in the bearish list. You hold it. Consider reducing or exiting.</div>
+  </div>
+
+  <div class="step-box">
+    <div class="step-num">Step 1.6</div>
+    <div class="step-title">Record the day's key numbers</div>
+    <div class="trade-grid">Date: 2026-05-24
+# bullish signals (green): 12
+# bearish signals (green-down): 8
+# red-flagged: 15
+Median band width: 18%</div>
+    <div class="highlight" style="margin-bottom:0;"><strong>Warning threshold:</strong> If # red-flagged > 30 or median band width > 30%, the market is in a high-uncertainty state -- reduce overall exposure.</div>
+  </div>
+</div>
+
+<div style="text-align:right;margin-top:-10px;"><a href="#" onclick="window.scrollTo(0,0);return false;" style="color:#2e86c1;font-size:0.82rem;text-decoration:none;">&uarr; Back to top</a></div>
+
+<!-- ============================================================ -->
+<h2 id="evening">2. Daily Evening Check</h2>
+<div class="card">
+  <p><strong>Objective:</strong> Verify that today's forecast cache was saved and is ready for tomorrow.</p>
+  <pre>ls -la data/forecast_cache/NeoQuasar_Kronos-small/$(date +%Y-%m-%d)/ | head -5</pre>
+  <div class="trade-grid">total 1234
+drwxrwxr-x 100 Dec 31 23:59 .
+-rw-rw-r-- 1 user user 1234 PTT.BK.parquet
+-rw-rw-r-- 1 user user 1234 KBANK.BK.parquet</div>
+  <p>If this directory is empty, tomorrow's morning run will regenerate forecasts (12 min delay). If missing entirely, the morning run will create it -- no problem, just 12 minutes of GPU time.</p>
+</div>
+
+<div style="text-align:right;margin-top:-10px;"><a href="#" onclick="window.scrollTo(0,0);return false;" style="color:#2e86c1;font-size:0.82rem;text-decoration:none;">&uarr; Back to top</a></div>
+
+<!-- ============================================================ -->
+<h2 id="weekly">3. Weekly Portfolio Review</h2>
+<div class="card">
+  <p><strong>Objective:</strong> Assess regime changes, model degradation, and class-level allocation exposure.</p>
+  <p><strong>When:</strong> Every Sunday evening or Monday morning before market open. <strong>Time:</strong> 15-20 minutes.</p>
+
+  <div class="step-box">
+    <div class="step-num">Step 3.1</div>
+    <div class="step-title">Run the Quant PM view</div>
+    <pre>REPORT_MODE = "quant"  # in Cell 0</pre>
+    <p>Run all cells. Output shows per-ticker risk-adjusted metrics grouped by asset class.</p>
+  </div>
+
+  <div class="step-box">
+    <div class="step-num">Step 3.2</div>
+    <div class="step-title">Identify volatility spikes</div>
+    <p>Check if any class's <code>HistVol</code> has doubled vs baseline:</p>
+    <table>
+      <tr><th>Class</th><th>Normal Vol Range</th><th>Warning Threshold</th></tr>
+      <tr><td>Thai equity</td><td>12-20%</td><td>>30%</td></tr>
+      <tr><td>US equity</td><td>18-28%</td><td>>40%</td></tr>
+      <tr><td>Crypto</td><td>40-70%</td><td>>80%</td></tr>
+    </table>
+    <div class="highlight-red" style="margin-bottom:0;"><strong>If HistVol > warning threshold:</strong> halve that class's allocation until vol normalizes.</div>
+  </div>
+
+  <div class="step-box">
+    <div class="step-num">Step 3.3</div>
+    <div class="step-title">Check trailing signal quality</div>
+    <p>Run the direction accuracy diagnostic for each major holding:</p>
+    <pre>python -c "
+import pandas as pd
+from pathlib import Path
+
+ticker = 'PTT.BK'
+today = '2026-05-24'
+safe = ticker.replace('^','_').replace('=','_')
+
+hits = 0; total = 0
+for i in range(5, 15):
+    d = (pd.Timestamp(today) - pd.Timedelta(days=i)).strftime('%Y-%m-%d')
+    f = Path(f'data/forecast_cache/NeoQuasar_Kronos-small/{d}/{safe}.parquet')
+    if not f.exists(): continue
+    fc = pd.read_parquet(f)
+    old_p50 = float(fc['p50'].iloc[-1])
+    df = pd.read_parquet(f'data/raw/{safe}.parquet')
+    close_before = float(df[df['timestamps']==d]['close'].iloc[0])
+    close_now = float(df['close'].iloc[-1])
+    pred_dir = 'up' if old_p50 > close_before else 'down'
+    actual_dir = 'up' if close_now > close_before else 'down'
+    hit = (pred_dir == actual_dir)
+    if hit: hits += 1
+    total += 1
+    print(f'{d}: Pred {pred_dir}, Actual {actual_dir} -> {\"HIT\" if hit else \"MISS\"}')
+print(f'Accuracy: {hits}/{total} = {hits/max(total,1):.0%}')"</pre>
+    <div class="highlight" style="margin-bottom:0;"><strong>If accuracy < 50%:</strong> the model may be degrading for this ticker. <strong>Repeat for each major holding</strong> (AAPL, BTC, etc.).</div>
+  </div>
+
+  <div class="step-box">
+    <div class="step-num">Step 3.4</div>
+    <div class="step-title">Review allocation vs targets</div>
+    <p>Open the Trader's Desk view. Check if any class has drifted >5% from target:</p>
+    <table>
+      <tr><th>Class</th><th>Target</th><th>Allowable Range</th></tr>
+      <tr><td>Thai equity</td><td>40%</td><td>35-45%</td></tr>
+      <tr><td>US equity</td><td>20%</td><td>15-25%</td></tr>
+      <tr><td>ETF global</td><td>10%</td><td>5-15%</td></tr>
+      <tr><td>Crypto</td><td>5%</td><td>2-8% (hard max 10%)</td></tr>
+      <tr><td>Other</td><td>5%</td><td>0-10%</td></tr>
+      <tr><td>Cash</td><td>20%</td><td>10-30%</td></tr>
+    </table>
+    <p>If any class is outside its range, add it to the monthly rebalancing plan.</p>
+  </div>
+</div>
+
+<div style="text-align:right;margin-top:-10px;"><a href="#" onclick="window.scrollTo(0,0);return false;" style="color:#2e86c1;font-size:0.82rem;text-decoration:none;">&uarr; Back to top</a></div>
+
+<!-- ============================================================ -->
+<h2 id="monthly">4. Monthly Rebalancing</h2>
+<div class="card">
+  <p><strong>Objective:</strong> Realign portfolio to target allocations based on accumulated monthly signals.</p>
+  <p><strong>When:</strong> Last Friday of each month. <strong>Time:</strong> 30-45 minutes.</p>
+
+  <div class="step-box">
+    <div class="step-num">Step 4.1</div>
+    <div class="step-title">Run the Trader's Desk view</div>
+    <pre>REPORT_MODE = "trader"  # in Cell 0</pre>
+    <p>Run all cells. All tickers sorted by <code>NetRet</code> descending, grouped by class, with friction costs.</p>
+  </div>
+
+  <div class="step-box">
+    <div class="step-num">Step 4.2</div>
+    <div class="step-title">Apply the 3-filter rule to each position</div>
+    <table>
+      <tr><th>Filter</th><th>Rule</th><th>Action</th></tr>
+      <tr><td><strong>Net Return</strong></td><td>NetRet > 2x friction?</td><td>Keep if yes; consider exit if no</td></tr>
+      <tr><td><strong>Confidence</strong></td><td>Flag is green or yellow?</td><td>Keep if green/yellow; consider exit if red</td></tr>
+      <tr><td><strong>Class allocation</strong></td><td>Within targeted range?</td><td>Adjust if outside range</td></tr>
+    </table>
+    <p><strong>All 3 pass:</strong> Maintain or increase. <strong>1-2 fail:</strong> Reduce by half. <strong>All 3 fail:</strong> Exit entirely.</p>
+  </div>
+
+  <div class="step-box">
+    <div class="step-num">Step 4.3</div>
+    <div class="step-title">Build the rebalancing trade list</div>
+    <div class="trade-grid">Ticker            Action        Size   NetRet   Rationale
+PTT.BK (hold)    Hold + add    +1%    +1.77%   green + NetRet
+KBANK.BK (hold)  Exit          -2%    -2.34%   green-down bearish
+AAPL             Enter         +1%    +0.50%   green + thin band
+BTC-USD (hold)   Reduce        -0.5%  +2.61%   yellow half size
+Cash             --            +2.5%  --       --</div>
+    <p style="font-size:0.85rem;color:#555;">Each full ticker = 20% of portfolio if max_positions=5. Confidence scaling: green = 100%, yellow = 50%, red = 0%.</p>
+    <div class="highlight-blue" style="margin-bottom:0;"><strong>Example:</strong> 4 positions -> 25% each. Confidence scaling: PTT green 25%, AAPL green 25%, BTC yellow 12.5%. Cash = 100 - 25 - 25 - 12.5 = <strong>37.5%</strong>.</div>
+    <div class="highlight" style="margin-top:8px;margin-bottom:0;"><strong>Note on cash drag:</strong> The backtest deploys 100% of capital. Confidence-based sizing leaves 50-80% deployed -- intentional. Sitting in cash when conviction is low prevents trading on noise. Expect 1-3% CAGR drag from cash allocation.</div>
+  </div>
+
+  <div class="step-box">
+    <div class="step-num">Step 4.4</div>
+    <div class="step-title">Execute over 2-3 days</div>
+    <div class="trade-grid">Day 1: Sell KBANK (bearish, urgent)
+Day 2: Buy AAPL (bullish, not urgent)
+Day 3: Buy PTT (bullish, adjust size)</div>
+    <div class="highlight-red" style="margin-bottom:0;"><strong>Exits for existing positions are same-day urgent.</strong> New entries wait for the monthly rebalance.</div>
+    <div class="highlight" style="margin-top:8px;margin-bottom:0;"><strong>Signal reversal:</strong> Forecasts update daily. If the signal flips direction between execution days (e.g., AAPL showed bullish on Monday but bearish on Tuesday), defer the remaining trades and re-evaluate next week. Do not blindly execute a plan when the model disagrees.</div>
+  </div>
+
+  <div class="step-box">
+    <div class="step-num">Step 4.5</div>
+    <div class="step-title">Log the trades</div>
+    <pre>import csv
+with open('data/trade_log.csv', 'a', newline='') as f:
+    w = csv.writer(f)
+    w.writerow(['2026-05-30', 'KBANK', 'sell', '142.00', '1.0', 'monthly rebalance'])
+    w.writerow(['2026-06-01', 'AAPL', 'buy', '181.50', '0.5', 'monthly signal'])</pre>
+  </div>
+</div>
+
+<div style="text-align:right;margin-top:-10px;"><a href="#" onclick="window.scrollTo(0,0);return false;" style="color:#2e86c1;font-size:0.82rem;text-decoration:none;">&uarr; Back to top</a></div>
+
+<!-- ============================================================ -->
+<h2 id="quarterly">5. Quarterly Performance Review</h2>
+<div class="card">
+  <p><strong>Objective:</strong> Compare actual portfolio performance against backtest benchmarks.</p>
+  <p><strong>When:</strong> End of March, June, September, December. <strong>Time:</strong> 30 minutes.</p>
+
+  <div class="step-box">
+    <div class="step-num">Step 5.1</div>
+    <div class="step-title">Compute total portfolio value (MTM)</div>
+    <pre>python -c "
+import pandas as pd
+from pathlib import Path
+
+trades = pd.read_csv('data/trade_log.csv')
+initial_cash = 1_000_000  # 1M THB
+
+# Net cash from closed trades (+sell, -buy)
+cash_flow = 0
+for _, row in trades.iterrows():
+    sign = 1 if row['direction'] == 'sell' else -1
+    cash_flow += sign * row['size'] * row['price'] * initial_cash
+
+# Mark-to-market of remaining holdings
+mtm_value = 0
+holdings = trades[trades['direction'] == 'buy']['ticker'].unique()
+for t in holdings:
+    buys = trades[(trades['ticker']==t) & (trades['direction']=='buy')]
+    sells = trades[(trades['ticker']==t) & (trades['direction']=='sell')]
+    net_units = buys['size'].sum() - sells['size'].sum()
+    if net_units > 0:
+        safe = t.replace('^','_').replace('=','_')
+        df = pd.read_parquet(f'data/raw/{safe}.parquet')
+        mtm_value += net_units * float(df['close'].iloc[-1]) * initial_cash
+
+total = initial_cash + cash_flow + mtm_value
+cagr = (total/initial_cash)**(252/len(trades['date'].unique())) - 1
+print(f'Portfolio value: {total:,.0f} THB  CAGR: {cagr:+.2%}')"</pre>
+  </div>
+
+  <div class="step-box">
+    <div class="step-num">Step 5.2</div>
+    <div class="step-title">Compare to benchmarks</div>
+    <table>
+      <tr><th>Benchmark</th><th>CAGR (backtest)</th><th>1-sigma Range (68% of outcomes)</th></tr>
+      <tr><td>Strategy (backtest)</td><td>+31.44%</td><td>14% to 48%</td></tr>
+      <tr><td>SET Index</td><td>-5.29%</td><td>-28% to +18%</td></tr>
+      <tr><td>SPY</td><td>+8.33%</td><td>-16% to +33%</td></tr>
+      <tr><td>Equal-weight</td><td>+1.44%</td><td>-19% to +22%</td></tr>
+    </table>
+    <p style="font-size:0.85rem;color:#555;">Ranges: backtest CAGR +/- 1.5 x annualized vol.</p>
+    <div class="highlight" style="margin-bottom:0;">If your CAGR is below the range for 2 consecutive quarters, check: over-trading (friction > 6% AUM/year)? Ignoring bearish signals? Model degradation?</div>
+  </div>
+
+  <div class="step-box">
+    <div class="step-num">Step 5.3</div>
+    <div class="step-title">Review position sizing fidelity</div>
+    <table>
+      <tr><th>Rule</th><th>Expected</th></tr>
+      <tr><td>Trades per month</td><td>10 or fewer</td></tr>
+      <tr><td>Average position size</td><td>20% or less</td></tr>
+      <tr><td>Friction per trade</td><td>0.5-0.9%</td></tr>
+      <tr><td>Win rate</td><td>1.5-3% (matches backtest: Thai 2.5%, US 2.8%, Crypto 1.5%)</td></tr>
+    </table>
+  </div>
+</div>
+
+<div style="text-align:right;margin-top:-10px;"><a href="#" onclick="window.scrollTo(0,0);return false;" style="color:#2e86c1;font-size:0.82rem;text-decoration:none;">&uarr; Back to top</a></div>
+
+<!-- ============================================================ -->
+<h2 id="scenarios">6. Example Scenarios</h2>
+
+<div class="card">
+  <h3>Scenario A: Normal Day</h3>
+  <div class="trade-grid">Morning Brief:
+  Green BULLISH: PTT (+2.3%), SCC (+1.8%), AAPL (+1.2%)
+  Red BEARISH:   KBANK (-1.8%), DELTA (-2.1%)
+  HistVol: Thai 18% (normal), BTC 52% (normal)
+
+  Your holdings: PTT (2%), KBANK (1.5%), AAPL (1%), cash (balance)</div>
+  <p><strong>Decision:</strong></p>
+  <ul>
+    <li><span style="color:#27ae60;">PTT: Hold.</span> Net return +1.77% > friction. Green flag.</li>
+    <li><span style="color:#e74c3c;">KBANK: Exit.</span> Confidently bearish (-1.8% P50, green). Reduce by 1%.</li>
+    <li><span style="color:#27ae60;">AAPL: Hold.</span> Net return +0.50% > US friction (0.35%). Keep.</li>
+    <li>Cash: Slightly increase from exit proceeds.</li>
+  </ul>
+  <div class="highlight-red"><strong>Exits for existing positions are same-day urgent.</strong> Sell KBANK at market open. New entries wait for monthly rebalance.</div>
+</div>
+
+<div style="margin-top:10px;"></div>
+
+<div class="card">
+  <h3>Scenario B: High Uncertainty Day</h3>
+  <div class="trade-grid">Morning Brief:
+  Green BULLISH: (none - all flags are yellow or red)
+  Median band width: 38%
+  # red-flagged: 42</div>
+  <p><strong>Decision:</strong> <span style="color:#e74c3c;font-weight:600;">Stay in cash.</span> The model's confidence is low across all 100 tickers. Trading in this environment is gambling.</p>
+  <p>Exception: If a position you hold shows <code>green-down</code> with a band narrower than the median, consider reducing.</p>
+
+  <div class="highlight-red" style="margin-top:12px;">
+    <strong>3+ consecutive days of all-red or median band > 30%:</strong> The model has entered a regime it does not understand. Reduce all positions by 50% and go to 75% cash. Do not re-enter until median band drops below 20% for 2 consecutive days.
+  </div>
+</div>
+
+<div style="margin-top:10px;"></div>
+
+<div class="card">
+  <h3>Scenario C: Regime Change Detected</h3>
+  <div class="trade-grid">Weekly Quant review:
+  -- thai_equity --
+  HistVol: 35%  <- was 18% last week
+  Warning: >30% threshold exceeded</div>
+  <p><strong>Decision:</strong></p>
+  <ul>
+    <li><span style="color:#e74c3c;">Halve Thai equity allocation:</span> 40% -> 20%.</li>
+    <li>Move freed capital to cash.</li>
+    <li>Do not re-enter Thai equity until HistVol drops below 30% for 2 consecutive weeks.</li>
+  </ul>
+</div>
+
+<div style="text-align:right;margin-top:-10px;"><a href="#" onclick="window.scrollTo(0,0);return false;" style="color:#2e86c1;font-size:0.82rem;text-decoration:none;">&uarr; Back to top</a></div>
+
+<!-- ============================================================ -->
+<h2 id="troubleshooting">7. Troubleshooting</h2>
+<div class="card">
+  <table>
+    <tr><th>Problem</th><th>Cause</th><th>Fix</th></tr>
+    <tr><td>Notebook says "No module named kth"</td><td>kth package not installed</td><td><code>python -m pip install -e .</code></td></tr>
+    <tr><td>GPU out of memory</td><td>Model + batch too large</td><td>Reduce <code>n_samples = 5</code> in Cell 0</td></tr>
+    <tr><td>Forecasts looking stale</td><td>Cache not refreshed</td><td>Delete <code>data/forecast_cache/NeoQuasar_Kronos-small/</code> and re-run</td></tr>
+    <tr><td><code>pd.bdate_range</code> error</td><td>Old cached file</td><td>Delete forecast cache and re-run</td></tr>
+    <tr><td>60/40 benchmark = 0.00</td><td>TLT.parquet not cached</td><td>Run <code>python -c "from kth.data.loader import download_universe; download_universe(['TLT'], period='max')"</code></td></tr>
+    <tr><td>Missing tickers in Morning Brief</td><td>Ticker has < 400 rows of history</td><td>Check "skipped" list in Cell 3 output -- some tickers need more data</td></tr>
+    <tr><td>All signals yellow</td><td>Typical on volatile days</td><td>Accept it. The model produces green signals on ~30% of days</td></tr>
+  </table>
+</div>
+
+<div style="text-align:right;margin-top:-10px;"><a href="#" onclick="window.scrollTo(0,0);return false;" style="color:#2e86c1;font-size:0.82rem;text-decoration:none;">&uarr; Back to top</a></div>
+
+<!-- ============================================================ -->
+<h2 id="quickref">8. Quick Reference Card</h2>
+<div class="quick-ref">
+  <h3>Kronos-TH Quick Reference</h3>
+  <table>
+    <tr><td style="width:80px;">DAILY</td><td>Open notebook, set REPORT_MODE="morning" &rarr; run all cells (12 min) &rarr; scan bullish/bearish &rarr; check holdings vs bearish &rarr; exit if green-down (<strong>green flag + down = confidently bearish</strong>)</td></tr>
+    <tr><td>EVENING</td><td>Verify today's forecast cache saved: <code>ls data/forecast_cache/NeoQuasar_Kronos-small/$(date +%Y-%m-%d)/</code></td></tr>
+    <tr><td>WEEKLY</td><td>REPORT_MODE="quant" &rarr; check HistVol for regime changes &rarr; check trailing direction accuracy &rarr; note allocation drift</td></tr>
+    <tr><td>MONTHLY</td><td>REPORT_MODE="trader" &rarr; apply 3-filter rule (NetRet, confidence, allocation) &rarr; build trade list &rarr; execute over 2-3 days</td></tr>
+    <tr><td>QUARTERLY</td><td>Compute MTM portfolio value &rarr; compare CAGR vs benchmarks (1-sigma range) &rarr; review position sizing compliance</td></tr>
+    <tr><td>SAME-DAY</td><td>Exits for existing positions when bearish (green-down) are same-day urgent. New bullish entries wait for monthly rebalance.</td></tr>
+    <tr><td>3-DAY RULE</td><td>3+ consecutive all-red days (median band >30%) &rarr; reduce all positions by 50%, go to 75% cash. Re-enter when band drops < 20% for 2 days.</td></tr>
+    <tr><td>CASH DRAG</td><td>Confidence-based sizing leaves 20-50% cash. Expect 1-3% lower CAGR vs the backtest's 100% deployed baseline. This is intentional -- cash when conviction is low prevents trading on noise.</td></tr>
+    <tr><td>DEFINITIONS</td><td><strong>green-down</strong> = green flag + down arrow (confidently bearish). <strong>1x-2x friction</strong> = enter at half size. <strong>3-filter</strong> = NetRet + confidence + class allocation.</td></tr>
+  </table>
+</div>
+
+</div>
+
+<a href="#" class="btt" onclick="window.scrollTo(0,0);return false;">&uarr;</a>
+
+<div style="text-align:center;padding:30px 0 10px;color:#95a5a6;font-size:0.82rem;">
+  Generated 2026-05-24 &bull; Not financial advice &bull; Past performance is not indicative of future results
+</div>
+
+</body>
+</html>"""
+
+def main():
+    out_path = Path("docs/operations-manual.html")
+    out_path.write_text(build_html(), encoding="utf-8")
+    print(f"Written to {out_path} ({len(build_html()):,} bytes)")
+
+
+if __name__ == "__main__":
+    main()
