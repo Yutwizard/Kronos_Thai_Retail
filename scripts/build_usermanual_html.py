@@ -50,7 +50,7 @@ def _fig_to_b64(fig) -> str:
     buf.seek(0)
     img = base64.b64encode(buf.read()).decode("utf-8")
     plt.close(fig)
-    return f"data:image/png;base64,{img}"
+    return f'<img src="data:image/png;base64,{img}" alt="chart">'
 
 
 def _color_palette():
