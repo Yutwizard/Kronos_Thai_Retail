@@ -59,7 +59,7 @@ def chart_metrics_radar():
     ax.set_xticks(x)
     ax.set_xticklabels(metrics, fontsize=9)
     ax.set_ylabel("Value")
-    ax.set_title("Metric Improvement: 14 vs 49 Tickers", fontweight="bold", fontsize=11)
+    ax.set_title("Metric Comparison: 14 vs 49 Tickers", fontweight="bold", fontsize=11)
     ax.legend(fontsize=8)
     ax.grid(True, axis="y", alpha=0.3)
     fig.tight_layout()
@@ -83,7 +83,7 @@ def chart_friction_waterfall():
 
 def chart_backtest_timeline():
     """Gantt-style: fold structure."""
-    fig, ax = plt.subplots(1, 1, figsize=(9, 3), facecolor="white")
+    fig, ax = plt.subplots(1, 1, figsize=(9, 4), facecolor="white")
     folds = [
         ("Fold 0 Train", "2022-01", "2022-06", "Train"),
         ("Fold 0 Val", "2022-07", "2024-03", "Val"),
@@ -100,6 +100,8 @@ def chart_backtest_timeline():
         s = pd.Timestamp(start).toordinal()
         e = pd.Timestamp(end).toordinal()
         ax.barh(name, e-s, left=s, color=colors[kind], edgecolor="white", height=0.6)
+    ax.grid(True, axis="x", alpha=0.3)
+    ax.tick_params(axis="y", labelsize=7)
     from matplotlib.patches import Patch
     legend_elements = [Patch(facecolor="#2e86c1", label="Training"), Patch(facecolor="#f39c12", label="Validation"), Patch(facecolor="#95a5a6", label="Test")]
     ax.legend(handles=legend_elements, loc="lower right", fontsize=7)
@@ -127,8 +129,9 @@ def build_html() -> str:
   .container {{ max-width: 960px; margin: 0 auto; padding: 20px; }}
   .hero {{ background: linear-gradient(135deg, #1a5276 0%, #2e86c1 100%); color: white; padding: 40px 30px; border-radius: 12px; margin: 20px 0 30px; text-align: center; }}
   .hero h1 {{ color: white; font-size: 2rem; font-weight: 800; margin: 0; }}
-  .hero .subtitle {{ color: rgba(255,255,255,0.85); font-size: 1rem; margin: 8px 0 0; }}
+  .hero .subtitle {{ color: rgba(255,255,255,0.85); font-size: 0.9rem; margin: 6px 0 0; }}
   .badge {{ display: inline-block; background: rgba(255,255,255,0.2); padding: 4px 14px; border-radius: 20px; font-size: 0.8rem; margin: 10px 4px 0; }}
+  .badge-highlight {{ background: #27ae60; font-weight: 700; font-size: 0.85rem; }}
   h2 {{ font-size: 1.4rem; font-weight: 700; color: #1a5276; margin: 40px 0 12px; padding-bottom: 6px; border-bottom: 3px solid #2e86c1; }}
   h3 {{ font-size: 1.1rem; font-weight: 600; color: #2c3e50; margin: 24px 0 8px; }}
   h4 {{ font-weight: 600; color: #34495e; margin: 16px 0 6px; }}
@@ -159,7 +162,7 @@ def build_html() -> str:
   .stat-card .num {{ font-size: 1.6rem; font-weight: 800; }}
   .stat-card .label {{ font-size: 0.78rem; color: #7f8c8d; margin-top: 2px; }}
   .stat-card.up {{ border-top: 3px solid #27ae60; }} .stat-card.down {{ border-top: 3px solid #e74c3c; }} .stat-card.neutral {{ border-top: 3px solid #2e86c1; }}
-  .btt {{ position: fixed; bottom: 30px; right: 30px; background: #1a5276; color: white; width: 42px; height: 42px; border-radius: 50%; text-align: center; line-height: 42px; font-size: 1.4rem; text-decoration: none; box-shadow: 0 2px 8px rgba(0,0,0,0.2); display: none; z-index: 100; }}
+  .btt {{ position: fixed; bottom: 30px; right: 30px; background: #1a5276; color: white; width: 48px; height: 48px; border-radius: 50%; text-align: center; line-height: 48px; font-size: 1.5rem; text-decoration: none; box-shadow: 0 2px 8px rgba(0,0,0,0.2); display: none; z-index: 100; }}
   .btt:hover {{ background: #2e86c1; }}
   ul, ol {{ padding-left: 22px; margin: 6px 0; }}
   li {{ margin: 3px 0; }}
@@ -174,8 +177,8 @@ window.addEventListener('scroll', function(){{ var b=document.querySelector('.bt
 
 <div class="hero">
   <h1>Backtest Methodology</h1>
-  <p class="subtitle">Walk-forward framework, position sizing, friction model, benchmarks &mdash; with worked numerical examples</p>
-  <span class="badge">SIGNIFICANT at p=0.013</span>
+  <p class="subtitle">Walk-forward backtesting with worked examples, position sizing, and friction model</p>
+  <span class="badge badge-highlight">SIGNIFICANT at p=0.013 (Thai equity only)</span>
   <span class="badge">49 tickers tested</span>
   <span class="badge">All returns net of friction</span>
 </div>
@@ -188,6 +191,7 @@ window.addEventListener('scroll', function(){{ var b=document.querySelector('.bt
     <li><a href="#friction">Friction Model</a></li>
     <li><a href="#benchmarks">Benchmarks</a></li>
     <li><a href="#metrics">Metrics &amp; Results</a></li>
+    <li><a href="#conclusion">What This Means</a></li>
     <li><a href="#limitations">Known Limitations</a></li>
   </ol>
 </div>
@@ -282,6 +286,7 @@ window.addEventListener('scroll', function(){{ var b=document.querySelector('.bt
   <p style="font-size:0.85rem;color:#555;">PTT (lowest vol) gets 3x the capital of AOT (highest vol). NaN guard: if vol is missing, defaults to 0.02.</p>
 
   <div class="chart">{c2}</div>
+  <p style="font-size:0.82rem;color:#7f8c8d;margin-top:-8px;">Calmar dropped slightly (1.83 &rarr; 1.75) because both CAGR (+6.4pp) and Max DD (+4.3pp) increased proportionally. The risk-adjusted return per unit of drawdown remained similar.</p>
 </div>
 
 <!-- ============================================================ -->
@@ -389,14 +394,32 @@ window.addEventListener('scroll', function(){{ var b=document.querySelector('.bt
 </div>
 
 <!-- ============================================================ -->
+<h2 id="conclusion">What This Means for Your Portfolio</h2>
+<div class="card">
+  <div class="stat-grid">
+    <div class="stat-card up"><div class="num" style="color:#27ae60;">High</div><div class="label">Thai Equity Trust</div></div>
+    <div class="stat-card neutral"><div class="num" style="color:#2e86c1;">Medium</div><div class="label">US Equity Trust</div></div>
+    <div class="stat-card down"><div class="num" style="color:#e74c3c;">Low</div><div class="label">Crypto Trust</div></div>
+    <div class="stat-card neutral"><div class="num" style="color:#7f8c8d;">Not Tested</div><div class="label">ETF, Bond, REIT</div></div>
+  </div>
+  <ul>
+    <li><strong>Thai equity:</strong> Deploy full allocation (30-40% of portfolio). Model is significant (p=0.013) with 1.40 Sharpe. Overweight per the Morning Brief's bullish signals.</li>
+    <li><strong>US equity:</strong> Use for direction signals but size conservatively (15-20%). Model is not significant (p=0.46) but beats SPY by 22pp CAGR.</li>
+    <li><strong>Crypto:</strong> Max 5% allocation. Model not significant (p=0.64). Use for BTC exposure, not for alt-coin signals.</li>
+    <li><strong>Untested classes:</strong> Do not trade ETF global, commodity, bond proxy, REIT, or FX based solely on model forecasts. Wait for backtest results.</li>
+  </ul>
+  <p style="font-size:0.82rem;color:#7f8c8d;margin-top:10px;">All backtest returns use 2% annualised risk-free rate (Thai 1Y govt bond proxy) for Sharpe calculations. The 60/40 benchmark returned -0.27% CAGR due to 2022's bond sell-off (TLT fell ~30% that year).</p>
+</div>
+
+<!-- ============================================================ -->
 <h2 id="limitations">6. Known Limitations</h2>
 <div class="card">
   <ul>
+    <li><strong>Only 3 of 9 classes backtested.</strong> Thai equity, US equity, and crypto have walk-forward backtests. ETF global, commodity, bond, REIT, FX are untested. Half the universe has no backtest validation.</li>
     <li><strong>Survivorship bias.</strong> Only currently-listed tickers are in the universe. Delisted SET stocks are absent, inflating returns.</li>
     <li><strong>Free data quality.</strong> Yahoo Thai stock prices can have stale data, gaps, and bad ticks. Extreme moves are flagged but not corrected.</li>
     <li><strong>No capacity constraints.</strong> Assumes ~200K THB positions fill at open. Real large orders could move the market.</li>
     <li><strong>Tax not modelled.</strong> Thai gains are taxed as personal income (0-35%). Net of tax, returns would be lower.</li>
-    <li><strong>Only 3 of 9 classes backtested.</strong> Thai equity, US equity, and crypto have walk-forward backtests. ETF global, commodity, bond, REIT, FX are untested.</li>
     <li><strong>Short time window.</strong> 3 years (2022-2024) is one macro regime. A different 3-year window would produce different results.</li>
   </ul>
 </div>
