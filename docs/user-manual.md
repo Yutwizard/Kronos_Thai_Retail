@@ -90,7 +90,9 @@ print(f'Forecasts cached at data/forecast_cache/{slug}/{today}/')
 
 Open `notebooks/05_decision_report.ipynb` in Jupyter or VS Code. Set `REPORT_MODE = "morning"` (or `"trader"`/`"quant"`). Run all cells.
 
-**Time estimate:** Same as Option A for Cell 2 (forecast generation). Cells 0, 1, 3, 4, 5: ~5 seconds total. Re-running on the same day: ~3 seconds (cache hit).
+> **First run of the day takes 12-15 minutes** (Cell 2 generates fresh forecasts for 100 tickers). Subsequent re-runs on the same day: ~3 seconds (cache hit).
+
+**Time estimate:** Same as Option A for Cell 2 (forecast generation). Cells 0, 1, 3, 4, 5: ~5 seconds total.
 
 > **Note:** Options A and B do the same thing. Choose one — don't run both. Option B is recommended for first-time users. Option A is for headless/cron setups.
 
@@ -247,7 +249,7 @@ Per `kth/data/universe.py`:
 |--------|---------|----------------|
 | **CAGR** | (final/start)^(252/days) − 1 | Annualized return. **Net** after friction. |
 | **Sharpe** | mean(daily return − rf/252) / std(daily return) × √252 | Return per unit of risk. >0.5 is good, >1.0 is excellent. |
-| **Sortino** | Same as Sharpe but uses downside vol only | Penalizes only bad volatility. Higher than Sharpe = right-tail wins. |
+| **Sortino** | Same as Sharpe but uses downside vol only | Penalizes only bad volatility. Higher than Sharpe means fewer/gentler drawdowns than average vol suggests (positive skew). |
 | **Max DD** | (trough − peak) / peak | Worst peak-to-trough loss. **-17%** in Thai equity = similar to benchmark. |
 | **Calmar** | CAGR / |Max DD| | Return per unit of max risk. >1.0 is strong. |
 | **Trade Win Rate** | trades with gross_return > 0 / total trades | **Not forecast accuracy.** This is trade P&L rate. 2-5% is expected for long-biased rolling strategies that churn positions monthly. |
@@ -329,7 +331,7 @@ Per `kth/data/universe.py`:
 
 7. **The trade win rate is 2-5%.** This does not mean the model is wrong 95% of the time. It means the portfolio churns monthly (daily rebalancing × 11.8× annual turnover), producing many small losing trades around a core of winning longs. This is expected for a long-biased rolling strategy. Focus on CAGR and Sharpe, not trade win rate.
 
-8. **CPU inference is very slow.** Generating forecasts for 100 tickers takes ~3 minutes on GPU (GTX 1060) but would take hours on CPU. The notebook will refuse to run on CPU. If you don't have GPU access, use Colab.
+8. **CPU inference is very slow.** Generating forecasts for 100 tickers takes 10-15 minutes on GTX 1060, 3-4 minutes on T4, but would take hours on CPU. The notebook will refuse to run on CPU. If you don't have GPU access, use Colab.
 
 ### Known Bugs
 
@@ -361,6 +363,14 @@ Per `kth/data/universe.py`:
 > **Thai equity risk note:** The strategy's Max DD (−17.97%) is nearly identical to equal-weight (−18.07%). The model's active selection does NOT increase tail risk over passive allocation. This is a positive finding — the alpha is "free" from a risk perspective.
 
 ### Benchmark Comparison Matrix
+
+All returns in native currency unless noted. For THB-equivalent, apply USDTHB adjustment (~+9% over 2022-2024).
+
+| Market | USD CAGR | USDTHB Adj | THB CAGR |
+|--------|----------|------------|----------|
+| US equity | +30.34% | ~+9% | **~+39%** |
+| Crypto | +16.45% | ~+9% | **~+25%** |
+| Thai equity | +31.44% | — | **+31.44%** (native THB) |
 
 | Asset | Strategy | SET | SPY | 60/40 | Equal-Wt |
 |-------|----------|-----|-----|-------|----------|
