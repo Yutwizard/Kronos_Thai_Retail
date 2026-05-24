@@ -240,6 +240,7 @@ def evaluate_model(
     test_dataset: KronosDataset,
     kronos_model_name: str = "NeoQuasar/Kronos-small",
     max_samples: int = 100,
+    calendar_freq: str = "B",  # "B" for equities, "D" for crypto
 ) -> dict:
     """
     Compare fine-tuned vs zero-shot on the same test set.
@@ -287,13 +288,13 @@ def evaluate_model(
         x_stamp = pd.Series(
             pd.date_range(
                 end=pd.Timestamp.now() - pd.Timedelta(days=1),
-                periods=lookback, freq="B",
+                periods=lookback, freq=calendar_freq,
             )
         )
         y_stamp = pd.Series(
             pd.date_range(
                 start=x_stamp.iloc[-1] + pd.Timedelta(days=1),
-                periods=pred_len, freq="B",
+                periods=pred_len, freq=calendar_freq,
             )
         )
 

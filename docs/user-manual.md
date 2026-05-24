@@ -445,7 +445,9 @@ Per `kth/data/universe.py`:
 
 3. **The 2022-2024 backtest period was a unique macro environment.** QE unwind, AI boom, SET underperformance. A different regime (e.g., 2018 trade war, 2020 COVID crash) would produce different results. Past performance is NOT indicative of future results.
 
-4. **Crypto backtests use a 5-day calendar when crypto trades 7 days.** The model's forecast timestamps skip weekends (business day convention from Kronos's equity pre-training). This compresses the forecast horizon: a 20-day prediction spans ~28 actual calendar days for crypto. The delta between ZS and FT is valid (both affected equally), but absolute Sharpe numbers are overstated by ~20-30%.
+4. **Crypto calendar fix applied.** The original backtest used 5-day business days (Mon-Fri) for all assets, which skipped weekends for crypto. This was fixed in Task 1 of the HFM review: `walkforward.py` now uses `_get_calendar_for_tickers()` which returns "D" (7-day) for crypto tickers. `forecast()` and `forecast_batch()` auto-detect crypto from ticker class. Crypto precompute and walk-forward now use the correct 7-day calendar. See `kth/backtest/walkforward.py:_get_calendar_for_tickers()`.
+
+> Note: If calling `forecast()` standalone with a DataFrame (not a ticker string), pass `calendar_freq="D"` explicitly for crypto data. The precompute path is unaffected.
 
 5. **ETFs class uses SPY as proxy.** The `etf_global` backtest metric (Sharpe 0.44, CAGR +8.33%) was computed only on SPY, but the class covers 9 ETFs including EM (VWO), Korea (EWY), Japan (EWJ), China (FXI). The model may perform differently on those markets. The report shows `"—"` for untested classes, but ETFs displays SPY numbers for all 9 tickers.
 
@@ -459,8 +461,8 @@ Per `kth/data/universe.py`:
 
 | Bug | Impact | Status |
 |-----|--------|--------|
-| `forecast()` timestamps always "B" for DataFrame input | Standalone calls on DataFrame (not ticker string) use 5-day calendar regardless of asset class. | Fix: pass `calendar_freq="D"` explicitly for crypto DataFrames. Precompute path unaffected. |
-| Mixed crypto+equity universe uses crypto calendar for all | If running a backtest that includes both BTC-USD and AAPL, AAPL gets 7-day forecasts (weekend timestamps fed to equity model). | Workaround: run crypto-only and equity-only backtests separately. |
+| `forecast()` timestamps default to "B" for DataFrame input | Standalone calls on DataFrame (not ticker string) default to 5-day calendar. | ✅ Precompute path unaffected. Pass `calendar_freq="D"` explicitly for crypto DataFrames. |
+| Mixed crypto+equity backtest run uses crypto 7-day for all | If running a backtest with both BTC-USD and AAPL, AAPL gets weekend timestamps. | Workaround: run crypto-only and equity-only backtests separately. Documented in `_get_calendar_for_tickers()`. |
 
 ---
 
