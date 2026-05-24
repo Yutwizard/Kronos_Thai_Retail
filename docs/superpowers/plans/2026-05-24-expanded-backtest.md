@@ -38,11 +38,11 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "kronos_repo"))
 
-from kth.data.universe import UNIVERSE, FRICTION, get_all_tickers, get_ticker_class, get_display_name
+from kth.data.universe import UNIVERSE, FRICTION
 from kth.data.loader import load_cached
 from kth.models.kronos_wrapper import KronosTH
-from kth.backtest.walkforward import precompute_forecasts, run_walkforward, BacktestConfig, BacktestResult
-from kth.backtest.metrics import compute_sharpe, compute_max_drawdown, compute_sortino, compute_metrics
+from kth.backtest.walkforward import precompute_forecasts, run_walkforward, BacktestConfig
+from kth.backtest.metrics import compute_sharpe, compute_max_drawdown
 
 TICKERS = [t for t, _, _ in UNIVERSE["thai_equity"]]
 CACHE_DIR = "./data/raw"
@@ -130,16 +130,18 @@ def main():
     equity = r.equity_curve  # pd.Series with date index
     trades_df = r.trades
 
-    # Compute equal-weight benchmark equity curve (from benchmarks dict)
+    # Compute equal-weight and SET benchmark equity curves (from benchmarks dict)
     ew_benchmark = r.benchmarks.get("equal_weight", pd.Series(1.0, index=equity.index))
+    set_benchmark = r.benchmarks.get("SET")
 
     period_results = []
     for label, start, end in PERIODS:
-        eq_slice = equity.loc[start:end] if start in equity.index else equity.loc[start:end]
+        eq_slice = equity.loc[start:end]
         ew_slice = ew_benchmark.loc[start:end]
+        set_slice = set_benchmark.loc[start:end] if "SET" in r.benchmarks else None
 
         if len(eq_slice) < 10:
-            period_results.append((label, None, None, None, None, 0, "Insufficient data"))
+            period_results.append((label, None, None, None, None, None, 0, "Insufficient data"))
             continue
 
         daily = eq_slice.pct_change().dropna()
@@ -148,23 +150,26 @@ def main():
         max_dd = compute_max_drawdown(eq_slice)
         ew_ret = (ew_slice.iloc[-1] / ew_slice.iloc[0]) ** (252 / len(ew_slice)) - 1
         alpha = cagr - ew_ret
+        set_cagr = (set_slice.iloc[-1] / set_slice.iloc[0]) ** (252 / len(set_slice)) - 1 if set_slice is not None and len(set_slice) > 5 else None
 
         # Count trades in this period
-        n_trades = len(trades_df[(trades_df["date"] >= start) & (trades_df["date"] <= end)]) if trades_df is not None else 0
+        ts = pd.Timestamp(start)
+        te = pd.Timestamp(end)
+        n_trades = len(trades_df[(trades_df["date"] >= ts) & (trades_df["date"] <= te)]) if trades_df is not None else 0
 
-        # Determine verdict
+        # Determine verdict (first match wins)
         if alpha > 0 and cagr > 0:
             verdict = "Thrive"
         elif alpha > 0 and sharpe > 0.5:
             verdict = "Survive"
-        elif alpha > 0 and cagr < 0:
+        elif alpha > 0 and cagr <= 0:
             verdict = "Mitigate"
         elif alpha <= 0:
             verdict = "Struggle"
         else:
             verdict = "Mixed"
 
-        period_results.append((label, cagr, sharpe, max_dd, alpha, n_trades, verdict))
+        period_results.append((label, cagr, sharpe, max_dd, alpha, set_cagr, n_trades, verdict))
 
     # Step 7: Print output
     print()
@@ -175,23 +180,25 @@ def main():
     print(f"    CAGR: {full_cagr:+.2%}  Sharpe: {full_sharpe:.2f}  Max DD: {full_max_dd:.2%}")
 
     print(f"\n  Period Breakdown:")
-    header = f"  {'Period':<25} {'CAGR':>10} {'Sharpe':>8} {'Max DD':>10} {'Alpha EW':>10} {'Trades':>8} {'Verdict':<12}"
+    header = f"  {'Period':<25} {'CAGR':>10} {'Sharpe':>8} {'Max DD':>10} {'Alpha EW':>10} {'SET CAGR':>10} {'Trades':>8} {'Verdict':<12}"
     print(header)
     print(f"  {'-' * len(header)}")
 
-    for label, cagr, sharpe, max_dd, alpha, n_trades, verdict in period_results:
+    for label, cagr, sharpe, max_dd, alpha, set_cagr, n_trades, verdict in period_results:
         if cagr is None:
-            print(f"  {label:<25} {'N/A':>10} {'N/A':>8} {'N/A':>10} {'N/A':>10} {'N/A':>8} {'N/A':<12}")
+            print(f"  {label:<25} {'N/A':>10} {'N/A':>8} {'N/A':>10} {'N/A':>10} {'N/A':>10} {'N/A':>8} {'N/A':<12}")
         else:
-            print(f"  {label:<25} {cagr:>+9.2%} {sharpe:>7.2f} {max_dd:>+9.2%} {alpha:>+9.2%} {n_trades:>8} {verdict:<12}")
+            sc = f"{set_cagr:>+9.2%}" if set_cagr is not None else "N/A"
+            print(f"  {label:<25} {cagr:>+9.2%} {sharpe:>7.2f} {max_dd:>+9.2%} {alpha:>+9.2%} {sc:>10} {n_trades:>8} {verdict:<12}")
 
     # Stress period warning
-    stress_trades = period_results[0][5]
+    stress_trades = period_results[0][6]
     if stress_trades < 50:
         print(f"\n  * Stress period: ~{stress_trades} trades — limited sample size.")
 
     print(f"\n  → If alpha is positive in all 3 periods, the model works across all regimes.")
     print(f"  → Lower 5-year CAGR vs 2022-2024 alone is expected (includes COVID crash).")
+    print(f"  → Period CAGR is annualized — short periods (<1 year) amplify returns/losses.")
 
     # Step 8: Save
     out = Path("data/backtest_results/thai_equity_2020-2024")
@@ -204,7 +211,7 @@ if __name__ == "__main__":
     main()
 ```
 
-- [ ] **Step 2: Verify the script syntax**
+- [ ] **Step 5: Verify the script syntax**
 
 Run: `venv/bin/python -c "import ast; ast.parse(open('scripts/run_expanded_backtest.py').read()); print('syntax OK')"`
 
