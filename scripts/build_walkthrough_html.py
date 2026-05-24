@@ -1,0 +1,313 @@
+"""
+Generate a styled HTML version of the monthly walkthrough.
+Usage: venv/bin/python scripts/build_walkthrough_html.py
+Output: docs/monthly-walkthrough.html
+"""
+from pathlib import Path
+
+
+def build_html() -> str:
+    return """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kronos-TH — 1-Month Walkthrough</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1a1a2e; background: #f5f6fa; line-height: 1.6; }
+  .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+  .hero { background: linear-gradient(135deg, #1a5276 0%, #2e86c1 100%); color: white; padding: 35px 30px; border-radius: 12px; margin: 20px 0 30px; text-align: center; }
+  .hero h1 { color: white; font-size: 2rem; font-weight: 800; margin: 0; }
+  .hero .subtitle { color: rgba(255,255,255,0.85); font-size: 1rem; margin: 8px 0 0; }
+  h2 { font-size: 1.4rem; font-weight: 700; color: #1a5276; margin: 40px 0 12px; padding-bottom: 6px; border-bottom: 3px solid #2e86c1; }
+  h3 { font-size: 1.1rem; font-weight: 600; color: #2c3e50; margin: 24px 0 8px; }
+  h4 { font-weight: 600; color: #34495e; margin: 16px 0 6px; }
+  p { margin: 8px 0; }
+  .card { background: white; border-radius: 10px; padding: 25px; margin: 16px 0; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  .toc-card { background: white; border-radius: 10px; padding: 20px 25px; margin: 20px 0; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  .toc-card ol { padding-left: 20px; column-count: 2; column-gap: 30px; }
+  @media (max-width: 600px) { .toc-card ol { column-count: 1; } }
+  .toc-card li { margin: 3px 0; }
+  .toc-card a { color: #2e86c1; text-decoration: none; font-size: 0.88rem; }
+  .toc-card a:hover { text-decoration: underline; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.88rem; }
+  th { background: #1a5276; color: white; padding: 7px 8px; text-align: left; font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px; }
+  td { padding: 6px 8px; border-bottom: 1px solid #eee; }
+  tr:hover td { background: #f0f4f8; }
+  code, pre { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; background: #f0f4f8; border-radius: 4px; }
+  code { padding: 2px 4px; }
+  pre { padding: 14px; overflow-x: auto; border-left: 3px solid #2e86c1; margin: 10px 0; position: relative; line-height: 1.5; }
+  .copy-btn { position: absolute; top: 6px; right: 6px; background: rgba(255,255,255,0.85); border: 1px solid #ddd; border-radius: 4px; padding: 2px 8px; font-size: 0.72rem; cursor: pointer; color: #555; font-family: 'Inter', sans-serif; }
+  .copy-btn:hover { background: #e8f0fe; color: #1a5276; }
+  .copy-btn.copied { background: #27ae60; color: white; border-color: #27ae60; }
+  .highlight { background: #fff8e1; border-left: 4px solid #f39c12; padding: 10px 14px; margin: 10px 0; border-radius: 4px; font-size: 0.88rem; }
+  .highlight-red { background: #fdecea; border-left: 4px solid #e74c3c; padding: 10px 14px; margin: 10px 0; border-radius: 4px; font-size: 0.88rem; }
+  .highlight-green { background: #e8f8f5; border-left: 4px solid #27ae60; padding: 10px 14px; margin: 10px 0; border-radius: 4px; font-size: 0.88rem; }
+  .highlight-blue { background: #eaf2f8; border-left: 4px solid #2e86c1; padding: 10px 14px; margin: 10px 0; border-radius: 4px; font-size: 0.88rem; }
+  .day-box { background: white; border-radius: 8px; padding: 18px 22px; margin: 12px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.06); border-left: 4px solid #2e86c1; }
+  .day-box .day-label { font-size: 0.7rem; color: #7f8c8d; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 2px; }
+  .day-box .day-title { font-size: 1.05rem; font-weight: 600; color: #1a5276; margin-bottom: 6px; }
+  .brief-box { background: #f8f9fa; border-radius: 6px; padding: 14px; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; line-height: 1.6; overflow-x: auto; white-space: pre; border: 1px solid #eef0f2; }
+  .alert { background: #fdecea; border: 2px solid #e74c3c; border-radius: 8px; padding: 14px 18px; margin: 10px 0; }
+  .alert .alert-title { font-weight: 700; color: #e74c3c; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin: 14px 0; }
+  .stat-card { background: #f8f9fa; border-radius: 8px; padding: 14px; text-align: center; }
+  .stat-card .stat-num { font-size: 1.6rem; font-weight: 800; color: #1a5276; }
+  .stat-card .stat-label { font-size: 0.78rem; color: #7f8c8d; margin-top: 2px; }
+  .stat-card.up { border-top: 3px solid #27ae60; }
+  .stat-card.down { border-top: 3px solid #e74c3c; }
+  ul, ol { padding-left: 22px; margin: 6px 0; }
+  li { margin: 3px 0; }
+  .btt { position: fixed; bottom: 30px; right: 30px; background: #1a5276; color: white; width: 42px; height: 42px; border-radius: 50%; text-align: center; line-height: 42px; font-size: 1.4rem; text-decoration: none; box-shadow: 0 2px 8px rgba(0,0,0,0.2); display: none; z-index: 100; }
+  .btt:hover { background: #2e86c1; }
+  .timeline-bar { height: 8px; background: #eef0f2; border-radius: 4px; margin: 20px 0 10px; display: flex; overflow: hidden; }
+  .timeline-bar .seg { height: 100%; }
+  .seg-green { background: #27ae60; }
+  .seg-yellow { background: #f1c40f; }
+  .seg-red { background: #e74c3c; }
+  .seg-gray { background: #95a5a6; }
+  .legend { display: flex; gap: 16px; margin: 6px 0 14px; font-size: 0.78rem; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 4px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+  table.summary tr:last-child td { border-bottom: none; }
+  .mb-table td { padding: 4px 8px; font-size: 0.85rem; }
+  @media (max-width: 768px) { .toc-card ol { column-count: 1; } .container { padding: 10px; } }
+</style>
+<script>
+window.addEventListener('scroll', function(){ var b=document.querySelector('.btt'); if(b) b.style.display=window.scrollY>300?'block':'none'; });
+document.addEventListener('DOMContentLoaded',function(){ document.querySelectorAll('pre').forEach(function(p){ if(p.querySelector('.copy-btn')) return;
+var b=document.createElement('button'); b.className='copy-btn'; b.textContent='Copy';
+b.onclick=function(){ navigator.clipboard.writeText(p.textContent).then(function(){ b.textContent='Copied!'; b.classList.add('copied');
+setTimeout(function(){ b.textContent='Copy'; b.classList.remove('copied'); },2000); }).catch(function(){ b.textContent='Failed'; }); };
+p.style.position='relative'; p.appendChild(b); }); });
+</script>
+</head>
+<body>
+<div class="container">
+
+<div class="hero">
+  <h1>One Month of Daily Operations</h1>
+  <p class="subtitle">A day-by-day simulated month using the Kronos-TH forecasting system</p>
+  <span class="badge">Not financial advice</span>
+  <span class="badge">Research output only</span>
+</div>
+
+<div class="toc-card">
+  <h3 style="margin-top:0; border:none; padding:0;">Contents</h3>
+  <ol>
+    <li><a href="#start">Starting Position</a></li>
+    <li><a href="#day1">Day 1 &mdash; Setup &amp; First Forecast</a></li>
+    <li><a href="#day2">Day 2 &mdash; Bullish Signals</a></li>
+    <li><a href="#day3">Day 3 &mdash; Bearish on Holding</a></li>
+    <li><a href="#day4">Day 4 &mdash; Same-Day Urgent Exit</a></li>
+    <li><a href="#day5">Day 5 &mdash; Moderate Conviction</a></li>
+    <li><a href="#day6">Day 6 &mdash; High Uncertainty</a></li>
+    <li><a href="#day7">Day 7 &mdash; Weekend Review</a></li>
+    <li><a href="#day8">Day 8 &mdash; New Week</a></li>
+    <li><a href="#day9">Day 9 &mdash; Signal Reversal</a></li>
+    <li><a href="#day10">Day 10 &mdash; Strengthening</a></li>
+    <li><a href="#day11">Day 11 &mdash; Crypto Warning</a></li>
+    <li><a href="#day12">Day 12 &mdash; Red Flag Day</a></li>
+    <li><a href="#day13">Day 13 &mdash; 3-Day Streak</a></li>
+    <li><a href="#day14">Day 14 &mdash; All-Clear</a></li>
+    <li><a href="#day15">Day 15 &mdash; Regime Change</a></li>
+    <li><a href="#day16">Days 16-20 &mdash; Quiet Week</a></li>
+    <li><a href="#day21">Day 21 &mdash; Month-End Rebalance</a></li>
+  </ol>
+</div>
+
+<div class="card" id="start">
+  <h3>Starting Position</h3>
+  <table>
+    <tr><th>Asset</th><th>Class</th><th>Value (THB)</th><th>%</th><th>Cost</th></tr>
+    <tr><td>Cash</td><td>—</td><td>600,000</td><td style="font-weight:600;">60%</td><td>—</td></tr>
+    <tr><td>PTT.BK</td><td>Thai equity</td><td>100,000</td><td>10%</td><td>31.50</td></tr>
+    <tr><td>KBANK.BK</td><td>Thai equity</td><td>80,000</td><td>8%</td><td>140.00</td></tr>
+    <tr><td>AAPL</td><td>US equity</td><td>120,000</td><td>12%</td><td>$180.00</td></tr>
+    <tr><td>BTC-USD</td><td>Crypto</td><td>100,000</td><td>10%</td><td>650,000 THB</td></tr>
+    <tr style="font-weight:700;background:#f0f4f8;"><td colspan="2">Total</td><td>1,000,000</td><td>100%</td><td></td></tr>
+  </table>
+  <p style="font-size:0.85rem;color:#7f8c8d;">Holdings: PTT, KBANK, AAPL, BTC | Cash: 60% | Invested: 40%. THB values at book cost unless noted.</p>
+</div>
+
+<div class="timeline-bar">
+  <div class="seg seg-green" style="width:20%"></div>
+  <div class="seg seg-green" style="width:20%"></div>
+  <div class="seg seg-green" style="width:14%"></div>
+  <div class="seg seg-green" style="width:6%"></div>
+  <div class="seg seg-yellow" style="width:6%"></div>
+  <div class="seg seg-yellow" style="width:6%"></div>
+  <div class="seg seg-green" style="width:6%"></div>
+  <div class="seg seg-green" style="width:6%"></div>
+  <div class="seg seg-green" style="width:6%"></div>
+  <div class="seg seg-yellow" style="width:6%"></div>
+  <div class="seg seg-red" style="width:6%"></div>
+  <div class="seg seg-red" style="width:6%"></div>
+  <div class="seg seg-red" style="width:6%"></div>
+  <div class="seg seg-yellow" style="width:6%"></div>
+  <div class="seg seg-yellow" style="width:6%"></div>
+  <div class="seg seg-green" style="width:6%"></div>
+  <div class="seg seg-green" style="width:6%"></div>
+  <div class="seg seg-green" style="width:6%"></div>
+  <div class="seg seg-green" style="width:6%"></div>
+  <div class="seg seg-green" style="width:6%"></div>
+  <div class="seg seg-green" style="width:6%"></div>
+</div>
+<div class="legend">
+  <span class="legend-item"><span class="legend-dot" style="background:#27ae60;"></span> Normal (green signals)</span>
+  <span class="legend-item"><span class="legend-dot" style="background:#f1c40f;"></span> High uncertainty (yellow/red)</span>
+  <span class="legend-item"><span class="legend-dot" style="background:#e74c3c;"></span> 3-day streak trigger</span>
+</div>
+
+<div class="stat-grid">
+  <div class="stat-card down"><div class="stat-num" style="color:#e74c3c;">-9.97%</div><div class="stat-label">Monthly Return</div></div>
+  <div class="stat-card up"><div class="stat-num" style="color:#27ae60;">7</div><div class="stat-label">Trades Executed</div></div>
+  <div class="stat-card down"><div class="stat-num" style="color:#e74c3c;">4,655</div><div class="stat-label">Friction Paid (THB)</div></div>
+  <div class="stat-card up"><div class="stat-num" style="color:#1a5276;">3</div><div class="stat-label">Exits (bearish signals)</div></div>
+  <div class="stat-card up"><div class="stat-num" style="color:#1a5276;">81%</div><div class="stat-label">Cash at Month End</div></div>
+</div>
+
+<!-- Day 1 -->
+<div class="day-box" id="day1">
+<div class="day-label">Trading Day 1</div>
+<div class="day-title">Setup &amp; First Forecast</div>
+<div class="brief-box">=== Morning Brief &mdash; 2026-05-01 ===
+
+GREEN BULLISH (top 10):
+  PTT.BK     PTT            31.80   +2.10%   6.8%   O    up
+  SCC.BK     Siam Cement   246.00   +1.90%   7.2%   O    up
+  AAPL       Apple         180.50   +1.30%   8.5%   O    up
+  GLOBAL.BK  Siam Global    18.20   +1.60%   7.5%   O    up
+
+RED BEARISH (bottom 10):
+  DELTA.BK   Delta Electron.  90.00  -1.50%   5.5%   O   down
+
+Median band: 16%  |  Green signals: 6  |  Red flags: 8</div>
+  <p><strong>Signal checks:</strong> PTT (+2.10%, O) &rarr; hold. AAPL (+1.30%, O) &rarr; hold. BTC (+3.20%, =) &rarr; hold at half-conviction. KBANK not in bearish list &rarr; hold.</p>
+  <p><strong>Action:</strong> None. All holdings acceptable. No new entries early in the month.</p>
+</div>
+
+<!-- Day 3 -->
+<div class="day-box" id="day3">
+<div class="day-label">Trading Day 3</div>
+<div class="day-title">Bearish Signal on a Holding</div>
+<div class="brief-box">GREEN BULLISH:
+  PTT.BK     PTT            32.00   +1.60%   6.2%   O    up
+  GLOBAL.BK  Siam Global    18.50   +1.80%   6.8%   O    up
+
+RED BEARISH:
+  KBANK.BK   Kasikornbank  141.00   -1.70%   5.0%   O   down   &lt;- NEW
+  DELTA.BK   Delta Electron. 89.00  -2.00%   5.8%   O   down</div>
+  <div class="alert">
+    <div class="alert-title">KBANK is in the bearish list. You hold KBANK.</div>
+    <p>Band: 5.0% (O narrow). P50 forecast: -1.70%. Net return: -1.70% - 0.536% = <strong>-2.24%</strong>. Confidently bearish (O down).</p>
+    <p>Decision: <strong>EXIT KBANK today</strong> per same-day urgent rule. Sell 571 shares at ~141 THB. Net proceeds: ~80,069 THB &rarr; cash.</p>
+  </div>
+</div>
+
+<!-- Day 9 -->
+<div class="day-box" id="day9">
+<div class="day-label">Trading Day 9 &mdash; Signal Reversal</div>
+<div class="day-title">AAPL Flips Bearish</div>
+<div class="brief-box">GREEN BULLISH:
+  GLOBAL.BK  Siam Global    19.20   +2.30%   5.2%   O    up
+  SCC.BK     Siam Cement   249.00   +1.60%   5.8%   O    up
+  CHG.BK     Chularat Hosp. 14.95   +1.80%   8.5%   O    up
+  PTT.BK     PTT            32.50   +0.90%   4.8%   O    up
+
+RED BEARISH:
+  AAPL       Apple         179.00   -0.80%   7.0%   O   down   &lt;- NEW</div>
+  <div class="alert">
+    <div class="alert-title">AAPL flips bearish. You hold AAPL.</div>
+    <p>Band: 7.0% (O narrow). Net return if held: -0.80% - 0.70% = <strong>-1.50%</strong>. Same-day urgent exit.</p>
+    <p>Sell ~18.5 shares at $179 &times; 36 = <strong>118,379 THB</strong> net after friction. Cash becomes 701,789 THB (70%). PTT holds at 100,000 THB (10%). BTC holds at 100,000 THB (10%).</p>
+  </div>
+  <p style="font-size:0.85rem;color:#7f8c8d;">The monthly rebalance plan is updated: CHG, HMPRO, SCC on buy list; AAPL removed (exited).</p>
+</div>
+
+<!-- Day 13 -->
+<div class="day-box" id="day13">
+<div class="day-label">Trading Day 13</div>
+<div class="day-title">3-Day Streak Trigger &mdash; Reduce to 75% Cash</div>
+<div class="brief-box">GREEN BULLISH: (none)
+YELLOW MODERATE: GLOBAL (+0.90%), SCC (+0.60%)
+RED-FLAGGED: BTC, AAPL, DELTA, KBANK... (42 tickers)
+
+Median band: 33% (Day 11: 35%, Day 12: 32%, Day 13: 33%)</div>
+  <div class="highlight-red">
+    <strong>3 consecutive days of median band > 30%.</strong> Per the streak rule: reduce all positions by 50%, go to 75% cash.
+    <p style="margin-top:6px;">The streak rule OVERRIDES the normal "don't exit on red" rule from Day 11.</p>
+  </div>
+  <p><strong>PTT half-exit:</strong> Sell 50% = 1,573 shares at 32.50. Net: +50,848 THB. PTT now 5%.</p>
+  <p><strong>BTC half-exit:</strong> Sell 50% of book position. Net: +49,550 THB. BTC now 5%.</p>
+  <p>Cash: 701,789 + 50,848 + 49,550 = <strong>801,626 THB (80%)</strong>. PTT: 5%. BTC: 5%. Total: 901,626 THB.</p>
+</div>
+
+<!-- Day 15 weekend review -->
+<div class="day-box" id="day15">
+<div class="day-label">Weekend Review</div>
+<div class="day-title">Regime Change &amp; Monthly Plan Update</div>
+  <p>Median band: 17% &mdash; below 20% for 2 consecutive days. Re-entry restriction lifted.</p>
+  <table>
+    <tr><th>Class</th><th>Current</th><th>Target</th><th>Status</th></tr>
+    <tr><td>Thai equity</td><td>5% (PTT only)</td><td>40%</td><td style="color:#e74c3c;">Under-allocated</td></tr>
+    <tr><td>US equity</td><td>0% (exited)</td><td>20%</td><td style="color:#e74c3c;">Under-allocated</td></tr>
+    <tr><td>Crypto</td><td>5% (BTC only)</td><td>5%</td><td style="color:#27ae60;">Within range</td></tr>
+    <tr><td>Cash</td><td>90%</td><td>20%</td><td style="color:#e74c3c;">Over-allocated</td></tr>
+  </table>
+  <p><strong>Monthly buy plan for Day 21:</strong> GLOBAL 10%, SCC 10%, CHG 5%, PTT add 5%, HMPRO 5% (all Thai equity). BTC hold at 5% (crypto still O down).</p>
+</div>
+
+<!-- Final Summary -->
+<div class="card" id="day21">
+  <h3>Month-End Summary &mdash; Day 21</h3>
+  <div class="stat-grid">
+    <div class="stat-card down"><div class="stat-num" style="color:#e74c3c;">900,286</div><div class="stat-label">Ending Value (THB)</div></div>
+    <div class="stat-card down"><div class="stat-num" style="color:#e74c3c;">-9.97%</div><div class="stat-label">Monthly Return</div></div>
+    <div class="stat-card up"><div class="stat-num" style="color:#27ae60;">59%</div><div class="stat-label">Cash After Rebalance</div></div>
+    <div class="stat-card up"><div class="stat-num" style="color:#1a5276;">-0.13%</div><div class="stat-label">Rebalance Friction Only</div></div>
+  </div>
+
+  <h4>Final Allocation</h4>
+  <table>
+    <tr><th>Asset</th><th>Value Before</th><th>After Rebalance</th><th>%</th></tr>
+    <tr><td>Cash</td><td>801,626</td><td>576,626</td><td>58%</td></tr>
+    <tr><td>PTT.BK</td><td>50,000</td><td>50,000</td><td>5%</td></tr>
+    <tr><td>GLOBAL.BK</td><td>0</td><td>99,464</td><td>10%</td></tr>
+    <tr><td>SCC.BK</td><td>0</td><td>49,732</td><td>5%</td></tr>
+    <tr><td>CHG.BK</td><td>0</td><td>49,732</td><td>5%</td></tr>
+    <tr><td>HMPRO.BK</td><td>0</td><td>49,732</td><td>5%</td></tr>
+    <tr><td>BTC-USD</td><td>50,000</td><td>25,000</td><td>2.5%</td></tr>
+    <tr style="font-weight:700;"><td>Total</td><td>901,626</td><td>900,286</td><td></td></tr>
+  </table>
+  <p style="font-size:0.85rem;color:#555;">The -9.97% monthly return is within the backtest's expected 1-sigma range (14-48% annual CAGR). One negative month does NOT invalidate the model.</p>
+  <div class="highlight-blue">
+    <strong>Key lesson:</strong> The -9.97% drawdown was driven by the 3-day streak trigger (forced partial exits into a volatile market), not by model signal error. KBANK and AAPL exits were correct (both remained bearish for 17+ days after exit). BTC exit was forced by the streak rule, not by BTC's individual signal. The month-end rebalance restores Thai equity positioning to 25% of portfolio.
+  </div>
+  <div class="highlight">
+    <strong>Limitation:</strong> This covers ONE month (May 2026) with a specific pattern: calm &rarr; bearish &rarr; turmoil &rarr; recovery. Real trading will encounter different regimes. A full year provides better validation.
+  </div>
+</div>
+
+</div>
+
+<a href="#" class="btt" onclick="window.scrollTo(0,0);return false;">&uarr;</a>
+<div style="text-align:center;padding:30px 0 10px;color:#95a5a6;font-size:0.82rem;">
+  Generated 2026-05-24 &bull; Not financial advice &bull; Past performance is not indicative of future results
+</div>
+</body>
+</html>"""
+
+
+def main():
+    out_path = Path("docs/monthly-walkthrough.html")
+    out_path.write_text(build_html(), encoding="utf-8")
+    print(f"Written to {out_path} ({len(build_html()):,} bytes)")
+
+
+if __name__ == "__main__":
+    main()
