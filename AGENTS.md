@@ -101,11 +101,12 @@ Key insight: 21-month fold windows needed (not 6mo) so val/test have ≥420 rows
 ## Reading order for context
 1. `PROJECT_STRUCTURE.md` — authoritative design doc, module specs, open questions
 2. `README.md` — project overview, caveats, quick start
-3. `docs/superpowers/specs/` — approved design specs for all layers
-4. `docs/superpowers/plans/` — implementation plans (specs → bite-sized tasks)
-5. `docs/superpowers/specs/2026-05-16-local-testing-design.md` — local testing pipeline (CPU + GPU)
-6. `kth/data/loader.py` — actual implementation of schema conversion and caching
-7. `kth/data/universe.py` — universe + friction definitions
-8. `kth/models/kronos_wrapper.py` — KronosTH wrapper (adapted to real Kronos API)
-9. `kth/models/_kronos_bridge.py` — import bridge for non-pip-installable Kronos repo
+3. `docs/user-manual.md` — full methodology, backtest results, and usage instructions
+4. `docs/superpowers/specs/` — approved design specs for all layers
+5. `docs/superpowers/plans/` — implementation plans (specs → bite-sized tasks)
+6. `docs/superpowers/specs/2026-05-16-local-testing-design.md` — local testing pipeline (CPU + GPU)
+7. `kth/data/loader.py` — actual implementation of schema conversion and caching
+8. `kth/data/universe.py` — universe + friction definitions
+9. `kth/models/kronos_wrapper.py` — KronosTH wrapper (adapted to real Kronos API)
+10. `kth/models/_kronos_bridge.py` — import bridge for non-pip-installable Kronos repo
 

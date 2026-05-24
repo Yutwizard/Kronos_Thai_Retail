@@ -211,8 +211,8 @@ kronos-th/
 │   ├── 01_data_layer.ipynb         ✅ Verify yfinance access (Colab-ready)
 │   ├── 02_kronos_zero_shot.ipynb   ⬜ Zero-shot inference on all classes
 │   ├── 03_walkforward_backtest.ipynb  ⬜ Backtest with realistic costs
-│   ├── 04_finetune_colab.ipynb     ⬜ Fine-tune Kronos-small on T4
-│   └── 05_decision_report.ipynb    ⬜ Daily report generation
+│   ├── 04_finetune_per_market.ipynb     ✅ Per-market training (Colab T4)
+│   └── 05_decision_report.ipynb         ✅ Daily decision report (3 views)
 │
 ├── data/
 │   ├── raw/                        Cached parquet (one per ticker)
@@ -501,22 +501,26 @@ If our strategy doesn't beat all four after frictions, we say so plainly.
 - `scripts/compare_finetune.py` — Fine-tuned vs zero-shot backtest comparison
 - `README.md` — project overview
 - `requirements.txt` — minimal pinned deps
+- `docs/user-manual.md` — full user manual with methodology, backtest results, and usage instructions
 
-### Fine-tuning results
+### Backtest Results (2022-2024, 3 markets × 4 benchmarks)
 
-| Model | Best Fold | Zero-Shot | Fine-Tuned | Δ |
-|---|---|---|---|---|
-| us_equity | F2 | 62.7% | **64.7%** | **+2.0pp** |
-| crypto | F1 | 56.4% | 56.4% | 0.0pp |
-| thai_equity | F0/F1 | 60.2% | 57.1% | −3.1pp |
+| Market | Strategy CAGR | Sharpe | Max DD | Alpha over equal-wt | Verdict |
+|--------|--------------|--------|--------|---------------------|---------|
+| Thai equity (49 tkrs) | +31.44% | 1.40 | −17.97% | **+30pp** | ✅ ZS Deploy |
+| US equity (17 tkrs) | +30.34% | 0.97 | −43.77% | +16pp | ✅ ZS Deploy |
+| Crypto (12 tkrs) | +16.45% | 0.52 | −68.58% | +22pp | ✅ ZS Deploy |
 
-**Deployment:** us_equity fold 2 deployed. Crypto and thai_equity remain zero-shot.
+**Zero-shot beats fine-tuning in all 3 markets.** The 9 fine-tuned checkpoints are saved but not deployed.
 
-All 9 checkpoints at `./checkpoints/{model}/fold{f}/best/`.
+See full results in `docs/user-manual.md` §6.
 
-### Known unknowns
+### Known unknowns — RESOLVED
 
-- Backtest results for fine-tuned models (us_equity crypto) in progress (HFM review Issues 1-2)
+- ✅ Backtest results for fine-tuned models — completed. ZS wins everywhere.
+- ✅ Calendar compatibility (crypto 7-day vs equity 5-day) — fixed (Task 1).
+- ✅ Hit-rate metric confusion (trade P&L vs forecast accuracy) — renamed to trade_win_rate.
+- ✅ Stale PROJECT_STRUCTURE.md — updated now.
 - Whether `^SET.BK` works on Yahoo (we have a backup plan: scrape from SET website if needed)
 - How well Kronos generalizes zero-shot to Thai mid-caps — this is the real research question
 

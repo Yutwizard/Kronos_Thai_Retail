@@ -22,7 +22,7 @@ Built on top of [Kronos](https://github.com/shiyu-coder/Kronos) — the open-sou
 
 ## The investable universe
 
-Defined in `kth/data/universe.py`. 51 tickers across 9 asset classes:
+Defined in `kth/data/universe.py`. 100 tickers across 9 asset classes:
 
 | Class | Examples | Why included |
 |---|---|---|
@@ -40,11 +40,13 @@ Defined in `kth/data/universe.py`. 51 tickers across 9 asset classes:
 
 ## Project state
 
-- ✅ **Data layer** (`kth/data/`): universe, yfinance loader, Kronos-format conversion, caching, quality checks. Verified end-to-end on synthetic data; Colab notebook ready to verify against real Yahoo Finance.
-- ⬜ Zero-shot Kronos inference (notebook 02)
-- ⬜ Walk-forward backtester with Thai-retail frictions (notebook 03)
-- ⬜ Fine-tuning Kronos-small on Colab T4 (notebook 04)
-- ⬜ Daily decision report (notebook 05)
+- ✅ **Data layer** (`kth/data/`): universe (100 tickers), yfinance loader, Kronos-format conversion, caching, quality checks.
+- ✅ **Kronos model** (`kth/models/`): wrapper, bridge, finetune with SGDR training, checkpoint loader.
+- ✅ **Backtest engine** (`kth/backtest/`): walk-forward with 4 benchmarks, friction costs, full metrics.
+- ✅ **Backtest results**: Thai equity (CAGR +31%, Sharpe 1.40), US equity (+30%, 0.97), Crypto (+16%, 0.52).
+- ✅ **Fine-tuning**: 9 models trained across 3 markets. None beat zero-shot. All deploy zero-shot.
+- ✅ **Daily decision report** (`notebooks/05_decision_report.ipynb`): 3 toggleable views (morning/trader/quant), 22 columns, 100 tickers.
+- ✅ **User manual** (`docs/user-manual.md`): complete methodology, usage, cautions, and results.
 
 ## Quick start
 
@@ -61,7 +63,7 @@ python verify_data_layer.py     # runs offline synthetic tests
 2. Upload the `kth/` folder next to it
 3. Run all cells
 
-The notebook downloads ~10 years of daily OHLCV for all 51 tickers (~5–10 min total) and caches to `./data/raw/*.parquet`. Persist to Google Drive if you want it to survive runtime shutdown.
+The notebook downloads ~10 years of daily OHLCV for all 100 tickers (~5–10 min total) and caches to `./data/raw/*.parquet`. Persist to Google Drive if you want it to survive runtime shutdown.
 
 ## Project layout
 
@@ -69,7 +71,7 @@ The notebook downloads ~10 years of daily OHLCV for all 51 tickers (~5–10 min 
 kronos-th/
 ├── kth/
 │   └── data/
-│       ├── universe.py      # 51-ticker universe + per-class FRICTION costs
+│       ├── universe.py      # 100-ticker universe + per-class FRICTION costs
 │       └── loader.py        # yfinance → Kronos schema, caching, quality checks
 ├── notebooks/
 │   └── 01_data_layer.ipynb  # Colab: verify real yfinance access

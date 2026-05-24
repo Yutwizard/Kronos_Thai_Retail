@@ -50,12 +50,13 @@ There is no test framework, lint config, CI, or build step. `verify_data_layer.p
 Five-layer pipeline (bottom-up build order):
 
 ```
-Layer 5: Decision report        notebooks/05_decision_report.ipynb     ⬜ planned
-Layer 4: Backtest               notebooks/03_walkforward_backtest.ipynb ⬜ planned
-Layer 3: Kronos model           notebooks/02_kronos_zero_shot.ipynb     ⬜ planned
-                                notebooks/04_finetune_per_market.ipynb  🔄 built (Colab)
-                                scripts/train_per_market.py             ✅ local
-                                scripts/eval_holdout.py                 ✅ local
+Layer 5: Decision report        notebooks/05_decision_report.ipynb     ✅ built
+Layer 4: Backtest               kth/backtest/walkforward.py             ✅ built
+                                scripts/compare_finetune.py             ✅ built
+                                scripts/eval_holdout.py                 ✅ built
+Layer 3: Kronos model           kth/models/kronos_wrapper.py            ✅ built
+                                notebooks/04_finetune_per_market.ipynb  ✅ built (Colab)
+                                scripts/train_per_market.py             ✅ built (local)
 Layer 2: Feature pipeline       kth/data/loader.py                      ✅ done
 Layer 1: Universe definition    kth/data/universe.py                    ✅ done
 ```
