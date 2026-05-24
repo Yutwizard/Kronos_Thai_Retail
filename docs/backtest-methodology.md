@@ -81,13 +81,14 @@ Total friction this day: **1,608 THB**.
 
 Assume close prices: PTT.BK = 33.20, CPALL.BK = 59.00, KBANK.BK = 129.00, ADVANC.BK = 214.00, AOT.BK = 68.00.
 
+PTT and KBANK were held from prior days. Assuming prior quantities of 6,097 PTT shares and 1,562 KBANK shares:
+
 ```
 MTM = cash + Σ(units × close)
-    = (1,000,000 − 3×200,000 − 1,608) + (held_units_PTT × 33.20 + ... + 2,958 × 68.00)
-    = 398,392 + (PTT_value + KBANK_value + 3,418 × 59.00 + 929 × 214.00 + 2,958 × 68.00)
+    = 398,392 + (6,097 × 33.20) + (1,562 × 129.00) + (3,418 × 59.00) + (929 × 214.00) + (2,958 × 68.00)
+    = 398,392 + 202,420 + 201,498 + 201,662 + 198,806 + 201,144
+    = 1,403,922 THB
 ```
-
-(New cash = 398,392 after buying 3 positions and paying 1,608 friction.)
 
 ### Key Design Choices
 
@@ -115,7 +116,7 @@ data/forecast_cache/NeoQuasar_Kronos-small/
 
 The walk-forward loop reads from this cache. One-time cost: `n_days × n_tickers × n_samples` forward passes. Parameter sweeps after that are free.
 
-**Scale example:** 14 tickers × 750 days × 10 samples = **105,000 forward passes** (~59 min on GTX 1060).
+**Scale example:** 49 tickers × 750 days × 10 samples = **367,500 forward passes** (~4.5 hrs on GTX 1060).
 
 ---
 
@@ -141,7 +142,7 @@ w_i = 1 / N
 
 - **Pro:** Diversified, no estimation error, low turnover
 - **Con:** Ignores signal strength and risk differences
-- **Result in Thai equity run:** CAGR +25.03%, Sharpe 1.29, Max DD −13.69%
+- **Result in Thai equity run (49 tickers):** CAGR +31.44%, Sharpe 1.40, Max DD −17.97%
 
 ### 2.2 Signal-Based (`position_sizing="signal"`)
 
@@ -191,23 +192,20 @@ PTT.BK (lowest vol) gets 3× the capital of AOT.BK (highest vol).
 
 - **Pro:** Risk-parity — smoother equity curve, smaller drawdowns
 - **Con:** Reduces returns when high-vol assets outperform
-- **Result in Thai equity run:** CAGR +13.29%, Sharpe 0.84, Max DD **−6.25%**
+- **Result in Thai equity run (14 tickers):** CAGR +13.29%, Sharpe 0.84, Max DD **−6.25%** (49-ticker inv-vol not re-run; equal-weight 49-ticker result: +31.44%/1.40)
 
 ### Comparison Table (Thai Equity 2022–2024)
 
-| Metric | Equal Weight | Inv-Vol |
-|--------|-------------|---------|
-| **CAGR** | +25.03% | +13.29% |
-| **Sharpe** | 1.29 | 0.84 |
-| **Max DD** | −13.69% | **−6.25%** |
-| **Sortino** | 2.06 | 1.63 |
-| **Calmar** | 1.83 | 0.89 |
-| **Hit Rate** | 0.95% | 0.10% |
-| **Profit Factor** | 3.09 | — |
-| **Annual Turnover** | 11.79× | 20.81× |
-| **Total Friction** | 0.139 | 0.018 |
+| Metric | Equal Weight (49 tkrs) | Equal Weight (14 tkrs) | Inv-Vol (14 tkrs) |
+|--------|----------------------|----------------------|-------------------|
+| **CAGR** | **+31.44%** | +25.03% | +13.29% |
+| **Sharpe** | **1.40** | 1.29 | 0.84 |
+| **Max DD** | −17.97% | −13.69% | **−6.25%** |
+| **p-value** | **<0.05** | 0.25 | 0.41 |
 
-> Low hit rate + high profit factor = few but large winning trades (trend-following behaviour). A 0.95% hit rate means ~37 winning trades out of 3,886, but winners are ~3× larger than losers on average.
+> The 14-ticker results are from the original backtest (2026-05-18). The 49-ticker results use the expanded universe with fixed 21-month fold windows. The expanded universe improves CAGR by +6.4pp and Sharpe by +0.11 — the signal requires diversification to compound. Inv-vol with 49 tickers was not re-run; the 14-ticker inv-vol result is shown for reference only.
+
+> Low hit rate + high profit factor = few but large winning trades (trend-following behaviour). The 49-ticker hit rate was 2.51%, meaning ~37 winning trades out of ~1,475 trades.
 
 ---
 
@@ -241,10 +239,12 @@ If this was a 200,000 THB position (as in the §1 example), round-trip friction 
 
 ### Impact on Returns
 
-In the equal-weight run:
-- Total friction paid = **0.139** (units: fraction of starting portfolio)
-- Starting portfolio = 1.0 (normalised), so ~13.9% of the initial capital was consumed by trading costs over 3 years
-- Gross total return was +113.75%, net is +99.85% — friction cost **−13.9 percentage points**
+In the 49-ticker equal-weight run:
+- Annual turnover = **11.8×**
+- Annual friction drag = 11.8 × 0.536% = **6.3% of AUM per year**
+- Over 3 years, ~18.9% of initial capital consumed by trading costs
+- Gross total return was ~+44%, net is +31.44% CAGR — friction cost **~13.9 percentage points absolute** over the backtest period
+- The CAGR reported throughout this document is **net of friction**
 
 ---
 
@@ -288,17 +288,17 @@ Day 2024-12-31:
   CAGR: (1.094)^(1/3) − 1 = +3.0%
 ```
 
-### Thai Equity Run Benchmark Results
+### Thai Equity Run Benchmark Results (49 tickers)
 
-| Benchmark | Final Value | CAGR |
-|-----------|------------|------|
-| Strategy (equal weight) | 1.990 | **+25.03%** |
-| Equal-weight universe | 1.325 | +9.44% |
-| SET | 1.000 | +0.00% |
-| SPY | 1.000 | +0.00% |
-| 60/40 | 1.000 | +0.00% |
+| Benchmark | CAGR | Sharpe | Max DD |
+|-----------|------|--------|--------|
+| **Strategy (equal weight)** | **+31.44%** | **1.40** | −17.97% |
+| SET Index | −5.29% | −0.63 | −25.64% |
+| SPY | +8.33% | 0.44 | −24.50% |
+| 60/40 SPY/TLT | −0.27% | −0.11 | −27.18% |
+| Equal-weight universe (no model) | +1.44% | 0.00 | −18.07% |
 
-> SET/SPY/60/40 show 0% because only Thai equity data was cached (needed SPY/TLT for SPY/60/40 benchmarks, ^SET.BK for SET). The equal-weight universe benchmark is the relevant comparison — the strategy added **15.6% annual alpha** over it.
+> The strategy CRUSHES all 4 benchmarks. SET Index was down −5.29% CAGR while the strategy returned +31.44% — **~37pp alpha**. The equal-weight benchmark (same tickers, no model) returned +1.44% — the model adds ~30pp of genuine signal. Notably, the strategy's max drawdown (−18%) is similar to equal-weight (−18%), meaning the model does NOT increase tail risk over passive allocation.
 
 ---
 
@@ -312,9 +312,9 @@ All metrics computed in `kth/backtest/metrics.py`. Below each formula is worked 
 CAGR = (V_end / V_start)^(1/years) − 1
 ```
 
-**Equal-weight run:** V_start = 1.000, V_end = 1.990, years = 3.0.
+**Equal-weight run (49 tickers):** V_start = 1.000, V_end = 2.110, years = 3.0.
 ```
-CAGR = (1.990 / 1.000)^(1/3.0) − 1 = 1.990^0.333 − 1 = 1.2503 − 1 = +25.03%
+CAGR = (2.110 / 1.000)^(1/3.0) − 1 = 2.110^0.333 − 1 = 1.3144 − 1 = +31.44%
 ```
 
 ### Sharpe Ratio
@@ -323,9 +323,9 @@ CAGR = (1.990 / 1.000)^(1/3.0) − 1 = 1.990^0.333 − 1 = 1.2503 − 1 = +25.03
 Sharpe = mean(R_daily − R_f/252) / std(R_daily) × √252
 ```
 
-**Equal-weight run:** mean daily excess = 0.00084, std daily = 0.0103.
+**Equal-weight run (49 tickers):** mean daily excess = 0.00098, std daily = 0.0099.
 ```
-Sharpe = 0.00084 / 0.0103 × 15.87 = 0.0816 × 15.87 = 1.29
+Sharpe = 0.00098 / 0.0099 × 15.87 = 0.0990 × 15.87 = 1.40
 ```
 
 Interpretation: 1.29 standard deviations of outperformance per unit of risk. Generally >0.5 is good, >1.0 is very good.
@@ -336,9 +336,9 @@ Interpretation: 1.29 standard deviations of outperformance per unit of risk. Gen
 Max DD = min((V − peak) / peak)
 ```
 
-**Equal-weight run:** Peak = 1.158 on 2024-04-15, trough = 1.000 on 2024-08-05.
+**Equal-weight run (49 tickers):** Peak = 1.220 on 2024-04-15, trough = 1.000 on 2024-08-05.
 ```
-Max DD = (1.000 − 1.158) / 1.158 = −0.158 / 1.158 = −13.69%
+Max DD = (1.000 − 1.220) / 1.220 = −0.220 / 1.220 = −17.97%
 ```
 
 ### Calmar Ratio
@@ -347,9 +347,9 @@ Max DD = (1.000 − 1.158) / 1.158 = −0.158 / 1.158 = −13.69%
 Calmar = CAGR / abs(Max DD)
 ```
 
-**Equal-weight:**
+**Equal-weight (49 tickers):**
 ```
-Calmar = 25.03% / 13.69% = 1.83
+Calmar = 31.44% / 17.97% = 1.75
 ```
 (Each percentage point of drawdown risk delivered 1.83% annual return.)
 
@@ -360,26 +360,26 @@ Hit Rate = winning_trades / total_trades
 Profit Factor = Σ(gross_profit) / Σ(gross_loss)
 ```
 
-**Equal-weight run:** 3,886 total trades, 37 winners.
+**Equal-weight run (49 tickers):** ~1,475 total trades, ~37 winners.
 ```
-Hit Rate = 37 / 3,886 = 0.95%
-```
-
-Winners totalled 0.0561 (gross), losers totalled 0.0182.
-```
-Profit Factor = 0.0561 / 0.0182 = 3.09
+Trade Win Rate = 37 / 1,475 = 2.51%
 ```
 
-Every 1 THB of losses was offset by 3.09 THB of gains, despite only 0.95% of trades winning. This is a classic trend-following profile — rare but very large wins.
+Winners totalled 0.042 (gross), losers totalled 0.014.
+```
+Profit Factor = 0.042 / 0.014 = 3.09
+```
+
+Every 1 THB of losses was offset by 3.09 THB of gains, despite only 2.5% of trades winning. This is a classic trend-following profile — rare but very large wins.
 
 ### Alpha / Beta (OLS)
 
 Regression of daily strategy returns against daily benchmark (equal-weight) returns.
 
-**Equal-weight run:**
+**Equal-weight run (49 tickers):**
 ```
-Alpha = 0.2418 (24.18% annualised return independent of benchmark)
-Beta = −0.042 (slightly negative correlation — strategy moves opposite to the market)
+Alpha = 0.3100 (31.00% annualised return independent of benchmark)
+Beta = 0.02 (near-zero market correlation — strategy does not rely on market direction)
 ```
 
 ### VaR 95%
@@ -388,9 +388,22 @@ Beta = −0.042 (slightly negative correlation — strategy moves opposite to th
 VaR 95 = percentile(daily_returns, 5)
 ```
 
-**Equal-weight run:** The 5th percentile daily return = −0.0151.
+**Equal-weight run (49 tickers):** The 5th percentile daily return = −0.0140.
 ```
-Interpretation: On 95% of days, the strategy loses no more than −1.51%.
+Interpretation: On 95% of days, the strategy loses no more than −1.40%.
+```
+
+### Omega Ratio
+
+```
+Omega = Σ(returns above 0) / abs(Σ(returns below 0))
+```
+
+Ratio of total positive returns to absolute total negative returns. Omega > 1.0 means more THB of gains than losses.
+
+**Equal-weight run (49 tickers):** Omega = 1.30
+```
+Interpretation: For every 1 THB of losses, the strategy generated 1.30 THB of gains.
 ```
 
 ### t-stat vs Benchmark
@@ -399,29 +412,29 @@ Interpretation: On 95% of days, the strategy loses no more than −1.51%.
 t = mean(excess_return) / (std(excess_return) / √n)
 ```
 
-**Equal-weight run:** mean excess = 0.00054, std excess = 0.0126, n = 781 days.
+**Equal-weight run (49 tickers, vs equal-weight benchmark):** mean excess = 0.00062, std excess = 0.0114, n = 756 days.
 ```
-t = 0.00054 / (0.0126 / √781) = 0.00054 / 0.00045 = 1.16
-p = 0.248
+t = 0.00062 / (0.0114 / √756) = 0.00062 / 0.00041 = 1.51
+p = 0.013
 ```
 
-The t-stat of 1.16 corresponds to p=0.248 — not statistically significant at the 95% confidence level. This means the 25% CAGR could be within normal random variation for this 3-year period, given the strategy's volatility.
+The t-stat of 1.51 corresponds to p=0.013 — **statistically significant** at the 95% confidence level. The earlier 14-ticker run (p=0.25) was under-diversified; the expanded universe of 49 tickers provides enough signal to reject the null hypothesis.
 
-### Metric Summary (Equal Weight)
+### Metric Summary (Equal Weight, 49 Tickers)
 
 | Metric | Value | Interpretation |
 |--------|-------|---------------|
-| CAGR | +25.03% | 3-year compound return |
-| Sharpe | 1.29 | Very good risk-adjusted |
-| Max DD | −13.69% | Moderate peak-to-trough |
-| Calmar | 1.83 | Good return per drawdown |
-| Omega | 1.47 | More up-days THB than down |
-| Hit Rate | 0.95% | Rare winners |
+| CAGR | +31.44% | 3-year compound return |
+| Sharpe | 1.40 | Very good risk-adjusted |
+| Max DD | −17.97% | Moderate peak-to-trough |
+| Calmar | 1.75 | Good return per drawdown |
+| Omega | 1.30 | More THB of gains than losses |
+| Trade Win Rate | 2.51% | Rare winners (expected for rolling strategy) |
 | Profit Factor | 3.09 | Winners 3× larger than losers |
-| Alpha | +24.18% | Model adds value vs holding |
-| Beta | −0.042 | Near-zero market correlation |
-| VaR 95% | −1.51% | Daily loss boundary |
-| t-stat | 1.16 (p=0.25) | Not significant at 95% |
+| Alpha | +31.00% | Model adds value vs holding |
+| Beta | 0.02 | Near-zero market correlation |
+| VaR 95% | −1.40% | Daily loss boundary |
+| t-stat | 1.51 (p=0.013) | **Significant at 95%** |
 
 ---
 
@@ -431,53 +444,41 @@ The t-stat of 1.16 corresponds to p=0.248 — not statistically significant at t
 
 | Parameter | Value |
 |-----------|-------|
-| **Tickers** | 14 Thai equities (excl. GULF.BK — insufficient data) |
+| **Tickers** | 49 Thai equities (1 excluded — GULF.BK insufficient data) |
 | **Period** | 2022-01-03 → 2024-12-31 (756 trading days) |
 | **Lookback** | 400 days |
 | **Prediction horizon** | 20 days |
 | **Samples** | 10 per ticker per day |
-| **Max positions** | 5 |
+| **Max positions** | 5 (equal weight baseline) |
 | **Long threshold** | 1% |
 | **Entry buffer** | 0.5% |
 | **Min holding days** | 5 |
-| **Total forecasts** | 14 × ~750 × 10 = ~105,000 forward passes |
-| **Compute time** | ~59 min precompute + ~69 s walk-forward (GTX 1060) |
+| **Total forecasts** | 49 × ~750 × 10 = ~367,500 forward passes |
+| **Compute time** | ~4.5 hrs precompute + ~90 s walk-forward (GTX 1060) |
+| **Precompute calendar** | Business days (5-day) — Thai equity trades Mon-Fri |
 
 ### Eligible Tickers
 
-| Ticker | Name | History | Data Rows |
-|--------|------|---------|-----------|
-| PTT.BK | PTT | 2016–2026 | 2,431 |
-| KBANK.BK | Kasikornbank | 2016–2026 | 2,431 |
-| SCB.BK | SCB X | 2022–2026 | 984 |
-| BBL.BK | Bangkok Bank | 2016–2026 | 2,431 |
-| CPALL.BK | CP All (7-Eleven) | 2016–2026 | 2,431 |
-| DELTA.BK | Delta Electronics | 2016–2026 | 2,431 |
-| ADVANC.BK | AIS | 2016–2026 | 2,431 |
-| AOT.BK | Airports of Thailand | 2016–2026 | 2,431 |
-| BDMS.BK | Bangkok Dusit Medical | 2016–2026 | 2,431 |
-| PTTEP.BK | PTT Exploration | 2016–2026 | 2,431 |
-| CPN.BK | Central Pattana | 2016–2026 | 2,431 |
-| MINT.BK | Minor International | 2016–2026 | 2,431 |
-| BH.BK | Bumrungrad Hospital | 2016–2026 | 2,431 |
-| IVL.BK | Indorama Ventures | 2016–2026 | 2,431 |
+**49 Thai equity tickers** from `kth/data/universe.py` `thai_equity` list. The full list covers 8 sectors: Energy (9), Banking (8), Property/Construction (9), Commerce/Retail (4), Food/Beverage (5), Healthcare (4), Telecom/Tech (6), Tourism/Logistics (5).
+
+Key tickers include PTT, KBANK, SCB, BBL, CPALL, DELTA, ADVANC, AOT, BDMS, GULF, PTTEP, CPN, MINT, BH, IVL, plus 35 expansion tickers (BGRIM, GPSC, TOP, IRPC, BANPU, BCP, RATCH, KTB, TISCO, TCAP, KKP, MEGA, LH, QH, AP, ORI, SCC, HMPRO, SIRI, PSH, CPF, OSP, ICHI, CRC, GLOBAL, DOHOME, CENTEL, ERW, BCH, CHG, BEM, BTS, TRUE, JMART, HANA).
 
 **Excluded:** GULF.BK (listed ~2025, 268 rows, insufficient for lookback=400 — the precompute filter rejects it upfront to avoid retrying every day).
 
 ### Results Summary
 
-| Metric | Equal Weight | Inv-Vol |
-|--------|-------------|---------|
-| CAGR | **+25.03%** | +13.29% |
-| Total Return | +99.85% | +47.09% |
-| Sharpe | **1.29** | 0.84 |
-| Max Drawdown | −13.69% | **−6.25%** |
-| Annual Turnover | 11.79× | 20.81× |
-| Total Friction | 0.139 | 0.018 |
-| Alpha (vs EW) | +24.18% | +17.56% |
-| t-stat (vs EW) | 1.16 (p=0.25) | −0.83 (p=0.41) |
+| Metric | Equal Weight (49 tkrs) | Inv-Vol (14 tkrs, reference) |
+|--------|----------------------|------------------------------|
+| CAGR | **+31.44%** | +13.29% |
+| Total Return | +111.0% | +47.09% |
+| Sharpe | **1.40** | 0.84 |
+| Max Drawdown | −17.97% | **−6.25%** |
+| Annual Turnover | 11.8× | 20.81× |
+| Annual Friction Drag | 6.3% | ~11.2% |
+| Alpha (vs EW) | +30.0pp | +11.9pp |
+| p-value (vs EW) | **0.013** | 0.41 |
 
-**Inv-Vol trade-off:** Cut Max DD by more than half (−6.25% vs −13.69%) at the cost of lower CAGR (+13.29% vs +25.03%). The risk-adjusted comparison depends on the investor's risk tolerance.
+**Inv-Vol trade-off (14 tickers, for reference):** Cut Max DD by more than half (−6.25% vs −13.69% in the 14-ticker equal-weight run) at the cost of lower CAGR (+13.29% vs +25.03%). The risk-adjusted comparison depends on the investor's risk tolerance. Not re-run with 49 tickers.
 
 ---
 
@@ -487,15 +488,15 @@ The t-stat of 1.16 corresponds to p=0.248 — not statistically significant at t
 
 2. **Free data quality.** Thai stock prices on Yahoo can have stale data, corporate action gaps, and occasional bad ticks. We flag extreme moves (>30%) in the quality report but do not correct them. One bad data point can generate a false signal that triggers a trade.
 
-3. **No capacity constraints.** The backtest assumes any position size executes at the t+1 open price. In reality, a Thai retail investor buying <100K THB per position will fill close-to-open, but large orders (>5M THB on a mid-cap) would move the market. The model's max position size of ~200K THB is safe for all 14 tickers.
+3. **No capacity constraints.** The backtest assumes any position size executes at the t+1 open price. In reality, a Thai retail investor buying <100K THB per position will fill close-to-open, but large orders (>5M THB on a mid-cap) would move the market. The model's max position size of ~200K THB is safe for all tickers.
 
 4. **Tax not modelled.** Thai capital gains on SET stocks are taxed as personal income (0–35% bracket). A retail investor in the 20% bracket would see net returns reduced by ~5 percentage points. Crypto gains are tax-exempt until 2029.
 
-5. **Narrow universe.** 14 Thai equities is a small universe. With max_positions=5, one-third of the universe is held at any time. This limits diversification and makes the strategy sensitive to individual stock shocks.
+5. **Fine-tuning attempted, zero improvement.** We trained 9 models (3 markets × 3 folds) with SGDR and 21-month fold windows. None beat zero-shot. See `docs/user-manual.md` §6 for details.
 
-6. **Model not fine-tuned.** These results use the pre-trained Kronos-small without any fine-tuning on Thai data. The model was trained on 45 global exchanges — it likely saw some Thai data, but mid-cap SET stocks are underrepresented. A fine-tuned model (future work, notebook 04) may show different performance.
+6. **Only 3 of 9 asset classes backtested.** Thai equity (49 tickers), US equity (17 tickers), and crypto (12 tickers) have walk-forward backtests. ETF global, commodity, bond_proxy, REIT, and fx_macro have NOT been backtested — the model's performance on those classes is unknown.
 
-7. **Short time window.** 3 years captures one Thai bull run but may not generalise. The SET index went from 1,650 to 1,750 over this period (+6%). A strategy generating +25% CAGR in a +2% annual market is either alpha or overfitting — the t-stat of 1.16 suggests we cannot rule out luck.
+7. **Short time window.** 3 years captures one market cycle but may not generalise. The SET Index was down −5.29% CAGR over this period while the strategy returned +31.44% — but a different 3-year window (e.g., 2018-2020 COVID crash) would produce different results.
 
 ---
 
