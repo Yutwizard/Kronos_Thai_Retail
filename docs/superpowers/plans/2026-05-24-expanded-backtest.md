@@ -1,10 +1,12 @@
-# Expanded Backtest (2020-2024) — Implementation Plan
+# Expanded Backtest (2020-2024) — Implementation Plan ✅ COMPLETE
+
+> **Status:** Steps 1-12 all complete. Results: CAGR +35.16%, Sharpe 1.29, Max DD −37.90%. Alpha positive in all 3 regimes (Mitigate/Thrive/Thrive). See `docs/user-manual.md` §6.1.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Run a 5-year Thai equity backtest (2020-2024) with COVID crash and recovery regime decomposition. Single GPU session (~10.5 hrs).
+**Goal:** Run a 5-year Thai equity backtest (2020-2024) with COVID crash and recovery regime decomposition. Single GPU session (~10.5 hrs, actual ~15 hrs with resume).
 
-**Architecture:** Create `scripts/run_expanded_backtest.py` that orchestrates: (1) pre-flight data validation, (2) delete old 2020-2021 cache, (3) precompute forecasts for 49 tickers × 1,260 days with checkpoint state, (4) walk-forward, (5) compute per-period metrics with p-values, (6) print comparison table with survivorship bias disclosure. Uses `BacktestConfig` from `walkforward.py` (not hardcoded paths). No changes to existing library code.
+**Architecture:** Create `scripts/run_expanded_backtest.py` that orchestrates: (1) pre-flight data validation, (2) delete old 2020-2021 cache, (3) precompute forecasts for 50 tickers × 1,260 days with checkpoint state, (4) walk-forward, (5) compute per-period metrics with p-values, (6) print comparison table with survivorship bias disclosure. Uses `BacktestConfig` from `walkforward.py` (not hardcoded paths). No changes to existing library code.
 
 **Design Review Applied (2026-05-24):** Fixes from code review: step ordering, error handling with resume, pre-flight validation, survivorship bias note, per-period p-values, logging to file, dry-run mode.
 
@@ -23,7 +25,7 @@
 ### ⚠️ Pre-Implementation Notes
 
 #### Survivorship Bias
-The 49 Thai tickers in `UNIVERSE["thai_equity"]` are tickers that exist today. If any Thai companies were delisted during COVID (tourism, hospitality, airlines), they are excluded. This overstates crash-period performance. **No fix is possible** without reconstructing historical universe membership (no free data source), but the output must include a disclaimer:
+The 50 Thai tickers in `UNIVERSE["thai_equity"]` are tickers that exist today. If any Thai companies were delisted during COVID (tourism, hospitality, airlines), they are excluded. This overstates crash-period performance. **No fix is possible** without reconstructing historical universe membership (no free data source), but the output must include a disclaimer:
 > *"Universe is point-in-time (2025). Delisted/merged tickers from 2020-2022 are excluded. COVID stress period results may be overstated."*
 
 #### Per-Period p-Values
@@ -50,7 +52,7 @@ The per-period decomposition uses CAGR alpha for interpretability. The full-peri
 A 10.5-hr precompute loop may accumulate GPU memory over 1,260 days. PyTorch `.empty_cache()` is not a guarantee. The `precompute_forecasts()` function creates `kronos_th.forecast_batch()` per day — each call may hold GPU tensors until garbage collection. If OOM occurs mid-run, the `--resume` flag restarts from the last incomplete day (idempotent, skips cached dates). Consider monitoring with `nvidia-smi` during the first hour.
 
 #### Concentration Risk
-`max_positions=5` for 49 tickers means ~10% of the universe is held. In a crash, a single position in a vulnerable sector (tourism, hospitality) could dominate portfolio drawdown. The equal-weight benchmark holds all 49, so the comparison inherently tests whether the model's stock selection avoids crash victims. If the stress period shows "Struggle," concentration risk is the likely cause — document this in the post-hoc analysis.
+`max_positions=5` for 50 tickers means ~10% of the universe is held. In a crash, a single position in a vulnerable sector (tourism, hospitality) could dominate portfolio drawdown. The equal-weight benchmark holds all 50, so the comparison inherently tests whether the model's stock selection avoids crash victims. If the stress period shows "Struggle," concentration risk is the likely cause — document this in the post-hoc analysis.
 
 #### p-Value Caveat
 The t-test in `compute_metrics()` assumes independent daily returns. Daily returns exhibit autocorrelation, making p-values anti-conservative (too small). For the stress period (~125 days), this is a minor concern. For the full period (1,260 days), it's negligible. No fix applied — standard practice for backtest p-values.
@@ -62,7 +64,7 @@ The t-test in `compute_metrics()` assumes independent daily returns. Daily retur
 **Files:**
 - Create: `scripts/run_expanded_backtest.py`
 
-- [ ] **Step 1: Script skeleton with imports, config, logging**
+- [x] **Step 1: Script skeleton with imports, config, logging**
 
 ```python
 """
@@ -129,7 +131,7 @@ config = BacktestConfig(
 )
 ```
 
-- [ ] **Step 2: Utility functions**
+- [x] **Step 2: Utility functions**
 
 ```python
 def _forecast_slug(model_name: str) -> str:
@@ -157,7 +159,7 @@ def _cagr_alpha(strat_eq: pd.Series, bm_eq: pd.Series) -> float:
     return strat_cagr - bm_cagr
 ```
 
-- [ ] **Step 3: Pre-flight validation and dry-run**
+- [x] **Step 3: Pre-flight validation and dry-run**
 
 ```python
 def validate_data(tickers: list[str], lookback: int, start_date: str) -> list[str]:
@@ -206,13 +208,13 @@ def run_dry_run():
     logger.info("  2020 dates: %d, 2021 dates: %d", len(cached_2020), len(cached_2021))
 
     n_days = len(pd.date_range(start=config.start_date, end=config.end_date, freq="B"))
-    est_hrs = n_days * len(viable) * 30 / 3600  # ~30 sec per day per batch
-    logger.info("Estimated precompute: %.1f hrs (%d days x %d tickers)", est_hrs, n_days, len(viable))
+    est_hrs = n_days * 30 / 3600  # ~30 sec per day (batches all tickers together)
+    logger.info("Estimated precompute: %.1f hrs (%d days, %d tickers batched)", est_hrs, n_days, len(viable))
     logger.info("Estimated walk-forward: ~90 sec")
     logger.info("Dry run — no execution. Run without --dry-run to proceed.")
 ```
 
-- [ ] **Step 4: Checkpoint save/resume and cache cleaning**
+- [x] **Step 4: Checkpoint save/resume and cache cleaning**
 
 ```python
 def save_checkpoint(state: dict):
@@ -249,7 +251,7 @@ def clean_old_cache(model_name: str):
     logger.info("Deleted %d cache directories (2020-2021)", deleted)
 ```
 
-- [ ] **Step 5: Period decomposition function (reusable)**
+- [x] **Step 5: Period decomposition function (reusable)**
 
 ```python
 def decompose_periods(
@@ -308,7 +310,7 @@ def print_results(
     print("\n" + "=" * 70)
     print("THAI EQUITY — WALK-FORWARD BACKTEST (2020-2024)")
     print("=" * 70)
-    print(f"Tickers: 49 | Calendar: 5-day (business) | Equal weight | n_samples={config.n_samples}")
+    print(f"Tickers: {len(TICKERS)} | Calendar: 5-day (business) | Equal weight | n_samples={config.n_samples}")
     print()
     print(f"Full Period (2020-2024):")
     print(f"  CAGR: {full_metrics['cagr']:+9.2%}  Sharpe: {full_metrics['sharpe']:6.2f}  "
@@ -341,7 +343,7 @@ def print_results(
     print("  → Multi-period testing: 3 periods × α=0.05 → ~14% probability of ≥1 false positive.")
 ```
 
-- [ ] **Step 6: Main orchestration with error handling and resume**
+- [x] **Step 6: Main orchestration with error handling and resume**
 
 ```python
 def main():
@@ -458,13 +460,13 @@ if __name__ == "__main__":
     main()
 ```
 
-- [ ] **Step 7: Verify the script syntax**
+- [x] **Step 7: Verify the script syntax**
 
 Run: `venv/bin/python -c "import ast; ast.parse(open('scripts/run_expanded_backtest.py').read()); print('syntax OK')"`
 
 Expected: `syntax OK`
 
-- [ ] **Step 8: Run dry-run to validate data availability**
+- [x] **Step 8: Run dry-run to validate data availability**
 
 ```bash
 venv/bin/python scripts/run_expanded_backtest.py --dry-run
@@ -472,7 +474,7 @@ venv/bin/python scripts/run_expanded_backtest.py --dry-run
 
 Expected output: ticker data status, estimated time, no GPU activity. If <40 viable tickers, investigate data cache.
 
-- [ ] **Step 9: Run the backtest (overnight session)**
+- [x] **Step 9: Run the backtest (overnight session)**
 
 ```bash
 # Ensure log directory exists
@@ -487,7 +489,7 @@ venv/bin/python scripts/run_expanded_backtest.py
 
 Expected: ~10.5 hrs precompute (n_samples=10) + ~90 sec walkforward. Output with full-period metrics + 3-period decomposition. Monitor GPU memory with `watch -n 60 nvidia-smi` during first hour.
 
-- [ ] **Step 10: Verify output**
+- [x] **Step 10: Verify output**
 
 Check the output for:
 - Full 5-year CAGR, Sharpe, Max DD with p-value
@@ -497,17 +499,17 @@ Check the output for:
 - Log file at `data/logs/expanded_backtest.log`
 - Results saved to `data/backtest_results/thai_equity_2020-2024/`
 
-- [ ] **Step 11: Update documentation with 5-year results**
+- [x] **Step 11: Update documentation with 5-year results**
 
 After the run completes, update `docs/backtest-methodology.md` and the relevant docs with the expanded results. Update the user-manual benchmark tables.
 
-- [ ] **Step 12: Commit**
+- [x] **Step 12: Commit**
 
 ```bash
 git add scripts/run_expanded_backtest.py docs/backtest-methodology.md
 git commit -m "backtest: Thai equity expanded 2020-2024 with regime decomposition
 
-- 5-year walk-forward (1,260 trading days, 49 tickers)
+- 5-year walk-forward (1,260 trading days, 50 tickers)
 - 3-period breakdown: COVID crash, recovery, rate hikes
 - Per-period CAGR, Sharpe, Max DD, Alpha vs EW, p-values
 - Verdict: Thrive/Survive/Mitigate/Struggle per regime

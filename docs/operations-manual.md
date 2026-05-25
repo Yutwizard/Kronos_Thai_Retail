@@ -405,12 +405,12 @@ print(f'Estimated CAGR: {cagr:+.2%}')
 
 #### Step 5.2 — Compare to benchmarks
 
-| Benchmark | CAGR (backtest) | 1σ Range (68% of outcomes) |
-|-----------|----------------|---------------------------|
-| Strategy (backtest) | +31.44% | 14% to 48% |
-| SET Index | −5.29% | −28% to +18% |
-| SPY | +8.33% | −16% to +33% |
-| Equal-weight | +1.44% | −19% to +22% |
+| Benchmark | CAGR (backtest, 2022-2024) | CAGR (backtest, 2020-2024) | 1σ Range (2022-2024) |
+|-----------|-----------------------------|-----------------------------|---------------------|
+| Strategy | +31.44% | +35.16% | 14% to 48% |
+| SET Index | −5.29% | — | −28% to +18% |
+| SPY | +8.33% | — | −16% to +33% |
+| Equal-weight | +1.44% | — | −19% to +22% |
 
 > Ranges are backtest CAGR ± 1.5 × annualized vol. If your actual CAGR is below the range for 2 consecutive quarters, review the §5.2 checklist below.
 

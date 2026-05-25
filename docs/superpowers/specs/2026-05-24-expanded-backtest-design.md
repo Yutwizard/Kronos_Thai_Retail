@@ -1,6 +1,8 @@
 # Expanded Backtest — 2020–2024 Thai Equity Design
 
-> Scope: Extend the Thai equity backtest from 3 years (2022-2024) to 5 years (2020-2024), adding COVID crash and recovery periods. Single GPU run (~10.5 hrs), regime decomposition via `scripts/run_expanded_backtest.py`.
+> ✅ COMPLETED 2026-05-25. Results: CAGR +35.16%, Sharpe 1.29, Max DD −37.90%. Alpha positive in all 3 regimes. See `docs/user-manual.md` §6.1 for full results.
+
+> Scope: Extend the Thai equity backtest from 3 years (2022-2024) to 5 years (2020-2024), adding COVID crash and recovery periods. Single GPU run (~10.5 hrs, actual ~15 hrs), regime decomposition via `scripts/run_expanded_backtest.py`.
 
 ---
 
@@ -59,22 +61,23 @@ The crash began Jan 2020 (SET started falling from ~1,580). March 2020 was the b
 The new one-off script `scripts/run_expanded_backtest.py` output:
 
 ```
-=== Thai Equity — Walk-Forward Backtest (2020-2024) ===
-Tickers: 49 | Calendar: 5-day (business) | Equal weight
+=== THAI EQUITY — WALK-FORWARD BACKTEST (2020-2024) ===
+Tickers: 50 | Calendar: 5-day (business) | Equal weight | n_samples=10
 
-  Full Period (2020-2024):
-    CAGR: +X.XX%  Sharpe: X.XX  Max DD: -XX.XX%  Alpha vs EW: +XX.Xpp
+Full Period (2020-2024):
+  CAGR:   +35.16%  Sharpe:   1.29  Max DD:  -37.90%  Alpha vs EW:  +23.32%  p=0.174
 
-  Period Breakdown:
-  Period               CAGR     Sharpe     Max DD     Alpha vs EW    SET CAGR     Trades   Verdict
-  -----------------------------------------------------------------------------------------------
-  Stress  (2020 H1)    +X.XX%    X.XX      -XX.XX%    +XX.Xpp        -XX.XX%      ~30     Thrive
-  Rebound (2020-2021)  +X.XX%    X.XX      -XX.XX%    +XX.Xpp        +XX.XX%     ~90     Thrive
-  Current (2022-2024)  +31.44%   1.40      -17.97%    +30.0pp        -5.29%      ~380    Already known
+Period                         CAGR  Sharpe    Max DD  Alpha EW  SET CAGR  Trades  p-value Verdict
+--------------------------------------------------------------------------------------------------
+Stress (COVID crash)        -1.62%   0.12  -37.90%  +21.63%   -27.43%     652   0.762 Mitigate
+Rebound (Recovery)         +65.96%   2.03  -17.54%  +29.73%   +14.10%    2012   0.425 Thrive
+Current (Rate hikes)       +27.94%   1.29  -17.00%  +20.29%    -5.29%    3959   0.229 Thrive
 
-  * Stress period: ~125 trading days (~30 trades) — limited sample size.
-  → Lower 5-year CAGR does NOT mean the model is worse. The COVID crash (−30%) is included.
-    Alpha per period is the relevant metric. If alpha is positive in all 3, the model works everywhere.
+  → Universe is point-in-time (2025). Delisted/merged tickers from 2020-2022
+    are excluded. COVID stress period results may be overstated.
+  → Alpha per period is the relevant metric for regime analysis.
+  → Lower 5-year CAGR vs 2022-2024 alone is expected (includes COVID crash).
+  → Multi-period testing: 3 periods × α=0.05 → ~14% probability of ≥1 false positive.
 ```
 
 ### Per-Period Verdict Rules (priority order — first match wins)
