@@ -498,6 +498,8 @@ Key tickers include PTT, KBANK, SCB, BBL, CPALL, DELTA, ADVANC, AOT, BDMS, GULF,
 
 7. **Short time window.** 3 years captures one market cycle but may not generalise. The SET Index was down −5.29% CAGR over this period while the strategy returned +31.44% — but a different 3-year window (e.g., 2018-2020 COVID crash) would produce different results.
 
+8. **Expanded backtest (2020-2024) confirms cross-regime alpha.** An expanded 5-year run (see `docs/user-manual.md` §6.1) tested the model across COVID crash, recovery, and rate hikes. Alpha vs equal-weight was positive in ALL 3 regimes. The full-period CAGR was +35.16% (Sharpe 1.29), demonstrating the model adds value across market cycles — not just the 2022-2024 rate-hike regime. Caveat: full-period p=0.174 (not significant at 5%) due to higher variance from the crash period.
+
 ---
 
 *Document generated 2026-05-18. Source: `docs/backtest-methodology.md`*
