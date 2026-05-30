@@ -11,3 +11,4 @@ kronos_repo/
 *.egg-info/
 venv/
 .worktrees/
+data/logs/
