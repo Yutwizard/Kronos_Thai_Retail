@@ -124,6 +124,62 @@ def compute_trade_metrics(trades: pd.DataFrame) -> dict:
     }
 
 
+def compute_psr(
+    daily_returns: pd.Series,
+    benchmark_sr: float = 0.0,
+    periods_per_year: int = 252,
+) -> float:
+    """
+    Probabilistic Sharpe Ratio (Bailey & Lopez de Prado, 2012).
+    P(SR > benchmark_sr) — probability that the true Sharpe exceeds the benchmark.
+
+    PSR = Φ( (SR - SR*) × √(T-1) / √(1 − γ₃·SR + (γ₄−1)/4·SR²) )
+
+    where SR is the observed annualized Sharpe, SR* is the benchmark (default 0),
+    T is the number of observations, γ₃ is skewness, and γ₄ is kurtosis.
+    """
+    from scipy.stats import norm
+    returns = daily_returns.dropna().values
+    if len(returns) < 2:
+        return 0.0
+    sr = float(daily_returns.mean() / daily_returns.std() * np.sqrt(periods_per_year)) if daily_returns.std() > 0 else 0.0
+    T = len(returns)
+    skew = float(np.mean((returns - returns.mean()) ** 3) / returns.std() ** 3) if returns.std() > 0 else 0.0
+    kurt = float(np.mean((returns - returns.mean()) ** 4) / returns.std() ** 4 - 3) if returns.std() > 0 else 0.0
+    denominator = np.sqrt(1 - skew * sr + (kurt - 1) / 4 * sr ** 2)
+    if denominator == 0:
+        return 0.5 if sr > benchmark_sr else 0.0
+    z = (sr - benchmark_sr) * np.sqrt(T - 1) / denominator
+    return float(norm.cdf(z))
+
+
+def compute_sharpe_ci(
+    daily_returns: pd.Series,
+    periods_per_year: int = 252,
+    n_bootstrap: int = 10000,
+    alpha: float = 0.05,
+) -> dict:
+    """
+    Bootstrap 95% confidence interval for the annualized Sharpe ratio.
+    Non-parametric — resamples daily returns with replacement.
+    """
+    returns = daily_returns.dropna().values
+    if len(returns) < 2:
+        return {"sharpe_ci_2_5": 0.0, "sharpe_ci_97_5": 0.0}
+
+    bootstrapped = []
+    rng = np.random.default_rng(42)
+    for _ in range(n_bootstrap):
+        sample = rng.choice(returns, size=len(returns), replace=True)
+        sr = float(sample.mean() / sample.std() * np.sqrt(periods_per_year)) if sample.std() > 0 else 0.0
+        bootstrapped.append(sr)
+
+    return {
+        "sharpe_ci_2_5": float(np.percentile(bootstrapped, alpha * 100 / 2)),
+        "sharpe_ci_97_5": float(np.percentile(bootstrapped, 100 - alpha * 100 / 2)),
+    }
+
+
 def compute_metrics(
     equity_curve: pd.Series,
     daily_returns: pd.Series,
@@ -198,6 +254,13 @@ def compute_metrics(
     else:
         t_stat = p_value = 0.0
 
+    # PSR — probability true Sharpe exceeds zero
+    psr = compute_psr(daily_returns, benchmark_sr=0.0, periods_per_year=periods_per_year)
+    psr_05 = compute_psr(daily_returns, benchmark_sr=0.5, periods_per_year=periods_per_year)
+
+    # Bootstrap Sharpe CI
+    sharpe_ci = compute_sharpe_ci(daily_returns, periods_per_year=periods_per_year)
+
     return {
         "cagr": cagr,
         "total_return": total_return,
@@ -209,6 +272,9 @@ def compute_metrics(
         "information_ratio": info_ratio,
         "alpha": alpha,
         "beta": beta,
+        "psr_zero": psr,
+        "psr_0_5": psr_05,
+        **sharpe_ci,
         **dd_metrics,
         **var_cvar,
         **trade_m,
