@@ -86,7 +86,7 @@ Key insight: 21-month fold windows needed (not 6mo) so val/test have ≥420 rows
 ### Yearly n=50 backtests (clean OOS, 2023-2026)
 - **2024 n=50:** +43.78%, Sharpe 2.27, Max DD −6.92%, p=0.015 (significant)
 - **2025 n=50:** +34.92%, Sharpe 1.03, Max DD −24.00%, p=0.257
-- **2026 n=50:** pending (running background, ETA ~7 hrs)
+- **2026 n=50:** +45.28%, Sharpe 2.42, Max DD −18.26%, p=0.353 (107 days, short period)
 - **2023 n=50:** pending (252 days, ~12 hrs)
 - n=10→n=50 upgrade improved 2025 by +12.4pp return, Sharpe +0.24 (n=10 forecasts were noisy)
 - **Crypto (12 tickers):** CAGR +16.45%, Sharpe 0.52, Max DD −68.58% (ZS)

@@ -463,10 +463,10 @@ High-quality backtests with n_samples=50 on the clean out-of-sample window (post
 |------|--------|--------|--------|----------|-----|---------|
 | **2024** | **+43.78%** | **2.27** | −6.92% | +49.0% | −1.10% | **0.015** |
 | **2025** | **+34.92%** | **1.03** | −24.00% | +27.3% | −10.04% | 0.257 |
+| **2026** | **+45.28%** | **2.42** | −18.26% | +26.5% | +20.61% | 0.353 |
 | 2023 | ⏳ pending | — | — | — | — | — |
-| 2026 | ⏳ pending | — | — | — | — | — |
 
-**Key insight:** n=50 improved 2025 by +12.4pp return and Sharpe +0.24 over n=10. The extra forecast samples stabilize stock selection, particularly in noisy market conditions. 2024 was already strong in n=10 — upgrade was marginal (+0.55pp).
+**Key insight:** n=50 improved 2025 by +12.4pp return and Sharpe +0.24 over n=10. 2026 has the highest return (+45%) but only 107 trading days — p=0.353 is not significant due to short period.
 
 ---
 
