@@ -449,9 +449,24 @@ A 5-year expanded backtest adds the COVID crash (Q1 2020) and recovery (2020-202
 | US equity | 0.97 | 0.94 (F2) | −0.03 | ✅ Stay ZS |
 | Crypto | 0.52 | 0.46 (F0) | −0.06 | ✅ Stay ZS |
 
+> Updated with n=50 yearly backtests (2024: +43.78%/2.27, 2025: +34.92%/1.03). See §6.2.
+
 **Fine-tuning did not help in any market.** All 3 markets use zero-shot Kronos-small. The 9 fine-tuned checkpoints are saved at `./checkpoints/{model}/fold{f}/best/` but not deployed. Direction accuracy improved slightly (+2.0pp for US equity) but did not translate to backtest alpha (FT Sharpe 0.94 vs ZS 0.97).
 
 **Do not attempt fine-tuning again without a different approach:** larger model (Kronos-base), longer training epochs, different prediction horizon, or a different dataset construction method. The current approach (21-month folds, SGDR, 10 epochs) was correct — the signal simply wasn't there.
+
+### Yearly n=50 Backtests (Clean OOS, 2023-2026)
+
+High-quality backtests with n_samples=50 on the clean out-of-sample window (post training cutoff). 2023 and 2026 are pending.
+
+| Year | Return | Sharpe | Max DD | Alpha EW | SET | p-value |
+|------|--------|--------|--------|----------|-----|---------|
+| **2024** | **+43.78%** | **2.27** | −6.92% | +49.0% | −1.10% | **0.015** |
+| **2025** | **+34.92%** | **1.03** | −24.00% | +27.3% | −10.04% | 0.257 |
+| 2023 | ⏳ pending | — | — | — | — | — |
+| 2026 | ⏳ pending | — | — | — | — | — |
+
+**Key insight:** n=50 improved 2025 by +12.4pp return and Sharpe +0.24 over n=10. The extra forecast samples stabilize stock selection, particularly in noisy market conditions. 2024 was already strong in n=10 — upgrade was marginal (+0.55pp).
 
 ---
 

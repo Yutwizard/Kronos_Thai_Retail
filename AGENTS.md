@@ -82,6 +82,13 @@ Key insight: 21-month fold windows needed (not 6mo) so val/test have ≥420 rows
 - **Recovery (Thrive):** +65.96% CAGR (+29.73pp alpha) — model captured rebound aggressively
 - **Rate hikes (Thrive):** +27.94% CAGR (+20.29pp alpha) — consistent with 3-year run
 - Caveat: full-period p not significant (0.174) due to crash noise; n_samples=10 vs 50 in 3-year run
+
+### Yearly n=50 backtests (clean OOS, 2023-2026)
+- **2024 n=50:** +43.78%, Sharpe 2.27, Max DD −6.92%, p=0.015 (significant)
+- **2025 n=50:** +34.92%, Sharpe 1.03, Max DD −24.00%, p=0.257
+- **2026 n=50:** pending (running background, ETA ~7 hrs)
+- **2023 n=50:** pending (252 days, ~12 hrs)
+- n=10→n=50 upgrade improved 2025 by +12.4pp return, Sharpe +0.24 (n=10 forecasts were noisy)
 - **Crypto (12 tickers):** CAGR +16.45%, Sharpe 0.52, Max DD −68.58% (ZS)
   - FT fold 0: CAGR +13.31%, Sharpe 0.46 — worse than ZS (−3.13%)
   - Verdict: crypto stays zero-shot per spec (FT ≤ ZS)
@@ -112,7 +119,7 @@ Key insight: 21-month fold windows needed (not 6mo) so val/test have ≥420 rows
 4. `docs/operations-manual.md` — daily/weekly/monthly step-by-step procedures (also `docs/operations-manual.html`)
 5. `docs/monthly-walkthrough.html` — 21-day simulated month with real trades and portfolio outcomes
 6. `docs/superpowers/specs/` — approved design specs for all layers
-7. `docs/superpowers/plans/` — implementation plans (specs → bite-sized tasks). Expanded backtest plan at `2026-05-24-expanded-backtest.md`
+7. `docs/superpowers/plans/` — implementation plans (specs → bite-sized tasks). Expanded backtest plan at `2026-05-24-expanded-backtest.md`. OOS yearly plan at `2026-05-31-n50-completion.md`
 8. `docs/superpowers/specs/2026-05-16-local-testing-design.md` — local testing pipeline (CPU + GPU)
 9. `kth/data/loader.py` — actual implementation of schema conversion and caching
 10. `kth/data/universe.py` — universe + friction definitions
