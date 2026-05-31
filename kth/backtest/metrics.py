@@ -254,9 +254,9 @@ def compute_metrics(
     else:
         t_stat = p_value = 0.0
 
-    # PSR — probability true Sharpe exceeds zero
-    psr = compute_psr(daily_returns, benchmark_sr=0.0, periods_per_year=periods_per_year)
-    psr_05 = compute_psr(daily_returns, benchmark_sr=0.5, periods_per_year=periods_per_year)
+    # PSR — probability true Sharpe exceeds benchmarks
+    psr_half = compute_psr(daily_returns, benchmark_sr=0.5, periods_per_year=periods_per_year)
+    psr_one = compute_psr(daily_returns, benchmark_sr=1.0, periods_per_year=periods_per_year)
 
     # Bootstrap Sharpe CI
     sharpe_ci = compute_sharpe_ci(daily_returns, periods_per_year=periods_per_year)
@@ -272,8 +272,8 @@ def compute_metrics(
         "information_ratio": info_ratio,
         "alpha": alpha,
         "beta": beta,
-        "psr_zero": psr,
-        "psr_0_5": psr_05,
+        "psr_0_5": psr_half,
+        "psr_1_0": psr_one,
         **sharpe_ci,
         **dd_metrics,
         **var_cvar,
