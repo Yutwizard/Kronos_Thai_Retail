@@ -12,3 +12,4 @@ kronos_repo/
 venv/
 .worktrees/
 data/logs/
+data/live_portfolio.csv
