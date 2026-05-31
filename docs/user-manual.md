@@ -457,7 +457,7 @@ A 5-year expanded backtest adds the COVID crash (Q1 2020) and recovery (2020-202
 
 ### Yearly n=50 Backtests (Clean OOS, 2023-2026)
 
-High-quality backtests with n_samples=50 on the clean out-of-sample window (post training cutoff). 2023 and 2026 are pending.
+High-quality backtests with n_samples=50 on the clean out-of-sample window (post training cutoff). 2023 is pending.
 
 | Year | Return | Sharpe | Max DD | Alpha EW | SET | p-value |
 |------|--------|--------|--------|----------|-----|---------|

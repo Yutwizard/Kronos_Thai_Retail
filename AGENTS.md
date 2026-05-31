@@ -114,15 +114,16 @@ Key insight: 21-month fold windows needed (not 6mo) so val/test have ≥420 rows
 
 ## Reading order for context
 1. `PROJECT_STRUCTURE.md` — authoritative design doc, module specs, open questions
-2. `README.md` — project overview, caveats, quick start
-3. `docs/user-manual.md` — full methodology, backtest results, and usage instructions (also `docs/user-manual.html` with interactive charts)
-4. `docs/operations-manual.md` — daily/weekly/monthly step-by-step procedures (also `docs/operations-manual.html`)
-5. `docs/monthly-walkthrough.html` — 21-day simulated month with real trades and portfolio outcomes
-6. `docs/superpowers/specs/` — approved design specs for all layers
-7. `docs/superpowers/plans/` — implementation plans (specs → bite-sized tasks). Expanded backtest plan at `2026-05-24-expanded-backtest.md`. OOS yearly plan at `2026-05-31-n50-completion.md`
-8. `docs/superpowers/specs/2026-05-16-local-testing-design.md` — local testing pipeline (CPU + GPU)
-9. `kth/data/loader.py` — actual implementation of schema conversion and caching
-10. `kth/data/universe.py` — universe + friction definitions
-11. `kth/models/kronos_wrapper.py` — KronosTH wrapper (adapted to real Kronos API)
-12. `kth/models/_kronos_bridge.py` — import bridge for non-pip-installable Kronos repo
+2. `CONTEXT.md` — domain language glossary (14 terms, example dialogue)
+3. `README.md` — project overview, caveats, quick start
+4. `docs/user-manual.md` — full methodology, backtest results, and usage instructions (also `docs/user-manual.html` with interactive charts)
+5. `docs/operations-manual.md` — daily/weekly/monthly step-by-step procedures (also `docs/operations-manual.html`)
+6. `docs/monthly-walkthrough.html` — 21-day simulated month with real trades and portfolio outcomes
+7. `docs/superpowers/specs/` — approved design specs for all layers
+8. `docs/superpowers/plans/` — implementation plans (specs → bite-sized tasks). Expanded backtest at `2026-05-24-expanded-backtest.md`. OOS yearly at `2026-05-31-n50-completion.md`
+9. `docs/superpowers/specs/2026-05-16-local-testing-design.md` — local testing pipeline (CPU + GPU)
+10. `kth/data/loader.py` — actual implementation of schema conversion and caching
+11. `kth/data/universe.py` — universe + friction definitions
+12. `kth/models/kronos_wrapper.py` — KronosTH wrapper (adapted to real Kronos API)
+13. `kth/models/_kronos_bridge.py` — import bridge for non-pip-installable Kronos repo
 
