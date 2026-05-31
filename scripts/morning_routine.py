@@ -89,6 +89,28 @@ for i, r in enumerate(ranked):
 stop_cls = "red" if stopped else "green"
 allocs_cls = "green" if sh > 1 else ("orange" if sh > 0.5 else "red")
 
+# Additional risk metrics
+ann_vol = float(daily.tail(60).std() * np.sqrt(252)) if 'daily' in dir() and len(daily) >= 20 else 0
+dd_pct = dd  # already fractional, e.g., -0.05 = -5%
+dd_remaining = 0.10 + dd_pct if abs(dd_pct) < 0.10 else 0  # how much room before -10%
+dd_bar_width = min(100, abs(dd_pct) * 1000)  # 10% = 100% bar
+dd_bar_cls = "green" if dd_pct > -0.03 else ("orange" if dd_pct > -0.07 else "red")
+max_pos_risk = f"{1/5:.0%}" if final_alloc > 0 else "—"  # equal-weight top-5
+risk_budget = f"{dd_remaining:.1%} remaining to -10% stop" if dd_remaining > 0 else "STOP TRIGGERED"
+
+risk_html = f"""
+<div class="controls" style="margin-top:16px">
+  <div class="ctl"><div class="l">Drawdown</div><div class="v {stop_cls}">{dd_pct:+.1%}</div>
+    <div style="background:#eee;height:6px;border-radius:3px;margin-top:6px">
+      <div style="background:{'#27ae60' if dd_bar_cls=='green' else '#f39c12' if dd_bar_cls=='orange' else '#e74c3c'};height:6px;width:{dd_bar_width}%;border-radius:3px;min-width:2px"></div>
+    </div>
+    <div style="font-size:0.6em;color:#888;margin-top:2px">{risk_budget}</div></div>
+  <div class="ctl"><div class="l">Portfolio Vol (ann.)</div><div class="v">{ann_vol:.1%}</div></div>
+  <div class="ctl"><div class="l">Max Position Risk</div><div class="v">{max_pos_risk}</div><div style="font-size:0.65em;color:#888">equal-weight top-5</div></div>
+  <div class="ctl"><div class="l">Risk Budget Used</div><div class="v {stop_cls}">{abs(dd_pct)/0.10:.0%}</div><div style="font-size:0.65em;color:#888">of -10% stop</div></div>
+</div>
+"""
+
 html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -125,6 +147,7 @@ tr.red{{border-left:3px solid #e74c3c}}
   <div class="ctl"><div class="l">Max Drawdown</div><div class="v {stop_cls}">{dd:+.1%}</div></div>
   <div class="ctl"><div class="l">Stop-Loss (-10%)</div><div class="v {stop_cls}">{'TRIGGERED' if stopped else 'OK'}</div></div>
 </div>
+{risk_html}
 
 <div class="summary">
 <strong>Trading plan:</strong> Allocate <code>{final_alloc:.0%}</code> of portfolio ({CAP*final_alloc:,.0f} THB) into {len(top5)} positions.
