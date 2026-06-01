@@ -53,6 +53,11 @@ for y, eq in data.items():
         sh = hist.mean() / hist.std() * np.sqrt(252) if len(hist) >= 20 and hist.std() > 0 else 0
         alloc, band = alloc_band(sh)
         
+        # Ramp-up rule: first 12 weeks default to 10% while Sharpe calibrates
+        days_in = len(daily.loc[:dt_use])
+        if days_in < 60 and alloc == 0:
+            alloc, band = 0.10, "neutral"
+        
         # Layered: stop overrides
         final_alloc = 0 if stopped else alloc
         final_band = "STOPPED" if stopped else band.upper()
@@ -120,7 +125,7 @@ tr.stopped{{border-left:3px solid #8e44ad;background:#fdf0ff}}
 <li><strong>Check circuit breaker.</strong> Is the portfolio more than 10% below its all-time high? → Go to cash. Skip all other rules.</li>
 <li><strong>If not stopped, check allocation band.</strong> Compute 12-week rolling Sharpe. Above 1.0 = 15%, 0.5-1.0 = 10%, 0.0-0.5 = 5%, negative = 0%.</li>
 <li><strong>Execute immediately.</strong> No buffer zones, no delay. Rebalance on the next trading day (Monday).</li>
-<li><strong>Re-entry after stop.</strong> If the stop triggered, wait until the portfolio recovers to 93% of the pre-stop peak (3% above the stop level), then resume allocation band rules.</li>
+<li><strong>Ramp-up rule.</strong> First 12 weeks default to 10% allocation while the Sharpe calibrates. Prevents sitting in cash at the start of a live deployment.</li>
 </ol>
 </div>
 

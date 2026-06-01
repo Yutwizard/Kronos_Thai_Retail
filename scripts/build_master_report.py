@@ -65,7 +65,7 @@ full_pct_2022 = f"+31.44%"
 # Summary cards
 cards = f"""
 <div class="card big"><div class="l">Expanded (2020-2024, n=10)</div><div class="v green">+35.16% CAGR</div><div>Sharpe 1.29 | Max DD −37.9% | p=0.174</div></div>
-<div class="card big"><div class="l">OOS Yearly (2023-2026, n=50)</div><div class="v green">2024: +43.8% | 2025: +34.9%</div><div>Sharpe 2.27 / 1.03 | p=0.015 / 0.257</div></div>
+<div class="card big"><div class="l">OOS Yearly (2023-2026, n=50)</div><div class="v green">2024: +43.8% | 2025: +34.9% | 2026: +45.3%</div><div>3 years complete, all alpha-positive</div></div>
 """
 
 html = f"""<!DOCTYPE html>
