@@ -3,10 +3,8 @@ from __future__ import annotations
 
 import json
 import csv
-import os
 from pathlib import Path
-from datetime import date, datetime
-from typing import Optional
+from datetime import date
 
 import numpy as np
 import pandas as pd
@@ -65,6 +63,8 @@ def get_positions(mode: str = "paper") -> dict:
     enriched = []
     for ticker, pos in positions.items():
         mark = _get_current_price(ticker)
+        if mark is None or mark == 0:
+            mark = 0.0  # fallback
         pnl = (mark - pos["avg_cost"]) / pos["avg_cost"] if pos["avg_cost"] > 0 else 0
         val = pos["shares"] * mark
         enriched.append({
@@ -94,14 +94,14 @@ def get_positions(mode: str = "paper") -> dict:
     }
 
 
-def _get_current_price(ticker: str) -> float:
+def _get_current_price(ticker: str) -> float | None:
     """Get latest close price from cached data."""
     try:
         from kth.data.loader import load_cached
         df = load_cached(ticker)
         return float(df["close"].iloc[-1])
     except Exception:
-        return 0.0
+        return None
 
 
 def execute_trade(ticker: str, action: str, shares: int, fill_price: float,
@@ -153,7 +153,7 @@ def execute_trade(ticker: str, action: str, shares: int, fill_price: float,
 
     # Recompute equity
     total_pos_value = sum(
-        pos["shares"] * _get_current_price(t)
+        pos["shares"] * (_get_current_price(t) or pos["avg_cost"])
         for t, pos in pf["positions"].items()
     )
     total_value = pf["cash"] + total_pos_value
@@ -176,7 +176,7 @@ def execute_trade(ticker: str, action: str, shares: int, fill_price: float,
         "portfolio_value": round(total_value, 2),
         "cash": round(pf["cash"], 2),
         "new_positions": [
-            {"ticker": t, "shares": p["shares"], "weight": round(p["shares"] * _get_current_price(t) / total_value, 4)}
+            {"ticker": t, "shares": p["shares"], "weight": round(p["shares"] * (_get_current_price(t) or p["avg_cost"]) / total_value, 4)}
             for t, p in pf["positions"].items()
         ],
         "frozen": pf["frozen"],
@@ -287,27 +287,27 @@ def compute_metrics(mode: str = "paper") -> dict:
 
 
 def _compute_fifo_wins(trades: list[dict]) -> tuple[int, int]:
-    """FIFO matching: first-bought shares are first-sold. Returns (closed_count, wins)."""
+    """FIFO matching: first-bought shares are first-sold. Returns (closed_round_trips, wins)."""
     from collections import deque
     buys = deque()
     wins = 0
-    closed = 0
+    closed_round_trips = 0
     for t in trades:
         if t["action"] == "buy":
             buys.append({"shares": int(t["shares"]), "price": float(t["price"])})
         elif t["action"] in ("exit", "sell"):
             remaining = int(t["shares"])
             sale_price = float(t["price"])
+            closed_round_trips += 1
             while remaining > 0 and buys:
                 lot = buys.popleft()
                 matched = min(remaining, lot["shares"])
                 if sale_price > lot["price"]:
                     wins += 1
-                closed += 1
                 remaining -= matched
                 if lot["shares"] > matched:
                     buys.appendleft({"shares": lot["shares"] - matched, "price": lot["price"]})
-    return closed, wins
+    return closed_round_trips, wins
 
 
 def _compute_market_state() -> str:
@@ -354,7 +354,7 @@ def check_phase2_gate() -> dict:
     """Check if Phase 2 transition gate conditions are met."""
     trades = get_trade_log("paper")
     if len(trades) < 2:
-        return {"ready": False, "reason": "No paper trades yet"}
+        return {"ready": False, "reason": "Need at least 2 paper trades" if len(trades) < 2 else "Not ready"}
 
     unique_dates = sorted(set(t["date"] for t in trades))
     weeks_active = len(unique_dates)
