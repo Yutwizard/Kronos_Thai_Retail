@@ -153,7 +153,7 @@ def generate_trade_ticket(report_date: str = None, positions: dict = None) -> di
 
     buys = []
     remaining_cap = deployable
-    existing_count = len(held_tickers) - len(exits) - len(reduces)
+    existing_count = len(held_tickers) - len(exits)
     slots = max(0, MAX_POSITIONS - existing_count)
 
     for f in forecasts:
@@ -161,7 +161,7 @@ def generate_trade_ticket(report_date: str = None, positions: dict = None) -> di
             break
         if f["ticker"] in held_tickers:
             continue
-        if f["net_ret"] <= f["friction_rt"] * 2:
+        if f["net_ret"] <= f["friction_rt"]:
             continue
         if f["confidence"] == "red":
             continue
