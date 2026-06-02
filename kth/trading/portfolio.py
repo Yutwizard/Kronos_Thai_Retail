@@ -13,7 +13,6 @@ import pandas as pd
 
 POSITIONS_DIR = Path("data/positions")
 INITIAL_CAPITAL = 500_000.0
-MAX_POSITIONS = 5
 STOP_LOSS = -0.10
 
 
@@ -117,7 +116,7 @@ def execute_trade(ticker: str, action: str, shares: int, fill_price: float,
     if action == "buy":
         cost = shares * fill_price
         # Estimate friction for Thai equity
-        friction_cost = cost * 0.00268 * 2  # commission_oneway*2 + slippage_oneway*2 = 0.00536
+        friction_cost = cost * 0.00268
         total_cost = cost + friction_cost
         if total_cost > pf["cash"]:
             return {"error": f"Insufficient cash: need {total_cost:.0f}, have {pf['cash']:.0f}",
@@ -134,7 +133,7 @@ def execute_trade(ticker: str, action: str, shares: int, fill_price: float,
             return {"error": f"Cannot exit {shares} shares of {ticker}: only {pos['shares'] if pos else 0} held",
                     "recorded": 0}
         proceeds = shares * fill_price
-        friction_cost = proceeds * 0.00268 * 2
+        friction_cost = proceeds * 0.00268
         pf["cash"] += proceeds - friction_cost
         remaining = pos["shares"] - shares
         if remaining <= 0:
@@ -238,8 +237,9 @@ def compute_metrics(mode: str = "paper") -> dict:
     today = date.today()
     month_start = today.replace(day=1)
     mtd_curve = [e for e in curve if e["date"] >= str(month_start)]
-    pnl_mtd = values[-1] - pf["initial_capital"]
-    pnl_mtd_pct = pnl_mtd / pf["initial_capital"]
+    month_start_value = mtd_curve[0]["value"] if mtd_curve else pf["initial_capital"]
+    pnl_mtd = values[-1] - month_start_value
+    pnl_mtd_pct = pnl_mtd / month_start_value if month_start_value > 0 else 0
 
     # Win rate (closed round-trips via FIFO)
     trades = get_trade_log(mode)
@@ -325,7 +325,7 @@ def _compute_market_state() -> str:
         if median_band > 0.30 or red_count > 30:
             return "Turmoil"
         if median_band > 0.20 or red_count > 15:
-            return "Elevated Vol"
+            return "Elevated"
         return "Normal"
     except Exception:
         return "Normal"
@@ -380,7 +380,7 @@ def check_phase2_gate() -> dict:
         "drawdown": round(metrics["drawdown"], 4),
         "rebalances": rebalance_count,
         "checks": {
-            "4weeks": weeks_active >= 20,
+            "20_days": weeks_active >= 20,
             "10_trades": round_trips >= 10,
             "win_rate_50": win_rate_ok,
             "sharpe_90": sharpe_ok,
