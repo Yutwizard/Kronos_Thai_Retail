@@ -1,0 +1,219 @@
+#!/usr/bin/env python3
+"""Kronos-TH Dashboard — Flask server for paper/live trading dashboard."""
+from __future__ import annotations
+
+import os
+import sys
+import json
+import subprocess
+from pathlib import Path
+from datetime import date, datetime
+
+from flask import Flask, jsonify, request, send_from_directory
+
+# Ensure kth is importable
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, "kronos_repo")
+
+app = Flask(__name__, static_folder="scripts/static", static_url_path="/static")
+TRADING_MODE = os.environ.get("KRONOS_MODE", "paper")  # "paper" or "live"
+PORT = int(os.environ.get("KRONOS_PORT", "5555"))
+
+
+@app.route("/")
+def index():
+    return send_from_directory("scripts/static", "dashboard.html")
+
+
+# ---- REST API ----
+
+@app.route("/api/forecasts")
+def api_forecasts():
+    from kth.trading.trade_gen import get_all_ranked
+    forecasts = get_all_ranked()
+    return jsonify({"date": str(date.today()), "count": len(forecasts), "forecasts": forecasts})
+
+
+@app.route("/api/positions")
+def api_positions():
+    from kth.trading.portfolio import get_positions
+    return jsonify(get_positions(TRADING_MODE))
+
+
+@app.route("/api/risk")
+def api_risk():
+    from kth.trading.portfolio import compute_metrics
+    return jsonify(compute_metrics(TRADING_MODE))
+
+
+@app.route("/api/trades", methods=["GET", "POST"])
+def api_trades():
+    if request.method == "GET":
+        from kth.trading.trade_gen import load_trade_ticket
+        return jsonify(load_trade_ticket())
+    elif request.method == "POST":
+        from kth.trading.portfolio import execute_trade
+        data = request.get_json(force=True)
+        trades = data.get("trades", [])
+        results = []
+        for t in trades:
+            r = execute_trade(
+                ticker=t["ticker"],
+                action=t["action"],
+                shares=int(t["shares"]),
+                fill_price=float(t["fill_price"]),
+                mode=data.get("mode", TRADING_MODE),
+                order_type=t.get("order_type", "market"),
+                rationale=t.get("rationale", ""),
+            )
+            results.append(r)
+        total_recorded = sum(r.get("recorded", 0) for r in results)
+        return jsonify({"recorded": total_recorded, "results": results})
+
+
+@app.route("/api/health")
+def api_health():
+    today_str = str(date.today())
+    log_path = Path(f"data/logs/cron_{today_str}.log")
+    steps = {"download": "unknown", "forecast": "unknown", "trade_gen": "unknown"}
+    stale = True
+    last_forecast = None
+
+    if log_path.exists():
+        content = log_path.read_text()
+        if "PIPELINE_OK" in content:
+            steps = {"download": "ok", "forecast": "ok", "trade_gen": "ok"}
+            stale = False
+        else:
+            if "STEP1_FAILED" in content:
+                steps["download"] = "failed"
+            elif "download_data.py" in content:
+                steps["download"] = "ok"
+            if "STEP2_FAILED" in content:
+                steps["forecast"] = "failed"
+            elif "forecast" in content.lower():
+                steps["forecast"] = "ok"
+
+    # Check for forecast cache
+    cache_dir = Path(f"data/forecast_cache/NeoQuasar_Kronos-small/{today_str}")
+    if cache_dir.exists():
+        last_forecast = today_str
+        steps["forecast"] = steps.get("forecast", "ok")
+    else:
+        # Find latest cached date
+        parent = Path("data/forecast_cache/NeoQuasar_Kronos-small")
+        if parent.exists():
+            dates = sorted([d.name for d in parent.iterdir() if d.is_dir()], reverse=True)
+            if dates:
+                last_forecast = dates[0]
+                stale = dates[0] != today_str
+
+    return jsonify({
+        "last_forecast_date": last_forecast,
+        "steps": steps,
+        "stale": stale,
+        "pipeline_log": str(log_path) if log_path.exists() else None,
+    })
+
+
+@app.route("/api/phase2_gate")
+def api_phase2_gate():
+    from kth.trading.portfolio import check_phase2_gate
+    return jsonify(check_phase2_gate())
+
+
+@app.route("/api/export_csv")
+def api_export_csv():
+    from kth.trading.portfolio import export_broker_csv
+    path = export_broker_csv(TRADING_MODE)
+    if path:
+        return jsonify({"status": "ok", "path": path})
+    return jsonify({"status": "error", "message": "No trades to export"})
+
+
+# ---- CLI ----
+
+def cmd_generate():
+    """Run morning pipeline: download data → generate forecasts → trade ticket."""
+    log_path = Path(f"data/logs/cron_{date.today()}.log")
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+
+    def log(msg):
+        ts = datetime.now().strftime("%H:%M:%S")
+        line = f"[{ts}] {msg}"
+        print(line, flush=True)
+        with open(log_path, "a") as f:
+            f.write(line + "\n")
+
+    os.environ["HF_HUB_OFFLINE"] = "1"
+
+    # Step 1: Download data
+    log("STEP1: download_data.py")
+    try:
+        result = subprocess.run(
+            [sys.executable, "scripts/download_data.py"],
+            capture_output=True, text=True, timeout=300,
+        )
+        if result.returncode != 0:
+            log(f"STEP1_FAILED: {result.stderr[:200]}")
+            return 1
+        log("STEP1_OK")
+    except Exception as e:
+        log(f"STEP1_FAILED: {e}")
+        return 1
+
+    # Step 2: Generate forecasts
+    log("STEP2: forecast generation")
+    try:
+        from kth.data.universe import UNIVERSE
+        from kth.models.kronos_wrapper import KronosTH
+        from kth.backtest.walkforward import precompute_forecasts
+        import shutil
+
+        tickers = [t for t, _, _ in UNIVERSE["thai_equity"]]
+        today_str = str(date.today())
+        slug = "NeoQuasar_Kronos-small"
+        today_dir = Path(f"data/forecast_cache/{slug}/{today_str}")
+        if today_dir.exists():
+            shutil.rmtree(today_dir)
+
+        th = KronosTH.from_pretrained("NeoQuasar/Kronos-small", device="cuda")
+        precompute_forecasts(th, tickers, start_date=today_str, end_date=today_str,
+                             pred_len=20, n_samples=50, lookback=400)
+        log("STEP2_OK")
+    except Exception as e:
+        log(f"STEP2_FAILED: {e}")
+        return 1
+
+    # Step 3: Generate trade ticket
+    log("STEP3: trade ticket generation")
+    try:
+        from kth.trading.trade_gen import generate_trade_ticket
+        ticket = generate_trade_ticket()
+        log(f"STEP3_OK: {len(ticket.get('exits',[]))} exits, {len(ticket.get('buys',[]))} buys")
+    except Exception as e:
+        log(f"STEP3_FAILED: {e}")
+        return 1
+
+    log("PIPELINE_OK")
+    return 0
+
+
+def cmd_serve():
+    """Start Flask dashboard server."""
+    print(f"Kronos-TH Dashboard — {TRADING_MODE.upper()} mode")
+    print(f"Open: http://localhost:{PORT}")
+    app.run(host="127.0.0.1", port=PORT, debug=False)
+
+
+if __name__ == "__main__":
+    if len(sys.argv) > 1 and sys.argv[1] == "--generate":
+        sys.exit(cmd_generate())
+    elif len(sys.argv) > 1 and sys.argv[1] == "--serve":
+        cmd_serve()
+    else:
+        print("Usage:")
+        print("  dashboard.py --generate   # Run morning pipeline")
+        print("  dashboard.py --serve      # Start web server")
+        print(f"\nMode: {TRADING_MODE} (set KRONOS_MODE=live for Phase 2)")
+        print(f"Port: {PORT} (set KRONOS_PORT to override)")
