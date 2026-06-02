@@ -2,12 +2,12 @@
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 from datetime import date
 from typing import Optional
 
 import pandas as pd
-import numpy as np
 
 from kth.data.universe import UNIVERSE, FRICTION, get_ticker_class, get_display_name
 
@@ -79,7 +79,8 @@ def load_forecasts(report_date: str = None) -> list[dict]:
                 "rank_score": round(rank_score, 4),
                 "market_sharpe": BACKTEST_METRICS.get(cls, {}).get("sharpe"),
             })
-        except Exception:
+        except Exception as e:
+            logging.warning(f"Trade gen: skipping {ticker}: {e}")
             continue
 
     rows.sort(key=lambda x: x["rank_score"], reverse=True)
@@ -92,7 +93,7 @@ def generate_trade_ticket(report_date: str = None, positions: dict = None) -> di
     if not forecasts:
         return {"error": "No forecasts available", "exits": [], "reduces": [], "buys": []}
 
-    from kth.trading.portfolio import init_portfolio, get_positions, compute_metrics
+    from kth.trading.portfolio import get_positions, compute_metrics
     metrics = compute_metrics("paper")
     alloc_band = metrics["allocation_band"]
     alloc_pct = metrics["allocation_pct"]
@@ -156,7 +157,7 @@ def generate_trade_ticket(report_date: str = None, positions: dict = None) -> di
     existing_count = len(held_tickers) - len(exits)
     slots = max(0, MAX_POSITIONS - existing_count)
 
-    for f in forecasts:
+    for rank_idx, f in enumerate(forecasts, 1):
         if len(buys) >= slots:
             break
         if f["ticker"] in held_tickers:
@@ -179,7 +180,7 @@ def generate_trade_ticket(report_date: str = None, positions: dict = None) -> di
             "order_type": "limit",
             "limit_price": limit,
             "estimated_thb": round(lots * f["close"]),
-            "rationale": f"🟢↑ rank#{forecasts.index(f)+1} net_ret={f['net_ret']:+.2%}",
+            "rationale": f"🟢↑ rank#{rank_idx} net_ret={f['net_ret']:+.2%}",
         })
         remaining_cap -= lots * f["close"]
 
