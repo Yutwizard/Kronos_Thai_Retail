@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import os
 import sys
-import json
 import subprocess
 from pathlib import Path
 from datetime import date, datetime
@@ -12,10 +11,11 @@ from datetime import date, datetime
 from flask import Flask, jsonify, request, send_from_directory
 
 # Ensure kth is importable
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-sys.path.insert(0, "kronos_repo")
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+sys.path.insert(0, str(PROJECT_ROOT / "kronos_repo"))
 
-app = Flask(__name__, static_folder="scripts/static", static_url_path="/static")
+app = Flask(__name__, static_folder=str(PROJECT_ROOT / "scripts/static"), static_url_path="/static")
 TRADING_MODE = os.environ.get("KRONOS_MODE", "paper")  # "paper" or "live"
 PORT = int(os.environ.get("KRONOS_PORT", "5555"))
 
@@ -54,6 +54,8 @@ def api_trades():
     elif request.method == "POST":
         from kth.trading.portfolio import execute_trade
         data = request.get_json(force=True)
+        if not data or "trades" not in data:
+            return jsonify({"error": "Missing trades array", "recorded": 0}), 400
         trades = data.get("trades", [])
         results = []
         for t in trades:
@@ -124,17 +126,21 @@ def api_phase2_gate():
 
 @app.route("/api/export_csv")
 def api_export_csv():
-    from kth.trading.portfolio import export_broker_csv
-    path = export_broker_csv(TRADING_MODE)
-    if path:
-        return jsonify({"status": "ok", "path": path})
-    return jsonify({"status": "error", "message": "No trades to export"})
+    try:
+        from kth.trading.portfolio import export_broker_csv
+        path = export_broker_csv(TRADING_MODE)
+        if path:
+            return jsonify({"status": "ok", "path": str(path)})
+        return jsonify({"status": "error", "message": "No trades to export"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 
 # ---- CLI ----
 
 def cmd_generate():
     """Run morning pipeline: download data → generate forecasts → trade ticket."""
+    import shutil
     log_path = Path(f"data/logs/cron_{date.today()}.log")
     log_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -168,7 +174,6 @@ def cmd_generate():
         from kth.data.universe import UNIVERSE
         from kth.models.kronos_wrapper import KronosTH
         from kth.backtest.walkforward import precompute_forecasts
-        import shutil
 
         tickers = [t for t, _, _ in UNIVERSE["thai_equity"]]
         today_str = str(date.today())
