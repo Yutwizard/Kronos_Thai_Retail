@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1024">
+<title>Kronos-TH Dashboard</title>
+<link rel="stylesheet" href="/static/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><circle cx='8' cy='8' r='8' fill='%231565C0'/></svg>">
+</head>
+<body>
+
+<div id="app">
+  <header id="header">
+    <div class="h-left">
+      <h1>Kronos-TH Dashboard</h1>
+      <span id="mode-badge" class="badge paper">📋 PAPER</span>
+    </div>
+    <div class="h-right">
+      <span id="header-date"></span>
+      <span id="header-refresh"></span>
+      <span id="banner-area"></span>
+    </div>
+  </header>
+
+  <div id="risk-bar" class="risk-bar">
+    <div class="risk-tile"><div class="t-label">Market State</div><div class="t-val" id="val-market">—</div></div>
+    <div class="risk-tile"><div class="t-label">Allocation</div><div class="t-val" id="val-alloc">—</div></div>
+    <div class="risk-tile"><div class="t-label">Trailing Sharpe</div><div class="t-val" id="val-sharpe">—</div></div>
+    <div class="risk-tile"><div class="t-label">Drawdown</div><div class="t-val" id="val-dd">—</div><div class="dd-bar"><div class="dd-fill" id="dd-fill"></div></div></div>
+    <div class="risk-tile"><div class="t-label">P&L MTD</div><div class="t-val" id="val-pnl">—</div></div>
+    <div class="risk-tile"><div class="t-label">Win Rate</div><div class="t-val" id="val-win">—</div></div>
+    <div class="risk-tile"><div class="t-label">Exposure</div><div class="t-val" id="val-exp">—</div></div>
+  </div>
+
+  <div id="signal-health" class="signal-health hidden">
+    <span id="sig-acc">Accuracy: —</span>
+    <span id="sig-sharpe-delta">vs Backtest: —</span>
+    <span id="sig-warning" class="hidden">🚨 Model review recommended — halve position sizes</span>
+  </div>
+
+  <div id="main-content">
+    <section id="trade-ticket" class="panel hero">
+      <h2>Trade Ticket — <span id="ticket-date"></span></h2>
+      <div id="ticket-body"></div>
+      <div id="ticket-actions">
+        <button id="btn-execute" class="btn primary" onclick="executeTrades()">Record Paper Trade</button>
+        <button id="btn-export" class="btn secondary" onclick="exportCSV()">Export for Broker</button>
+      </div>
+    </section>
+
+    <div class="two-col">
+      <section id="positions-panel" class="panel">
+        <h2>Current Positions</h2>
+        <div id="positions-body"></div>
+      </section>
+      <section id="morning-panel" class="panel">
+        <h2>Morning Brief — Top 10</h2>
+        <div id="morning-body"></div>
+      </section>
+    </div>
+
+    <section id="ranking-panel" class="panel collapsible">
+      <h2 onclick="toggleRanking()">Full Ranking (49 tickers) <span id="rank-toggle">▼</span></h2>
+      <div id="ranking-search"><input type="text" placeholder="Search ticker..." oninput="filterRanking(this.value)"></div>
+      <div id="ranking-body"></div>
+    </section>
+  </div>
+
+  <footer>
+    <p>Not financial advice. Past performance ≠ future results. Kronos-small zero-shot, n_samples=50. Auto-refresh 60s.</p>
+  </footer>
+</div>
+
+<script>
+const MODE = "paper";
+const API = "";
+
+function $(id) { return document.getElementById(id); }
+
+async function fetchJSON(url) {
+  try { const r = await fetch(API + url); return await r.json(); }
+  catch(e) { return null; }
+}
+
+let showRanking = false;
+
+async function refresh() {
+  const now = new Date();
+  $("header-date").textContent = now.toISOString().slice(0, 10) + " " + now.toTimeString().slice(0, 5) + " BKK";
+
+  const [risk, positions, forecasts, trades, health] = await Promise.all([
+    fetchJSON("/api/risk"), fetchJSON("/api/positions"),
+    fetchJSON("/api/forecasts"), fetchJSON("/api/trades"),
+    fetchJSON("/api/health")
+  ]);
+
+  updateRiskBar(risk);
+  updateHealth(health);
+  updatePositions(positions);
+  updateForecasts(forecasts);
+  updateTradeTicket(trades, risk);
+  updateMode();
+
+  $("header-refresh").textContent = "Last refresh: " + now.toTimeString().slice(0, 8);
+}
+
+function updateMode() {
+  const badge = $("mode-badge");
+  const btn = $("btn-execute");
+  if (MODE === "live") {
+    badge.className = "badge live"; badge.textContent = "💰 LIVE";
+    btn.textContent = "Confirm Live Trade";
+    document.querySelector("link[rel=icon]").href = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><circle cx='8' cy='8' r='8' fill='%2327ae60'/></svg>";
+  }
+}
+
+function updateRiskBar(risk) {
+  if (!risk) return;
+  $("val-market").textContent = risk.market_state || "—";
+  $("val-market").className = "t-val " + (risk.market_state === "Turmoil" ? "red" : risk.market_state === "Elevated" ? "orange" : "green");
+  $("val-alloc").textContent = (risk.allocation_pct !== undefined) ? (risk.allocation_pct * 100).toFixed(0) + "% " + risk.allocation_band : "—";
+  $("val-sharpe").textContent = risk.sharpe?.toFixed(2) || "—";
+  $("val-sharpe").className = "t-val " + (risk.sharpe > 1 ? "green" : risk.sharpe > 0.5 ? "orange" : "red");
+  const dd = risk.drawdown || 0;
+  $("val-dd").textContent = (dd * 100).toFixed(1) + "%";
+  $("val-dd").className = "t-val " + (dd > -0.03 ? "green" : dd > -0.07 ? "orange" : "red");
+  $("dd-fill").style.width = Math.min(100, Math.abs(dd) * 1000) + "%";
+  $("dd-fill").style.background = dd > -0.03 ? "#27ae60" : dd > -0.07 ? "#f39c12" : "#e74c3c";
+  $("val-pnl").textContent = risk.pnl_mtd_pct ? (risk.pnl_mtd_pct * 100).toFixed(1) + "%" : "—";
+  $("val-pnl").className = "t-val " + (risk.pnl_mtd >= 0 ? "green" : "red");
+  $("val-win").textContent = risk.win_rate ? (risk.win_rate * 100).toFixed(0) + "% (" + (risk.closed_trades || 0) + ")" : "—";
+  $("val-exp").textContent = risk.exposure ? (risk.exposure * 100).toFixed(0) + "%" : "—";
+}
+
+function updateHealth(health) {
+  if (!health) return;
+  if (health.stale) {
+    $("signal-health").classList.remove("hidden");
+    $("banner-area").innerHTML = '<span class="banner warn">⚠ Forecasts from ' + health.last_forecast_date + ' — stale</span>';
+  }
+}
+
+function updatePositions(pos) {
+  if (!pos) return;
+  const body = $("positions-body");
+  if (!pos.positions || pos.positions.length === 0) {
+    body.innerHTML = '<p class="empty">No positions yet. Paper trade to start tracking.</p>'; return;
+  }
+  let html = '<table><thead><tr><th>Ticker</th><th>Shares</th><th>Avg Cost</th><th>Mark</th><th>P&amp;L%</th><th>Weight</th></tr></thead><tbody>';
+  for (const p of pos.positions) {
+    const pnlCls = p.pnl_pct >= 0 ? "green" : "red";
+    html += '<tr><td class="ticker">' + p.ticker + '</td><td class="num">' + (p.shares||0).toLocaleString() + '</td><td class="num">' + (p.avg_cost||0).toFixed(2) + '</td><td class="num">' + (p.mark||0).toFixed(2) + '</td><td class="num ' + pnlCls + '">' + (p.pnl_pct*100).toFixed(1) + '%</td><td class="num">' + (p.weight*100).toFixed(0) + '%</td></tr>';
+  }
+  html += '</tbody></table>';
+  body.innerHTML = html;
+}
+
+function updateForecasts(fc) {
+  if (!fc || !fc.forecasts) return;
+  const top10 = fc.forecasts.slice(0, 10);
+  let html = '<table><thead><tr><th>Ticker</th><th>Close</th><th>Exp Ret</th><th>Band</th><th>Flag</th><th>Net Ret</th></tr></thead><tbody>';
+  for (const f of top10) {
+    const dir = f.direction === "up" ? "↑" : "↓";
+    const retCls = f.exp_ret >= 0 ? "green" : "red";
+    html += '<tr><td class="ticker">' + f.ticker + '</td><td class="num">' + (f.close?.toFixed(2)||"—") + '</td><td class="num ' + retCls + '">' + dir + ' ' + (f.exp_ret*100).toFixed(2) + '%</td><td class="num">' + (f.band_width*100).toFixed(1) + '%</td><td>' + (f.confidence==="green"?"🟢":f.confidence==="yellow"?"🟡":"🔴") + '</td><td class="num ' + (f.net_ret>=0?"green":"red") + '">' + (f.net_ret*100).toFixed(2) + '%</td></tr>';
+  }
+  html += '</tbody></table>';
+  $("morning-body").innerHTML = html;
+
+  let rankHtml = '<table><thead><tr><th>#</th><th>Ticker</th><th>Name</th><th>Close</th><th>Exp Ret</th><th>Band</th><th>Flag</th></tr></thead><tbody>';
+  fc.forecasts.forEach((f, i) => {
+    const dir = f.direction === "up" ? "↑" : "↓";
+    const retCls = f.exp_ret >= 0 ? "green" : "red";
+    const flag = f.confidence === "green" ? "🟢" : f.confidence === "yellow" ? "🟡" : "🔴";
+    rankHtml += '<tr class="rank-row" data-ticker="' + f.ticker.toLowerCase() + '"><td>' + (i+1) + '</td><td class="ticker">' + f.ticker + '</td><td class="muted">' + (f.name||"") + '</td><td class="num">' + (f.close?.toFixed(2)||"—") + '</td><td class="num ' + retCls + '">' + dir + ' ' + (f.exp_ret*100).toFixed(2) + '%</td><td class="num">' + (f.band_width*100).toFixed(1) + '%</td><td>' + flag + '</td></tr>';
+  });
+  rankHtml += '</tbody></table>';
+  $("ranking-body").innerHTML = rankHtml;
+
+  const redCount = fc.forecasts.filter(f => f.confidence === "red").length;
+  if (redCount > 30) {
+    $("banner-area").innerHTML += '<span class="banner warn">High uncertainty — ' + redCount + '/49 tickers flagged red. Stay in cash.</span>';
+    $("trade-ticket").classList.add("hidden");
+  } else {
+    $("trade-ticket").classList.remove("hidden");
+  }
+}
+
+function updateTradeTicket(trades, risk) {
+  if (!trades || trades.error) {
+    $("ticket-body").innerHTML = '<p class="empty">No trade ticket available. Run cron to generate forecasts.</p>';
+    $("ticket-date").textContent = "—"; return;
+  }
+  $("ticket-date").textContent = trades.date || "—";
+  if (trades.frozen) {
+    $("ticket-body").innerHTML = '<div class="banner stop">STOP-LOSS −10% TRIGGERED. Portfolio frozen. All actions disabled.</div>';
+    $("btn-execute").disabled = true; return;
+  }
+  $("btn-execute").disabled = false;
+  let html = "";
+
+  if (trades.exits && trades.exits.length > 0) {
+    html += '<h3 class="section-label exit-label">▼ EXIT (same day, market order)</h3><table><thead><tr><th>Ticker</th><th>Shares</th><th>Type</th><th>Est. THB</th><th>Rationale</th></tr></thead><tbody>';
+    for (const e of trades.exits) {
+      html += '<tr class="row-exit"><td class="ticker">' + e.ticker + '</td><td class="num">' + (e.shares||0).toLocaleString() + '</td><td>market</td><td class="num">~' + (e.estimated_thb||0).toLocaleString() + '</td><td class="muted">' + (e.rationale||"") + '</td></tr>';
+    }
+    html += '</tbody></table>';
+  }
+  if (trades.reduces && trades.reduces.length > 0) {
+    html += '<h3 class="section-label reduce-label">▼ REDUCE</h3><table><thead><tr><th>Ticker</th><th>Shares</th><th>Limit</th><th>Est. THB</th><th>Rationale</th></tr></thead><tbody>';
+    for (const r of trades.reduces) {
+      html += '<tr class="row-reduce"><td class="ticker">' + r.ticker + '</td><td class="num">' + (r.shares||0).toLocaleString() + '</td><td class="num">' + (r.limit_price?.toFixed(2)||"—") + '</td><td class="num">~' + (r.estimated_thb||0).toLocaleString() + '</td><td class="muted">' + (r.rationale||"") + '</td></tr>';
+    }
+    html += '</tbody></table>';
+  }
+  if (trades.buys && trades.buys.length > 0) {
+    html += '<h3 class="section-label buy-label">▲ BUY (within 2 days)</h3><table><thead><tr><th>Ticker</th><th>Shares</th><th>Limit</th><th>Est. THB</th><th>Rationale</th></tr></thead><tbody>';
+    for (const b of trades.buys) {
+      html += '<tr class="row-buy"><td class="ticker">' + b.ticker + '</td><td class="num">' + (b.shares||0).toLocaleString() + '</td><td class="num">' + (b.limit_price?.toFixed(2)||"—") + '</td><td class="num">~' + (b.estimated_thb||0).toLocaleString() + '</td><td class="muted">' + (b.rationale||"") + '</td></tr>';
+    }
+    html += '</tbody></table>';
+  }
+  if (!trades.exits?.length && !trades.buys?.length) {
+    html += '<p class="empty">No trade signals today.</p>';
+  }
+  if (trades.cash_flow) {
+    const cf = trades.cash_flow;
+    html += '<div class="cash-flow"><div class="cf-row"><span>Gross proceeds (sells):</span><span class="green">+' + (cf.gross_proceeds||0).toLocaleString() + ' THB</span></div><div class="cf-row"><span>Buy cost:</span><span class="red">−' + (cf.buy_cost||0).toLocaleString() + ' THB</span></div><div class="cf-row"><span>Friction:</span><span class="red">−' + (cf.friction||0).toLocaleString() + ' THB</span></div><div class="cf-row cf-total"><span>Net cash flow:</span><span class="' + ((cf.net_proceeds||0)>=0?"green":"red") + '">' + ((cf.net_proceeds||0)>=0?"+":"") + (cf.net_proceeds||0).toLocaleString() + ' THB</span></div></div>';
+  }
+  $("ticket-body").innerHTML = html;
+}
+
+async function executeTrades() {
+  if (!confirm("Execute all trades in the ticket as paper trades?")) return;
+  const resp = await fetchJSON("/api/trades");
+  if (!resp || !resp.exits) return;
+  const tradeList = [];
+  for (const e of (resp.exits || [])) tradeList.push({ ticker: e.ticker, action: "exit", shares: e.shares, fill_price: 0, order_type: "market", rationale: e.rationale });
+  for (const r of (resp.reduces || [])) tradeList.push({ ticker: r.ticker, action: "reduce", shares: r.shares, fill_price: 0, order_type: "limit", rationale: r.rationale });
+  for (const b of (resp.buys || [])) tradeList.push({ ticker: b.ticker, action: "buy", shares: b.shares, fill_price: b.limit_price || 0, order_type: "limit", rationale: b.rationale });
+  if (tradeList.length === 0) { alert("No trades to execute."); return; }
+  const r = await fetch("/api/trades", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ trades: tradeList, date: resp.date, mode: MODE }) });
+  const result = await r.json();
+  alert(result.recorded + " trades recorded.");
+  refresh();
+}
+
+async function exportCSV() {
+  const r = await fetchJSON("/api/export_csv");
+  alert(r && r.status === "ok" ? "CSV exported: " + r.path : "No trades to export.");
+}
+
+function toggleRanking() { showRanking = !showRanking; $("ranking-body").style.display = showRanking ? "block" : "none"; $("rank-toggle").textContent = showRanking ? "▲" : "▼"; }
+function filterRanking(q) { document.querySelectorAll(".rank-row").forEach(r => { r.style.display = r.dataset.ticker.includes(q.toLowerCase()) ? "" : "none"; }); }
+
+refresh();
+setInterval(refresh, 60000);
+</script>
+</body>
+</html>
