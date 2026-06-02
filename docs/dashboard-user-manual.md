@@ -2,6 +2,8 @@
 
 > Step-by-step guide for the real-market dashboard. Paper trading first, broker-ready CSV export when ready.
 > Thai equity only. 500,000 THB starting capital. Not financial advice.
+>
+> **New to all of this?** Start with the [Getting Started Guide](getting-started.md) instead — it explains everything from zero, including installation, paper trading, and a day-by-day first week walkthrough. This manual is the detailed reference for daily operations.
 
 ---
 

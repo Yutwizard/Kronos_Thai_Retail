@@ -1,9 +1,12 @@
 # Kronos-TH Operations Manual
 
-> Daily/weekly/monthly procedures for using the Kronos forecasting system.
-> A Thai retail investor's guide to turning model forecasts into investment decisions.
+> **Reference document — decision rules and methodology.**
 >
-> **New: Automated Dashboard.** The manual notebook process below is the reference. For streamlined daily use, see the [Local Dashboard User Manual](dashboard-user-manual.md) — a Flask web app that automates forecast generation, trade ticket creation, paper trading, and risk monitoring. This operations manual remains the authoritative decision-rule reference.
+> For daily use, start here:
+> - **New to Kronos?** → [Getting Started Guide](getting-started.md) (installation, paper trading, day-by-day walkthrough)
+> - **Using the dashboard?** → [Dashboard User Manual](dashboard-user-manual.md) (step-by-step operating procedures)
+>
+> This operations manual documents the original notebook-based workflow. The dashboard automates most of these steps. The decision rules (3-filter, signal interpretation, risk controls) remain authoritative and are referenced by the dashboard.
 
 ---
 
@@ -20,6 +23,8 @@
 ---
 
 ## 1. Daily Morning Routine (12-15 minutes)
+
+> **Note:** This describes the original notebook workflow (100 tickers, all asset classes). The dashboard (see [Dashboard User Manual](dashboard-user-manual.md)) automates this for Thai equity only (49 tickers, 500K THB). The signal interpretation rules below apply to both.
 
 ### Objective
 Generate fresh forecasts for all 100 tickers and identify actionable signals for the day ahead.
