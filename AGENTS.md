@@ -23,7 +23,7 @@ Priority order:
 ## Project type
 - **Not a deployable app.** No CI, no build step, no test framework, no lint config.
 - **Colab-first:** The real workflow is Jupyter notebooks on Google Colab (T4 GPU). Local Python scripts are for offline verification only.
-- **Current state:** Layers 1–2 (data) are ✅. Layers 3–5 (model, backtest, report) are ⬜ planned but empty.
+- **Current state:** Layers 1–2 (data) + Layer 5 (report) are ✅. Layer 5 is now a real-market dashboard (Flask + HTML) for paper/live trading. Layers 3–4 (model, backtest) are ✅ but backtest pipeline continues to evolve.
 
 ## Verify the data layer (offline)
 ```bash
@@ -106,9 +106,7 @@ Key insight: 21-month fold windows needed (not 6mo) so val/test have ≥420 rows
 - All FT backtests executed per approved specs
 
 ## What not to build yet
-
-## What not to build yet
-- Do not add a web UI, live trading, or intraday data — all explicitly out of scope per `PROJECT_STRUCTURE.md` §12.
+- Do not add live order execution, broker API integration, or intraday data — all explicitly out of scope per `PROJECT_STRUCTURE.md` §12. The local dashboard is for paper trading + broker-ready CSV exports only.
 - Do not add `pytest`, `tox`, or CI config unless explicitly asked.
 - `Makefile` and `docker-compose.yml` already exist for Docker workflows — do not remove them.
 
@@ -121,9 +119,12 @@ Key insight: 21-month fold windows needed (not 6mo) so val/test have ≥420 rows
 6. `docs/monthly-walkthrough.html` — 21-day simulated month with real trades and portfolio outcomes
 7. `docs/superpowers/specs/` — approved design specs for all layers
 8. `docs/superpowers/plans/` — implementation plans (specs → bite-sized tasks). Expanded backtest at `2026-05-24-expanded-backtest.md`. OOS yearly at `2026-05-31-n50-completion.md`
-9. `docs/superpowers/specs/2026-05-16-local-testing-design.md` — local testing pipeline (CPU + GPU)
-10. `kth/data/loader.py` — actual implementation of schema conversion and caching
-11. `kth/data/universe.py` — universe + friction definitions
-12. `kth/models/kronos_wrapper.py` — KronosTH wrapper (adapted to real Kronos API)
-13. `kth/models/_kronos_bridge.py` — import bridge for non-pip-installable Kronos repo
+9. `docs/superpowers/specs/2026-06-02-real-market-dashboard-design.md` — real-market dashboard design spec
+10. `docs/superpowers/plans/2026-06-02-real-market-dashboard.md` — dashboard implementation plan
+11. `docs/dashboard-user-manual.md` — step-by-step dashboard operating guide
+12. `docs/superpowers/specs/2026-05-16-local-testing-design.md` — local testing pipeline (CPU + GPU)
+13. `kth/data/loader.py` — actual implementation of schema conversion and caching
+14. `kth/data/universe.py` — universe + friction definitions
+15. `kth/models/kronos_wrapper.py` — KronosTH wrapper (adapted to real Kronos API)
+16. `kth/models/_kronos_bridge.py` — import bridge for non-pip-installable Kronos repo
 

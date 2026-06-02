@@ -2,6 +2,8 @@
 
 > Daily/weekly/monthly procedures for using the Kronos forecasting system.
 > A Thai retail investor's guide to turning model forecasts into investment decisions.
+>
+> **New: Automated Dashboard.** The manual notebook process below is the reference. For streamlined daily use, see the [Local Dashboard User Manual](dashboard-user-manual.md) — a Flask web app that automates forecast generation, trade ticket creation, paper trading, and risk monitoring. This operations manual remains the authoritative decision-rule reference.
 
 ---
 
