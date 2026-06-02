@@ -37,7 +37,7 @@ Kronos-TH is an **AI-powered daily report** for Thai stock investors. It:
 
 **The numbers that matter:**
 - Starting capital: **500,000 THB** (you choose, but this is the default)
-- Stocks covered: **49 Thai stocks** (SET50 index plus mid-caps)
+- Stocks covered: **49 Thai stocks** (SET50 index plus mid-caps; 1 of the 50 universe tickers has insufficient price history for the model's 400-day lookback window and is skipped during forecast generation)
 - Time per day: **15 minutes** (after initial setup)
 - Backtest result: +31.44% per year (2022–2024), but **past performance does not guarantee future results**
 
@@ -92,6 +92,7 @@ Open a terminal (Command Prompt on Windows, Terminal on Mac/Linux) and type:
 ```bash
 cd ~
 git clone https://github.com/shiyu-coder/Kronos.git kronos_repo
+# Then clone Kronos-TH (replace with the actual repo URL):
 git clone https://github.com/your-repo/kronos-th.git kronos-th
 cd kronos-th
 ```
@@ -148,6 +149,8 @@ python scripts/dashboard.py --generate
 ```
 
 This will take **~12 minutes on GTX 1060** (~3 minutes on newer GPUs). You'll see progress messages like `STEP1_OK`, `STEP2_OK`, etc.
+
+> **If you get an "out of memory" error on GTX 1060:** The default uses `n_samples=50` which requires ~8GB VRAM. On a 6GB GTX 1060, reduce to `n_samples=10` by editing `scripts/dashboard.py` line ~180 (change `n_samples=50` to `n_samples=10`). Forecast quality is slightly lower but the pipeline will run.
 
 Then start the dashboard:
 ```bash
@@ -232,13 +235,14 @@ The backtest says the strategy makes +31.44% per year, but:
 | **Market Order** | "Buy/sell at whatever price the market gives me right now." Use for urgent exits. | You sell KBANK immediately at the current market price |
 | **Limit Order** | "Buy/sell but only at this price or better." Use for non-urgent buys. | You set a limit to buy CPALL at 56.70 or cheaper |
 | **Board Lot** | The minimum number of shares you can trade. For Thai stocks: 100 shares. | You can buy 100, 200, 300 shares — but not 50 or 150 |
-| **Friction / Commission** | The fee your broker charges per trade. ~0.27% per side for Thai stocks. | Buying 50,000 THB of PTT costs ~135 THB in fees |
+| **Friction / Commission** | The fee your broker charges per trade. For Thai stocks: ~0.27% one-way (0.54% round-trip). The dashboard uses one-way friction per trade side. | Buying 50,000 THB of PTT costs ~135 THB in fees |
 | **Net Return** | Expected return minus friction. What you actually keep. | +2.31% return − 0.54% friction = +1.77% net |
 
 ### Risk Terms
 
 | Term | Plain English | Good | Bad |
 |------|--------------|------|-----|
+| **CAGR** | Compound Annual Growth Rate. "If I started with 500K and grew at this rate every year, here's what I'd have." Smooths out the bumps. | +20%+ | <0% |
 | **Sharpe Ratio** | "How much return am I getting per unit of risk?" | >1.0 | <0.5 |
 | **Drawdown** | "How much has my portfolio dropped from its peak?" | >−3% | <−10% (triggers stop-loss) |
 | **Win Rate** | "What % of my closed trades made money?" | >50% | <40% |
@@ -252,6 +256,11 @@ The backtest says the strategy makes +31.44% per year, but:
 | **Market State** | Normal / Elevated / Turmoil. If Turmoil, stay in cash — the model doesn't understand what's happening. |
 | **3-Filter Rule** | Monthly check: (1) Is net return good? (2) Is confidence 🟢 or 🟡? (3) Is position size within limits? |
 | **Phase 2 Gate** | The checklist you must pass before switching from paper to real trading. |
+| **FIFO** | First-In-First-Out. When you buy shares in multiple batches and sell some, the oldest shares are counted as sold first. Used to calculate win rate accurately. |
+| **P50 / P50%** | The model's median prediction — "I think there's a 50% chance the price is above this and 50% chance below." |
+| **HistVol** | Historical Volatility. How much a stock's price has jumped around over the past year. Higher = riskier. |
+| **SET** | The Stock Exchange of Thailand. The main Thai stock market index. |
+| **Zero-shot** | The model uses its pre-trained knowledge without additional fine-tuning. Backtests showed fine-tuning did NOT improve results for Thai equity, so the dashboard uses zero-shot only. |
 
 ---
 
@@ -400,7 +409,7 @@ Visit http://localhost:5555/api/phase2_gate — it shows which checks pass/fail.
 | Understand the decision rules | [Operations Manual](operations-manual.md) |
 | See the technical architecture | [Design Spec](superpowers/specs/2026-06-02-real-market-dashboard-design.md) |
 | Understand how the backtest works | [User Manual & Methodology](user-manual.md) |
-| Get help or report a bug | Open a GitHub issue |
+| Get help or report a bug | Open a GitHub issue at https://github.com/your-repo/kronos-th/issues |
 
 ---
 
@@ -429,11 +438,17 @@ Visit http://localhost:5555/api/phase2_gate — it shows which checks pass/fail.
 │   1. Risk Bar → Normal? Not EXIT?                           │
 │   2. Trade Ticket → Exits SAME DAY. Buys within 2 days.     │
 │   3. Click "Record Paper Trade"                             │
-│   4. Scan Positions → any >−10% loss?                       │
-│   5. Full Ranking → sanity check                            │
+│   4. Scan Positions → any >−10% loss?                        │
+│   5. Full Ranking → sanity check                              │
 ├─────────────────────────────────────────────────────────────┤
 │ COLORS: 🟢=confident 🟡=moderate 🔴=unsure/skip             │
-│ STOP IF: Market=Turmoil or Allocation=EXIT or DD <−7%       │
+│ STOP TRADING: Market=Turmoil or Allocation=EXIT              │
+│ REDUCE EXPOSURE: DD <−7% (orange/red)                       │
+│ ALL LIQUIDATED: DD crosses −10% (stop-loss triggers)        │
+├─────────────────────────────────────────────────────────────┤
+│ SETUP (first time only, ~30 min)                             │
+│   See docs/getting-started.md §2 for full installation       │
+│   This card assumes you've already completed setup           │
 └─────────────────────────────────────────────────────────────┘
 ```
 

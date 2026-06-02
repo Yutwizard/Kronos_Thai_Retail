@@ -374,7 +374,7 @@ from pathlib import Path
 
 # Load trades and current holdings from log
 trades = pd.read_csv('data/trade_log.csv')
-initial_cash = 1_000_000  # 1M THB starting portfolio
+initial_cash = 500_000  # 500K THB starting portfolio (matches dashboard default; original notebook used 1M)
 
 # Compute net cash from closed trades (+ sell, - buy)
 cash_flow = 0
@@ -541,4 +541,4 @@ Median band width: 38%
 
 ---
 
-*Document version: 2026-05-24. Any questions: open a GitHub issue.*
+*Document version: 2026-06-02. Superseded by dashboard for daily operations. Remains authoritative for decision rules. Any questions: open a GitHub issue.*

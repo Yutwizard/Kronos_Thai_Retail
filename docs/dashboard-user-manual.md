@@ -114,8 +114,12 @@ venv/bin/python scripts/dashboard.py --serve
 # Ctrl+B, D to detach
 
 # Option B: systemd (persistent across reboots)
-# See /path/to/kronos-th/docs/dashboard-user-manual.md Appendix A
+# See Appendix A below
 ```
+
+> **Note to Windows/Mac users:** `crontab` and `systemd` are Linux tools. On Windows, use Task Scheduler. On Mac, use `launchd`. Alternatively, just run the commands manually each morning — no automation required.
+
+### Timezone
 
 ---
 
@@ -176,6 +180,12 @@ Scroll to **Current Positions**. Check:
 - **P&L% column** — any position down > −10%? Consider exiting regardless of signal.
 - **Weight% column** — any position > 25% of portfolio? Add to monthly rebalance plan.
 - **Total exposure** in the risk bar — should be < 20% (15% in BULL, 10% in NEUTRAL, 5% in BEAR).
+
+> **Weekly vs monthly allocation checks:**
+> | When | Rule | Purpose |
+> |------|------|---------|
+> | Weekly | Flag positions >25% or <5% weight | Catch drift early; note for rebalance plan |
+> | Monthly | Enforce positions within 15-25% weight (3-filter rule §6) | Hard rebalance — exit positions outside range
 
 ### Step 5: Quick Scan — Full Ranking (1 minute)
 
