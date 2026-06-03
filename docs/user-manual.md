@@ -379,9 +379,31 @@ Per `kth/data/universe.py`:
 
 ---
 
-## 6. Backtest Results (2022–2024)
+## 6. Backtest Results
 
-### Thai Equity (49 tickers)
+### 4-Year Out-of-Sample Summary (2023–2026, n=50)
+
+The most credible evidence for the strategy comes from the 4 clean OOS years — all post the inferred Kronos pre-training cutoff of December 2022.
+
+| Year | Net CAGR | Sharpe | Max DD | p-value | EW CAGR | Alpha vs EW | Friction/yr |
+|------|----------|--------|--------|---------|---------|-------------|-------------|
+| **2023** | +2.6% | 0.10 | −13.1% | 0.419 ❌ | +12.8% | **−10.2pp** | 5.68% |
+| **2024** | +42.0% | 2.27 | −6.9% | **0.015 ✅** | −7.2% | **+49.2pp** | 7.54% |
+| **2025** | +33.7% | 1.03 | −24.0% | 0.257 ❌ | −9.9% | **+43.6pp** | 17.35% |
+| **2026** | +143% ann.¹ | 2.42 | −18.3% | 0.353 ❌ | +41.8% | **+101pp** | 32.78% |
+
+> ¹ 2026 covers only 107 trading days (Jan–May 2026). Annualised figures are not representative of a full year.
+
+**Statistical note:** Only 2024 clears p<0.05 (unadjusted). Under Bonferroni correction for 4 OOS years (threshold p<0.0125), no year survives. The evidence is suggestive, not conclusive.
+
+**Pattern — SET regime dependency:**
+- 📈 **SET bull years (EW positive):** 2023 (EW +12.8%) → strategy underperforms. Cash drag from conservative allocation (50% deployed in a rising market) + friction costs more than stock-selection gains.
+- 📉 **SET bear years (EW negative):** 2024 (EW −7.2%), 2025 (EW −9.9%) → strategy crushes equal-weight by +49pp and +44pp. Selective positions in declining markets is exactly where the model's advantage shows.
+- **Key finding:** The 2023 underperformance is structural, not a model failure. The deployed stocks beat EW by +3.3pp on deployed capital — cash drag (−6.4pp) and friction (−5.7pp) caused the net underperformance vs a fully-deployed EW.
+
+---
+
+### Thai Equity 2022–2024 Canonical Backtest
 
 | Metric | Strategy | SET Index | SPY | Equal-Weight |
 |--------|----------|-----------|-----|-------------|
@@ -389,9 +411,11 @@ Per `kth/data/universe.py`:
 | Sharpe | **1.40** | −0.63 | 0.44 | 0.00 |
 | Max DD | −17.97% | −25.64% | −24.50% | −18.07% |
 
-**Interpretation:** The SET Index was DOWN 5% CAGR over this period — the model was UP 31%. The ~30pp alpha over equal-weight (1.44% → 31.44%) is not beta. It is genuine statistical signal from the Kronos model.
+Source: `data/backtest_results/thai_equity_2022-2024_v2/` (n_samples=10, equal-weight, single path).
 
-**Why this is not luck:** The p-value for the strategy's returns being > 0 is significant at 5%. The previous 14-ticker backtest (p=0.25) was under-diversified — the signal requires 49 tickers to compound through frequent small winners.
+**Interpretation:** The SET Index was DOWN 5% CAGR over this period — the model was UP 31%. The ~30pp alpha over equal-weight is the key signal.
+
+**Statistical note:** Single-run p=0.034 (borderline). The 2022 portion may partially overlap Kronos pre-training data (cutoff ≈ Dec 2022). Treat 2022 results with caution; the 4-year OOS table above is the more reliable evidence.
 
 ### Expanded Thai Equity (2020–2024, 5-year)
 

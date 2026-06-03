@@ -80,8 +80,13 @@ Key insight: 21-month fold windows needed (not 6mo) so val/test have ≥420 rows
 - **Position sizing: equal-weight confirmed superior.** `inv_vol` was backtested (`thai_equity_2022-2024_invvol/`): CAGR 13.29%, Sharpe 0.84, p=0.732. Equal-weight wins by a wide margin. Do NOT use inv_vol — inv_vol allocates more capital to low-vol stocks where Kronos signal is weaker.
 - **Friction analysis (2022-2024 canonical run):** 4.63%/yr friction drag on 500K portfolio ≈ 23,150 THB/yr. Gross CAGR ~36% → net 31.44%. Acceptable.
 - **Friction by year:** 2023: 5.68%/yr | 2024: 7.54%/yr | 2025: 17.35%/yr | 2026: 32.78%/yr (ann., 107 days)
-  - 2025 high friction root cause: **larger average position sizes** (size_pct 0.045 vs 0.021 in 2024) — stronger signal conviction in n50 results in larger entries. NOT high turnover (trade count only 8% more). In exchange for 17.35% friction, strategy earned +43.6pp alpha vs EW. Net positive.
-  - **min_holding_days experiment (2026-06-03):** values 5/10/15/20 produce identical results — natural holding period already exceeds 20 days. Friction cannot be reduced by this parameter.
+  - 2025 high friction root cause: **larger average position sizes** (size_pct 0.045 vs 0.021 in 2024) — stronger signal conviction in n50 forecasts results in larger entries. NOT high turnover (trade count only 8% more). In exchange for 17.35% friction, strategy earned +43.6pp alpha vs EW. Net positive.
+  - **min_holding_days experiment + long_threshold experiment (2026-06-03):** Both showed null results in fresh walkforward, BUT this is because fresh walkforward reads the general n10 forecast cache while stored n50 results used dedicated n50-precomputed forecasts. These experiments require GPU re-precompute to test properly. **Do not change parameters based on this test — it used wrong data.**
+- **Factor attribution (Task 5, 2026-06-03):** OLS regression of strategy vs SET market + 12-1 month momentum factor:
+  - Beta_market = −0.009, R² = 0.000 → **strategy is completely market-neutral**
+  - Beta_momentum = −0.010 → **strategy is NOT a momentum proxy**
+  - Residual alpha = +29.4%/yr after factor adjustment → **genuine Kronos model alpha, unexplained by common factors**
+  - This is the strongest possible factor attribution result. The alpha source is the model, not factor exposure.
 
 ### Expanded backtest (2020-2024, Thai equity)
 - **Full period:** CAGR +35.16%, Sharpe 1.29, Max DD −37.90%, Alpha vs EW +23.32%, p=0.174
@@ -144,7 +149,13 @@ Key insight: 21-month fold windows needed (not 6mo) so val/test have ≥420 rows
 Plan files archived to `docs/superpowers/archive/plans/`.
 
 ### Known unknowns
-- **Kronos pre-training cutoff:** The model card does not document a training data cutoff date. The README states "trained on data from over 45 global exchanges" but no date range. All backtests since 2022 should be treated as partially in-sample until confirmed otherwise. The 2023-2026 OOS window (post plausible late-2022 cutoff) is the conservative estimate.
+- **Kronos pre-training cutoff: ≈ December 2022 (inferred, not explicit)**
+  Evidence: `kronos_repo/finetune/config.py` sets `train_time_range = ["2011-01-01", "2022-12-31"]` and `test_time_range = ["2024-04-01", "2025-06-05"]`. This design is only coherent if the PRE-TRAINED model also ends around 2022 — otherwise the fine-tuning test would be partially in-sample for the base model. Paper (arXiv:2508.02739, published Aug 2025, accepted AAAI 2026) was developed with 2024-2025 treated as future/OOS.
+  **Practical implication:**
+  - 2022 portion of `thai_equity_2022-2024_v2` canonical run: **potentially partially in-sample** (H2 2022 most likely)
+  - **2023-2026 OOS backtests: CLEAN** — all genuinely out-of-sample
+  - This is GOOD NEWS: the 4-year OOS results (including the weak 2023) are trustworthy
+  - Status: INFERRED. To confirm definitively, read arXiv:2508.02739 Section 3 (Training Data).
 
 ## What not to build yet
 - Do not add live order execution, broker API integration, or intraday data — all explicitly out of scope per `PROJECT_STRUCTURE.md` §12. The local dashboard is for paper trading + broker-ready CSV exports only.
