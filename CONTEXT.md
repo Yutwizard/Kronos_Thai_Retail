@@ -76,6 +76,34 @@ _Avoid_: Prediction length, look-ahead window
 The median (50th percentile) of the model's predicted price distribution for a given ticker at a given Forecast Horizon. Interpreted as "the model's best guess." Used to compute Expected Return: `(P50 / current_price) − 1`. The model also outputs P5 and P95 for confidence bands.
 _Avoid_: Median prediction, expected price
 
+**Information Ratio (IR)**:
+A measure of stock-selection skill: `annualised active return / tracking error vs Equal-Weight Benchmark`. Higher IR means more return per unit of deviation from the benchmark. Used in the Signal Health row alongside Sharpe. Computed by `compute_information_ratio()` in `kth/backtest/metrics.py` (planned Phase 3).
+_Avoid_: Alpha ratio, active Sharpe (imprecise)
+
+**Batting Average**:
+The percentage of calendar months where the strategy's mean daily return exceeded the Equal-Weight Benchmark's mean daily return. Measures consistency, not magnitude. A strategy can have high Sharpe but low batting average (a few big wins). Computed by `compute_batting_average()` (planned Phase 3).
+_Avoid_: Win rate (that's trade_win_rate — per-trade P&L, not monthly benchmark-beating)
+
+**Calibration**:
+A check on whether the model's P5/P95 forecast bands are statistically honest. Compares each historical forecast's [P5, P95] range to the actual price 20 trading days later. Target: actual prices fall inside the band ~90% of the time. Coverage < 80% = overconfident; > 95% = overly wide. Computed by `compute_calibration()` (planned Phase 3) and shown in the Signal Health row.
+_Avoid_: Band accuracy, confidence accuracy
+
+**Drawdown Velocity**:
+A regime warning triggered when the Portfolio Value drops more than 3% over 5 consecutive trading days, even without hitting a single-day threshold. Catches slow grinds that the Circuit Breaker misses. Displayed as an 8th tile in the Risk Bar when triggered. Computed by `compute_drawdown_velocity()` (planned Phase 4).
+_Avoid_: Grind (too informal), slow drawdown
+
+**Bootstrap p-value**:
+A statistical measure of whether the strategy's live alpha is real or luck. Computed by shuffling the strategy's daily returns 1,000 times and counting what fraction of shuffles beat the Equal-Weight Benchmark by at least the observed margin. p < 0.05 = edge confirmed; p ≥ 0.15 = no confirmed edge. Displayed inline in the Signal Health row. Computed by `compute_bootstrap_pvalue()` (planned Phase 4).
+_Avoid_: p-value (use full term to distinguish from other statistical tests)
+
+**Sector Concentration**:
+A portfolio-level risk flag triggered when the buy loop would place more than 2 positions in the same SET sector (e.g., Banking, Energy, Property). Enforced by a hard filter in `trade_gen.py` using the `SECTOR` dict in `universe.py`. Not a warning — it silently skips over-concentrated picks and continues to the next ranked ticker.
+_Avoid_: Sector cap, concentration limit
+
+**Survivorship Bias**:
+An upward distortion in backtest CAGR caused by the universe containing only currently-listed tickers. Delisted Thai stocks (bankruptcies, mergers, 2020–2024) are excluded because yfinance does not expose their historical data. Estimated to inflate CAGR by ~1–3 percentage points per year for 40–60 stock universes. Formal disclosure added to `docs/backtest-methodology.html` (planned Phase 4).
+_Avoid_: Data bias, selection bias (too generic)
+
 ## Example Dialogue
 
 **Trader:** "What does today's report say?"  

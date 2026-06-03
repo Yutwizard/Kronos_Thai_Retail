@@ -530,6 +530,24 @@ See full results in `docs/user-manual.md` §6.
 - Whether `^SET.BK` works on Yahoo (we have a backup plan: scrape from SET website if needed)
 - How well Kronos generalizes zero-shot to Thai mid-caps — this is the real research question
 
+### Active enhancement plan (2026-06-03)
+
+4-phase QFM improvement plan in response to quant fund manager + software engineer review. 15 items across correctness, resilience, professional metrics, and statistical disclosure.
+
+**Open statistical questions identified:**
+- p-values: only 2024 (p=0.015) is significant. 2025 (p=0.257) and 2026 (p=0.353) are not. Live bootstrap p-value planned (Phase 4) to track this in real-time.
+- P5/P95 calibration: never verified against actual outcomes. Calibration check planned (Phase 3).
+- Survivorship bias: acknowledged but not quantified. Formal disclosure (~1–3% CAGR/yr inflation) planned (Phase 4).
+
+**Open resilience issues identified:**
+- Hardcoded friction rate `0.00268` in `trade_gen.py` — fixed in Phase 1.
+- Duplicated `INITIAL_CAPITAL` constant — fixed in Phase 1.
+- No sector concentration guard — sector guard added in Phase 2.
+- Portfolio JSON not written atomically — atomic write in Phase 2.
+- Forecast pipeline loses progress on crash — recovery logic in Phase 2.
+
+See plan files: `docs/superpowers/plans/2026-06-03-phase{1..4}-*.md`
+
 ---
 
-*Document version: 2026-05-21. Updated: universe 100 tickers, layers 3-4 built, open questions resolved.*
+*Document version: 2026-06-03. Updated: dashboard live, 4-phase enhancement plan added.*

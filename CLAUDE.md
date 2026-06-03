@@ -50,16 +50,26 @@ There is no test framework, lint config, CI, or build step. `verify_data_layer.p
 Five-layer pipeline (bottom-up build order):
 
 ```
-Layer 5: Decision report        notebooks/05_decision_report.ipynb     ✅ built
+Layer 5: Dashboard / Report     scripts/dashboard.py                    ✅ built (Flask, paper trading)
+                                kth/trading/portfolio.py                ✅ built
+                                kth/trading/trade_gen.py                ✅ built
+                                scripts/cron_pipeline.sh                ✅ built
+                                notebooks/05_decision_report.ipynb      ✅ built (Colab version)
 Layer 4: Backtest               kth/backtest/walkforward.py             ✅ built
+                                kth/backtest/strategy.py                ✅ built
+                                kth/backtest/metrics.py                 ✅ built
                                 scripts/compare_finetune.py             ✅ built
                                 scripts/eval_holdout.py                 ✅ built
 Layer 3: Kronos model           kth/models/kronos_wrapper.py            ✅ built
+                                kth/models/finetune.py                  ✅ built
+                                kth/models/_kronos_bridge.py            ✅ built
                                 notebooks/04_finetune_per_market.ipynb  ✅ built (Colab)
                                 scripts/train_per_market.py             ✅ built (local)
 Layer 2: Feature pipeline       kth/data/loader.py                      ✅ done
 Layer 1: Universe definition    kth/data/universe.py                    ✅ done
 ```
+
+**Active work:** 4-phase QFM enhancement plan in `docs/superpowers/plans/2026-06-03-phase*.md` — start with Phase 1 (15 min bug fixes).
 
 **Library code** lives in `kth/` (tested, reused across notebooks). **Research narrative** lives in `notebooks/` (exploratory, with plots).
 
@@ -85,30 +95,24 @@ columns: timestamps, open, high, low, close, volume, amount
 - Hardcoded 100 tickers across 9 asset classes in [kth/data/universe.py](kth/data/universe.py) — not a CSV. Adding a ticker is an intentional code change for version control.
 - `FRICTION` costs are per-class, not per-ticker. `fx_macro` class has zero friction (features only, not investable).
 - Key helpers: `get_all_tickers()`, `get_ticker_class(ticker)`, `get_display_name(ticker)`.
+- **Phase 2 addition (planned):** `SECTOR` dict + `get_sector()` — all 50 thai_equity tickers mapped to 10 SET sectors for the sector concentration guard (max 2 positions per sector).
 
 ### yfinance download behavior
 - `download_universe()` pauses 0.5s between tickers and retries with exponential backoff (2s / 4s / 8s, 3 attempts).
 - Individual ticker failures return `None` and are logged — they don't abort the batch.
 
-## Planned modules (not yet built)
+## Planned enhancements (4-phase QFM plan — 2026-06-03)
 
-| Module | Purpose |
-|---|---|
-| `kth/models/kronos_wrapper.py` | `KronosTH` class — loads Kronos-small/base, returns `ForecastResult` with P5/P50/P95 bands at 5d and 20d horizons; model weights pinned to local `./checkpoints/` after first HuggingFace download |
-| `kth/models/finetune.py` | `prepare_dataset`, `finetune_tokenizer` (stub — Kronos has no `fit()`), `finetune_predictor` (stub), `evaluate_model` — actual training uses `scripts/train_per_market.py` with custom training loop (tokenizer.encode → model forward → head.compute_loss → backprop) |
-| `scripts/train_per_market.py` | SGDR (CosineAnnealingWarmRestarts, 2 cycles), `fold_step_months=21` for ≥420-row val/test windows, early stopping patience=3, saves model_config.json + model.safetensors per fold |
-| `scripts/eval_holdout.py` | Loads fine-tuned checkpoints via `KronosTH._predictor` swap, evaluates direction accuracy on 2025 holdout per model, per fold |
-| `kth/backtest/walkforward.py` | `run_walkforward()` + `precompute_forecasts()` — forecasts cached per (date, ticker) to avoid re-running 38k forward passes; hysteresis buffer prevents whipsaw trades |
-| `kth/backtest/strategy.py` | `compute_signals()`, `select_positions()`, `compute_weights()` — pure stateless signal functions |
-| `kth/backtest/metrics.py` | Full professional metric set: Sharpe/Sortino/Calmar/Omega, historical VaR/CVaR, Ulcer Index, hit-rate, profit factor, t-stat, per-class attribution; gross and net side-by-side |
-| `kth/utils/plot.py` | `plot_forecast_band`, `plot_equity_curve`, `plot_attribution`, `plot_drawdown` |
-| `kth/utils/report.py` | `build_report_table` (dual sort: confidence-adjusted + raw), `render_markdown`, `render_html` |
-| `scripts/build_usermanual_html.py` | Generates `docs/user-manual.html` with 7 embedded Matplotlib charts |
-| `scripts/build_operations_html.py` | Generates `docs/operations-manual.html` |
-| `scripts/build_walkthrough_html.py` | Generates `docs/monthly-walkthrough.html` with timeline visualization |
-| `scripts/build_backtest_html.py` | Generates `docs/backtest-methodology.html` with 4 data visualizations |
+All core modules are ✅ built. The active work queue is a 4-phase enhancement plan. See `docs/superpowers/plans/2026-06-03-phase*.md` for full task lists.
 
-Target model sizes: **Kronos-small** (24.7M params) for iteration, **Kronos-base** (102.3M) for final fine-tune — both fit on a T4 16GB GPU.
+| Phase | Module(s) | What gets added | Est. |
+|---|---|---|---|
+| **1 (P0)** | `trade_gen.py` | Fix hardcoded `0.00268` friction; dedup `INITIAL_CAPITAL` | 15 min |
+| **2 (P1)** | `universe.py`, `trade_gen.py`, `portfolio.py`, `dashboard.py` | SECTOR dict, sector guard (max 2/sector), atomic JSON write, forecast recovery | ~2 hrs |
+| **3 (P2)** | `metrics.py`, `trade_gen.py`, `portfolio.py`, `cron_pipeline.sh` | IR, batting avg, calibration check, T+2 warning, model version log, LINE Notify | ~4 hrs |
+| **4 (P3/P4)** | `download_data.py`, `dashboard.py`, `metrics.py`, `backtest-methodology.html` | Price sanity, POST validation, drawdown velocity, bootstrap p-value, survivorship bias | ~6 hrs |
+
+Target model sizes: **Kronos-small** (24.7M params) — confirmed in production. Kronos-base (102.3M) requires T4 16GB.
 
 ## Known quirks
 
@@ -117,7 +121,7 @@ Target model sizes: **Kronos-small** (24.7M params) for iteration, **Kronos-base
 
 ## Hard scope limits
 
-Do **not** add (unless explicitly asked): live order execution, intraday data, web UI, portfolio optimization (Markowitz/factor), news sentiment, `pytest`/`tox` test frameworks, or CI config — all explicitly out of scope per `PROJECT_STRUCTURE.md §12`. (`Makefile` and `docker-compose.yml` are already present for Docker workflows — do not remove them.)
+Do **not** add (unless explicitly asked): live order execution, intraday data, portfolio optimization (Markowitz/factor), news sentiment, `pytest`/`tox` test frameworks, or CI config — all explicitly out of scope per `PROJECT_STRUCTURE.md §12`. (`Makefile` and `docker-compose.yml` are already present for Docker workflows — do not remove them.)
 
 ## Superpowers workflow
 
