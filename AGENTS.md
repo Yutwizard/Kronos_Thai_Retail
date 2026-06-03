@@ -152,7 +152,7 @@ Plan files archived to `docs/superpowers/archive/plans/`.
 7. `docs/user-manual.md` — full methodology, backtest results, and usage instructions
 8. `docs/monthly-walkthrough.html` — 21-day simulated month with real trades and portfolio outcomes
 9. `docs/superpowers/specs/` — approved design specs for all layers (6 active, 5 archived)
-10. `docs/superpowers/plans/` — implementation plans (3 active, 14 archived). Active: expanded backtest, OOS yearly, n50 completion
+10. `docs/superpowers/plans/` — implementation plans (4 active, 14 archived). Active: expanded backtest, OOS yearly, n50 completion, **post-2023 actions (execute when 2023 run completes)**
 11. `docs/superpowers/archive/` — completed/superseded plans (incl. all 4 QFM phase plans)
 12. `docs/superpowers/specs/2026-06-02-real-market-dashboard-design.md` — real-market dashboard design spec
 13. `kth/data/loader.py` — schema conversion and caching implementation
