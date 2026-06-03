@@ -1,6 +1,6 @@
 # AGENTS.md — Kronos-TH
 
-> Notebook-first research repo. Only the data layer is built; everything else is planned.
+> All 5 layers fully built. Active work: 4-phase QFM enhancement plan (Phase 1 = 15 min bug fixes).
 > When in doubt, read `PROJECT_STRUCTURE.md` — it is the authoritative design doc.
 
 ## Superpower workflow
@@ -137,7 +137,7 @@ Key decisions locked: SECTOR dict (max 2 positions/sector), LINE_NOTIFY_TOKEN en
 7. `docs/user-manual.md` — full methodology, backtest results, and usage instructions
 8. `docs/monthly-walkthrough.html` — 21-day simulated month with real trades and portfolio outcomes
 9. `docs/superpowers/specs/` — approved design specs for all layers (6 active, 5 archived)
-10. `docs/superpowers/plans/` — implementation plans (10 active, 7 archived). Key: expanded backtest, OOS yearly, n50 completion, 4-phase QFM enhancements
+10. `docs/superpowers/plans/` — implementation plans (7 active, 10 archived). Key: expanded backtest, OOS yearly, n50 completion, 4-phase QFM enhancements
 11. `docs/superpowers/archive/` — completed/superseded plans and specs
 12. `docs/superpowers/specs/2026-06-02-real-market-dashboard-design.md` — real-market dashboard design spec
 13. `docs/superpowers/plans/2026-06-02-real-market-dashboard.md` — dashboard implementation plan

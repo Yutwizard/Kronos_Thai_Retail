@@ -163,7 +163,11 @@ These were debated and chosen earlier:
 └────────────────────────────────────────────────────────────────┘
 ```
 
-LAYER 5: Decision report      notebooks/05_decision_report.ipynb     ⬜ planned
+LAYER 5: Dashboard / Report   scripts/dashboard.py                   ✅ built (Flask paper trading)
+                                kth/trading/portfolio.py                ✅ built
+                                kth/trading/trade_gen.py                ✅ built
+                                scripts/cron_pipeline.sh                ✅ built
+                                notebooks/05_decision_report.ipynb      ✅ built (Colab version)
 LAYER 4: Backtest             kth/backtest/walkforward.py            ✅ built
                                 kth/backtest/strategy.py               ✅ built
                                 kth/backtest/metrics.py                 ✅ built
@@ -191,28 +195,33 @@ kronos-th/
 │   ├── __init__.py
 │   ├── data/
 │   │   ├── __init__.py
-│   │   ├── universe.py             ⚙️  100-ticker universe + FRICTION costs
-│   │   └── loader.py               ⚙️  yfinance → Kronos schema + caching
-│   ├── models/                     [planned]
+│   │   ├── universe.py             ✅ 100-ticker universe + FRICTION costs
+│   │   └── loader.py               ✅ yfinance → Kronos schema + caching
+│   ├── models/                     ✅ built
 │   │   ├── __init__.py
-│   │   ├── kronos_wrapper.py       Thin wrapper around KronosPredictor
-│   │   └── finetune.py             Fine-tune loop adapted for T4 + our data
-│   ├── backtest/                   [planned]
+│   │   ├── kronos_wrapper.py       ✅ KronosTH zero-shot wrapper
+│   │   ├── finetune.py             ✅ Fine-tune loop (ZS wins, FT not deployed)
+│   │   └── _kronos_bridge.py       ✅ Import bridge for local Kronos repo
+│   ├── backtest/                   ✅ built
 │   │   ├── __init__.py
-│   │   ├── walkforward.py          Walk-forward eval driver
-│   │   ├── strategy.py             Signal → position translation
-│   │   └── metrics.py              Sharpe, MaxDD, Calmar, hit-rate
-│   └── utils/                      [planned]
+│   │   ├── walkforward.py          ✅ Walk-forward eval driver
+│   │   ├── strategy.py             ✅ Signal → position translation
+│   │   └── metrics.py              ✅ Sharpe, MaxDD, Calmar, VaR, attribution
+│   ├── trading/                    ✅ built (2026-06-02)
+│   │   ├── __init__.py
+│   │   ├── portfolio.py            ✅ Paper/live position tracking, P&L, trade log
+│   │   └── trade_gen.py            ✅ Trade ticket generation, 3-filter rule
+│   └── utils/                      ✅ built
 │       ├── __init__.py
-│       ├── plot.py                 Standard chart styles
-│       └── report.py               Daily decision report renderer
+│       ├── plot.py                 ✅ Standard chart styles
+│       └── report.py               ✅ Daily decision report renderer
 │
 ├── notebooks/
 │   ├── 01_data_layer.ipynb         ✅ Verify yfinance access (Colab-ready)
-│   ├── 02_kronos_zero_shot.ipynb   ⬜ Zero-shot inference on all classes
-│   ├── 03_walkforward_backtest.ipynb  ⬜ Backtest with realistic costs
-│   ├── 04_finetune_per_market.ipynb     ✅ Per-market training (Colab T4)
-│   └── 05_decision_report.ipynb         ✅ Daily decision report (3 views)
+│   ├── 02_kronos_zero_shot.ipynb   ✅ Superseded by walkforward.py + scripts
+│   ├── 03_walkforward_backtest.ipynb  ✅ Superseded by scripts/run_*.py
+│   ├── 04_finetune_per_market.ipynb   ✅ Per-market training (Colab T4)
+│   └── 05_decision_report.ipynb       ✅ Daily decision report (3 views)
 │
 ├── data/
 │   ├── raw/                        Cached parquet (one per ticker)
@@ -241,68 +250,21 @@ Cells:
 7. Quality report by asset class
 8. Confirm one ticker loads into Kronos-expected schema
 
-### Notebook 02 — Kronos zero-shot inference ⬜
+### Notebook 02 — Kronos zero-shot inference ✅ (superseded)
 
-Goal: see what a *pre-trained, untouched* Kronos model says about each asset class. This is the baseline before fine-tuning.
+**Superseded by** `scripts/run_backtest.py` and `kth/backtest/walkforward.py`. Zero-shot inference is run at scale via the walkforward pipeline, not interactively in a notebook. Backtest results (2022–2026) are in `docs/user-manual.md §6`.
 
-Cells:
-1. Load `NeoQuasar/Kronos-Tokenizer-base` and `NeoQuasar/Kronos-small`
-2. For 6 representative tickers (PTT.BK, AAPL, SPY, GLD, BTC-USD, ^SET.BK):
-   - Pull last 400 days, predict next 20 days
-   - Use `sample_count=20` for probabilistic forecast
-   - Plot prediction band (P5, P50, P95) vs. actual
-3. Compute per-asset error: MAE, directional hit-rate, correlation
-4. Summary table: which asset classes Kronos handles best zero-shot
+### Notebook 03 — Walk-forward backtest ✅ (superseded)
 
-**Honest expectation**: Kronos will do best on assets most similar to its pre-training (US stocks, crypto, gold). Thai mid-caps may be weakest. We'll see.
+**Superseded by** `scripts/run_*.py` family (`run_2023_n50.py`, `run_2025_n50.py`, `run_2026_n50.py`, `run_expanded_backtest.py`). The notebook approach was replaced by parameterised scripts that can run headlessly and resume from checkpoints.
 
-### Notebook 03 — Walk-forward backtest ⬜
+### Notebook 04 — Fine-tune Kronos-small on Colab T4 ✅
 
-Goal: turn forecasts into a strategy, run it through history with realistic costs, measure performance.
+**Built.** `notebooks/04_finetune_per_market.ipynb`. Also available as `scripts/train_per_market.py` for local/non-Colab runs. 9 checkpoints trained (3 markets × 3 folds). Verdict: zero-shot beats fine-tuning in all 3 markets. Checkpoints saved but not deployed.
 
-**Strategy v1 (intentionally simple):**
-- Each day, get Kronos forecast for next 5 days
-- If median forecast return > threshold T_long, go long 1 unit
-- If median forecast return < -T_long, exit (or short if `allow_short=True`)
-- Position sizing: equal-weight across signals, capped at N positions
-- Apply per-asset FRICTION costs from `universe.py`
+### Notebook 05 — Daily decision report ✅
 
-Cells:
-1. Load all cached data, split into train/test (e.g. test = last 2 years)
-2. Walk-forward loop: refit-free zero-shot first; later notebook redoes this with the fine-tuned model
-3. Compute portfolio P&L net of frictions
-4. Plot equity curve vs. buy-and-hold benchmarks per asset class
-5. Compute Sharpe, max drawdown, Calmar, hit-rate
-6. Drawdown attribution: which asset class hurt us most?
-
-### Notebook 04 — Fine-tune Kronos-small on Colab T4 ⬜
-
-Goal: adapt Kronos to our specific universe and see if it beats zero-shot.
-
-Cells:
-1. Build train/val/test pickles from cached parquet (mimic Kronos's QlibDataset format)
-2. Configure: lookback=400, pred_len=20, batch_size=8, grad_accum=4
-3. Fine-tune tokenizer (1 epoch on T4 ~30 min)
-4. Fine-tune predictor (3-5 epochs on T4 ~2 hours)
-5. Save checkpoint to Drive
-6. Re-run zero-shot evaluation from Notebook 02 with the fine-tuned model — does it improve?
-
-**Risk**: T4 sessions cap at ~8 hours and disconnect. We'll use frequent checkpointing.
-
-### Notebook 05 — Daily decision report ⬜
-
-Goal: a single rendered output a user could look at each morning.
-
-Cells:
-1. Load fine-tuned model + latest data
-2. For every ticker in universe: 20-step forecast with 20 samples
-3. For each ticker compute:
-   - Median expected return (1d, 5d, 20d)
-   - P5/P95 band width (uncertainty measure)
-   - Trend direction agreement across samples (consensus measure)
-   - "Confidence flag": green/yellow/red based on band width & consensus
-4. Render markdown table sorted by expected return × confidence
-5. Disclaimers: this is research output, not advice
+**Built.** `notebooks/05_decision_report.ipynb` (Colab version, 3 views). Also superseded for daily use by the local Flask dashboard (`scripts/dashboard.py`) which runs automatically via cron and requires no Colab session.
 
 ---
 
@@ -341,9 +303,9 @@ quality_report(df, ticker) -> dict
 - We compute `amount = close × volume` ourselves because Yahoo doesn't expose it. Kronos's tokenizer uses it as a "turnover" channel; using close×volume is what the original Kronos repo also does for markets that don't publish turnover.
 - Exponential backoff (3 tries, 2s/4s/8s) for individual ticker failures — Yahoo's rate limit is unpredictable.
 
-### `kth/models/kronos_wrapper.py` ⬜ planned
+### `kth/models/kronos_wrapper.py` ✅ built
 
-**Planned API:**
+**Public API:**
 ```python
 class KronosTH:
     def __init__(self, model_name="NeoQuasar/Kronos-small", device="auto")
@@ -351,28 +313,23 @@ class KronosTH:
     def forecast_batch(self, tickers, ...) -> dict[ticker, pd.DataFrame]
 ```
 
-**Design choices:**
-- Wraps `KronosPredictor` but always uses `predict_batch` internally for speed.
-- Always probabilistic (`n_samples >= 5`), returns all sample paths so callers can compute their own bands.
-- Caches the loaded model in a module-level variable to avoid reloading per call.
+**As built:** Wraps `KronosPredictor` via `_kronos_bridge.py`. Always probabilistic, returns P5/P50/P95 bands. Model cached at module level. Zero-shot only in production (fine-tuning did not beat ZS).
 
-### `kth/models/finetune.py` ⬜ planned
+### `kth/models/finetune.py` ✅ built
 
-**Planned API:**
+**Public API:**
 ```python
 def prepare_dataset(cache_dir, train_end, val_end, lookback, pred_len) -> dict
 def finetune_tokenizer(dataset, output_dir, **hparams)
 def finetune_predictor(dataset, tokenizer_path, output_dir, **hparams)
+def evaluate_model(model, dataset) -> dict
 ```
 
-**Design choices:**
-- Mirrors the Kronos repo's `finetune/` structure (`train_tokenizer.py`, `train_predictor.py`) but rewritten as importable functions, not CLI scripts, so Colab cells can call them.
-- Aggressive checkpointing (every N steps) to survive Colab disconnects.
-- Mixed-precision (fp16) training to fit Kronos-base on T4.
+**As built:** 9 checkpoints trained (3 markets × 3 folds). Verdict: zero-shot beats fine-tuning everywhere. Checkpoints exist at `./checkpoints/{model}/fold{f}/best/` but are not deployed.
 
-### `kth/backtest/walkforward.py` ⬜ planned
+### `kth/backtest/walkforward.py` ✅ built
 
-**Planned API:**
+**Public API:**
 ```python
 @dataclass
 class BacktestConfig:
@@ -384,20 +341,21 @@ class BacktestConfig:
     max_positions: int = 5
 
 def run_walkforward(config, predictor, universe_subset) -> BacktestResult
+def precompute_forecasts(config, predictor, tickers) -> None
 ```
 
-**Design choices:**
-- Walk-forward, not in-sample. Each prediction uses only data up to that point.
-- Strict no-look-ahead: signals on day `t` use data `<= t`, trade executes at day `t+1` open (not close, which is unrealistic).
-- Per-asset friction applied on every position change.
+**As built:** Strict no-look-ahead. Forecasts cached per (date, ticker) to avoid re-running. Hysteresis buffer prevents whipsaw. 4 benchmarks computed: SET, SPY, 60/40, equal-weight.
 
-### `kth/backtest/metrics.py` ⬜ planned
+### `kth/backtest/metrics.py` ✅ built
 
-**Planned metrics:**
-- CAGR, Sharpe (annualized), Sortino, Calmar
-- Max drawdown, average drawdown duration
-- Hit rate, payoff ratio
+**Implemented metrics:**
+- CAGR, Sharpe (annualised, rf=2%), Sortino, Calmar, Omega
+- Max drawdown, avg drawdown, Ulcer Index, max/avg duration
+- Historical VaR (95%, 99%), CVaR
+- Trade win rate, payoff ratio, profit factor
+- OLS alpha, beta, t-stat vs benchmark
 - Per-asset-class attribution
+- **Planned additions (Phase 3–4):** IR, batting average, calibration check, drawdown velocity, bootstrap p-value
 
 ---
 
