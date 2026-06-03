@@ -457,16 +457,16 @@ A 5-year expanded backtest adds the COVID crash (Q1 2020) and recovery (2020-202
 
 ### Yearly n=50 Backtests (Clean OOS, 2023-2026)
 
-High-quality backtests with n_samples=50 on the clean out-of-sample window (post training cutoff). 2023 is pending.
+High-quality backtests with n_samples=50 on the clean out-of-sample window (post training cutoff). All 4 years complete.
 
 | Year | Return | Sharpe | Max DD | Alpha EW | SET | p-value |
 |------|--------|--------|--------|----------|-----|---------|
 | **2024** | **+43.78%** | **2.27** | −6.92% | +49.0% | −1.10% | **0.015** |
 | **2025** | **+34.92%** | **1.03** | −24.00% | +27.3% | −10.04% | 0.257 |
 | **2026** | **+45.28%** | **2.42** | −18.26% | +26.5% | +20.61% | 0.353 |
-| 2023 | ⏳ pending | — | — | — | — | — |
+| **2023** | **+2.65%** | **0.10** | −13.08% | −1.67% | — | 0.419 |
 
-**Key insight:** n=50 improved 2025 by +12.4pp return and Sharpe +0.24 over n=10. 2026 has the highest return (+45%) but only 107 trading days — p=0.353 is not significant due to short period.
+**Key insight:** n=50 improved 2025 by +12.4pp return and Sharpe +0.24 over n=10. 2026 has the highest return (+45%) but only 107 trading days — p=0.353 is not significant due to short period. 2023 was a flat year (+2.65%) — the model slightly underperformed equal-weight. Alpha is not uniform every year.
 
 ---
 

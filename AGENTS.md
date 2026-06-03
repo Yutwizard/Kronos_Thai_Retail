@@ -92,9 +92,9 @@ Key insight: 21-month fold windows needed (not 6mo) so val/test have ≥420 rows
 - **2024 n=50:** +43.78%, Sharpe 2.27, Max DD −6.92%, p=0.015. Friction/yr: 7.54%.
 - **2025 n=50:** +34.92%, Sharpe 1.03, Max DD −24.00%, p=0.257. Friction/yr: 17.35% ⚠ (51% of gross CAGR eaten by friction — investigate before live trading 2025-style regimes).
 - **2026 n=50:** +45.28%, Sharpe 2.42, Max DD −18.26%, p=0.353 (107 days — too short).
-- **2023 n=50:** ⬜ running (~12 hrs GPU). This is the most credible OOS year — no pre-training overlap risk.
+- **2023 n=50:** +2.65%, Sharpe 0.10, Max DD −13.08%, p=0.419. Friction/yr: 19.52% ⚠ (flat year, model slightly underperformed EW by −1.67%).
 - n=10→n=50 upgrade improved 2025 by +12.4pp return, Sharpe +0.24 (n=10 forecasts were noisy)
-- **Statistical note:** Only 2024 clears p<0.05 (single test). Under Bonferroni for 9 tests, threshold is p<0.0056 — no year survives correction. 2023 result will be the critical data point.
+- **Statistical note:** Only 2024 clears p<0.05 (single test). Under Bonferroni for 9 tests, threshold is p<0.0056 — no year survives correction. 2023 was a flat year — alpha is not uniform every year.
 - **Crypto (12 tickers):** CAGR +16.45%, Sharpe 0.52, Max DD −68.58% (ZS)
   - FT fold 0: CAGR +13.31%, Sharpe 0.46 — worse than ZS (−3.13%)
   - Verdict: crypto stays zero-shot per spec (FT ≤ ZS)

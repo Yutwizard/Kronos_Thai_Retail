@@ -1,22 +1,13 @@
-# 2026 + 2023 n=50 Plan — Status
-> ✅ 2026 complete | ⬜ 2023 pending
+# n=50 Yearly Backtest — Complete ✅
+> All 4 years (2023-2026) done with n_samples=50
 
-## Steps
+## Results
 
-### Task 1: 2026 n=50 (107 days) ✅
-- Script: `scripts/run_2026_n50.py`
-- Period: 2026-01-01 → 2026-05-30
-- Result: **+45.28%, Sharpe 2.42, Max DD −18.26%, p=0.353**
-- Saved: `data/backtest_results/thai_equity_2026_n50_full/`
+| Year | Return | Sharpe | Max DD | p-value |
+|------|--------|--------|--------|---------|
+| 2023 | **+2.65%** | **0.10** | −13.08% | 0.419 |
+| 2024 | **+43.78%** | **2.27** | −6.92% | **0.015** |
+| 2025 | **+34.92%** | **1.03** | −24.00% | 0.257 |
+| 2026 | **+45.28%** | **2.42** | −18.26% | 0.353 |
 
-### Task 2: 2023 n=50 (252 days) ⬜
-- Script: `scripts/run_2023_n50.py`
-- Period: 2023-01-01 → 2023-12-31
-- ~252 days × 2.8 min/day = ~12 hrs background
-- Run after reboot:
-  ```bash
-  nohup venv/bin/python scripts/run_2023_n50.py > data/logs/2023_n50.log 2>&1 &
-  ```
-
-### Task 3: Generate final n=50 comparison report (all 4 years) ⬜
-- After 2023 completes, regenerate all reports
+**Key takeaway:** Alpha is not uniform every year. 2024-2026 averaged +41.3% CAGR, but 2023 was flat (+2.65%). The model has regime-dependent performance — strongest in directional markets, weakest in low-volatility sideways years.
