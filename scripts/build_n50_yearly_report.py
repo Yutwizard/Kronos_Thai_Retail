@@ -22,10 +22,10 @@ def load_year(year, tag=""):
     return {"eq": eq * CAP, "trades": tr, "m": m, "ew": ew * CAP, "set": set_bm}
 
 years = {
+    "2023": load_year("2023", "_n50"),
     "2024": load_year("2024", "_n50"),
     "2025": load_year("2025", "_n50"),
     "2026": load_year("2026", "_n50_full"),
-    "2023": None,
 }
 
 # Year cards
