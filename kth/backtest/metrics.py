@@ -325,9 +325,15 @@ def compute_bootstrap_pvalue(
     else:
         bench = np.zeros(len(strat))
 
-    observed_alpha = strat.mean() - bench.mean()
+    active = strat - bench
+    observed_alpha = active.mean()
+    # Bootstrap under H0: active mean = 0.
+    # Center the active returns, resample with replacement, count how often
+    # resampled mean >= observed mean. Permutation is wrong here because
+    # permutation preserves the mean exactly.
+    centered = active - observed_alpha
     beat_count = sum(
-        rng.permutation(strat).mean() - bench.mean() >= observed_alpha
+        rng.choice(centered, size=len(centered), replace=True).mean() >= observed_alpha
         for _ in range(n_bootstrap)
     )
     pvalue = beat_count / n_bootstrap
