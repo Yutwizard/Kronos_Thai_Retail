@@ -87,13 +87,20 @@ def load_forecasts(report_date: str = None) -> list[dict]:
     return rows
 
 
+def _one_way_friction(ticker: str) -> float:
+    """One-way friction rate for a ticker (commission + slippage) from the FRICTION dict."""
+    cls = get_ticker_class(ticker)
+    fric = FRICTION.get(cls, {"commission_oneway": 0.002, "slippage_oneway": 0.001})
+    return fric["commission_oneway"] + fric["slippage_oneway"]
+
+
 def generate_trade_ticket(report_date: str = None, positions: dict = None) -> dict:
     """Generate today's trade ticket: exits, reduces, buys, cash flow."""
     forecasts = load_forecasts(report_date)
     if not forecasts:
         return {"error": "No forecasts available", "exits": [], "reduces": [], "buys": []}
 
-    from kth.trading.portfolio import get_positions, compute_metrics
+    from kth.trading.portfolio import get_positions, compute_metrics, INITIAL_CAPITAL
     metrics = compute_metrics("paper")
     alloc_band = metrics["allocation_band"]
     alloc_pct = metrics["allocation_pct"]
@@ -105,7 +112,6 @@ def generate_trade_ticket(report_date: str = None, positions: dict = None) -> di
     else:
         held_tickers = positions
 
-    INITIAL_CAPITAL = 500000.0
     capital = pos_data.get("total_value", INITIAL_CAPITAL) if positions is None else INITIAL_CAPITAL
     deployable = capital * alloc_pct
 
@@ -186,8 +192,9 @@ def generate_trade_ticket(report_date: str = None, positions: dict = None) -> di
 
     gross_sells = sum(e["estimated_thb"] for e in exits) + sum(r["estimated_thb"] for r in reduces)
     gross_buys = sum(b["estimated_thb"] for b in buys)
-    friction_sells = gross_sells * 0.00268
-    friction_buys = gross_buys * 0.00268
+    friction_sells = sum(e["estimated_thb"] * _one_way_friction(e["ticker"]) for e in exits) + \
+                     sum(r["estimated_thb"] * _one_way_friction(r["ticker"]) for r in reduces)
+    friction_buys = sum(b["estimated_thb"] * _one_way_friction(b["ticker"]) for b in buys)
     total_friction = round(friction_sells + friction_buys, 2)
     net_cash = gross_sells - gross_buys - total_friction
 
