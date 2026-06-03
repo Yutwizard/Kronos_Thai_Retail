@@ -201,6 +201,44 @@ FRICTION = {
 }
 
 
+# SET sector classification for thai_equity tickers.
+# Used by the sector concentration guard (max 2 positions per sector).
+SECTOR: dict[str, str] = {
+    # Banking (7)
+    "KBANK.BK": "Banking", "SCB.BK":  "Banking", "BBL.BK":   "Banking",
+    "KTB.BK":   "Banking", "TISCO.BK":"Banking",  "TCAP.BK":  "Banking", "KKP.BK": "Banking",
+    # Energy (10)
+    "PTT.BK":   "Energy",  "PTTEP.BK":"Energy",   "BGRIM.BK": "Energy",  "GPSC.BK": "Energy",
+    "TOP.BK":   "Energy",  "IRPC.BK": "Energy",   "BANPU.BK": "Energy",  "BCP.BK":  "Energy",
+    "RATCH.BK": "Energy",  "GULF.BK": "Energy",
+    # Property (7)
+    "LH.BK":    "Property","QH.BK":   "Property", "AP.BK":    "Property","ORI.BK":  "Property",
+    "SIRI.BK":  "Property","PSH.BK":  "Property", "CPN.BK":   "Property",
+    # Healthcare (4)
+    "BDMS.BK":  "Healthcare","BH.BK": "Healthcare","BCH.BK":  "Healthcare","CHG.BK":"Healthcare",
+    # Retail (6)
+    "CPALL.BK": "Retail",  "HMPRO.BK":"Retail",   "CRC.BK":   "Retail",
+    "GLOBAL.BK":"Retail",  "DOHOME.BK":"Retail",  "MEGA.BK":  "Retail",
+    # Hospitality & Tourism (4)
+    "MINT.BK":  "Hospitality","CENTEL.BK":"Hospitality","ERW.BK":"Hospitality","AOT.BK":"Hospitality",
+    # Telecom (2)
+    "ADVANC.BK":"Telecom", "TRUE.BK": "Telecom",
+    # Food & Beverage (3)
+    "CPF.BK":   "Food",    "OSP.BK":  "Food",     "ICHI.BK":  "Food",
+    # Tech & Electronics (3)
+    "JMART.BK": "Tech",    "HANA.BK": "Tech",     "DELTA.BK": "Tech",
+    # Logistics & Infrastructure (2)
+    "BEM.BK":   "Logistics","BTS.BK": "Logistics",
+    # Other / Diversified (2)
+    "IVL.BK":   "Other",   "SCC.BK":  "Other",
+}
+
+
+def get_sector(ticker: str) -> str:
+    """Return SET sector label for a thai_equity ticker. Returns 'Other' for non-Thai tickers."""
+    return SECTOR.get(ticker, "Other")
+
+
 if __name__ == "__main__":
     print(f"Total asset classes: {len(UNIVERSE)}")
     print(f"Total tickers:       {len(get_all_tickers())}")

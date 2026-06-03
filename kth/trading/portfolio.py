@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import csv
+import os
 from pathlib import Path
 from datetime import date
 
@@ -48,8 +49,11 @@ def init_portfolio(mode: str = "paper") -> dict:
 
 def _save_portfolio(mode: str, pf: dict):
     _ensure_dirs()
-    with open(_portfolio_path(mode), "w") as f:
+    path = _portfolio_path(mode)
+    tmp = path.with_suffix(".tmp")
+    with open(tmp, "w") as f:
         json.dump(pf, f, indent=2, default=str)
+    os.replace(tmp, path)
 
 
 def get_positions(mode: str = "paper") -> dict:

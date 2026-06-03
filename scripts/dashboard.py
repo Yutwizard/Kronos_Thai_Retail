@@ -179,12 +179,25 @@ def cmd_generate():
         today_str = str(date.today())
         slug = "NeoQuasar_Kronos-small"
         today_dir = Path(f"data/forecast_cache/{slug}/{today_str}")
-        if today_dir.exists():
-            shutil.rmtree(today_dir)
+        today_dir.mkdir(parents=True, exist_ok=True)
 
-        th = KronosTH.from_pretrained("NeoQuasar/Kronos-small", device="cuda")
-        precompute_forecasts(th, tickers, start_date=today_str, end_date=today_str,
-                             pred_len=20, n_samples=50, lookback=400)
+        def _already_done(ticker: str) -> bool:
+            safe = ticker.replace("^", "_").replace("=", "_")
+            p = today_dir / f"{safe}.parquet"
+            if not p.exists():
+                return False
+            from datetime import datetime as _dt
+            return _dt.fromtimestamp(p.stat().st_mtime).date() == date.today()
+
+        pending = [t for t in tickers if not _already_done(t)]
+        skipped = len(tickers) - len(pending)
+        if skipped:
+            log(f"STEP2: {skipped} tickers already forecasted today, running {len(pending)} remaining")
+
+        if pending:
+            th = KronosTH.from_pretrained("NeoQuasar/Kronos-small", device="cuda")
+            precompute_forecasts(th, pending, start_date=today_str, end_date=today_str,
+                                 pred_len=20, n_samples=50, lookback=400)
         log("STEP2_OK")
     except Exception as e:
         log(f"STEP2_FAILED: {e}")

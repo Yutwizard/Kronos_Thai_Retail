@@ -9,12 +9,13 @@ from typing import Optional
 
 import pandas as pd
 
-from kth.data.universe import UNIVERSE, FRICTION, get_ticker_class, get_display_name
+from kth.data.universe import UNIVERSE, FRICTION, get_ticker_class, get_display_name, get_sector
 
 CACHE_SLUG = "NeoQuasar_Kronos-small"
 CACHE_DIR = Path("data/forecast_cache") / CACHE_SLUG
 POSITIONS_DIR = Path("data/positions")
 MAX_POSITIONS = 5
+MAX_SECTOR_POSITIONS = 2
 THAI_TICKERS = [t for t, _, _ in UNIVERSE["thai_equity"]]
 BACKTEST_METRICS = {
     "thai_equity": {"sharpe": 1.40, "cagr": 0.3144, "max_dd": -0.1797},
@@ -160,8 +161,16 @@ def generate_trade_ticket(report_date: str = None, positions: dict = None) -> di
 
     buys = []
     remaining_cap = deployable
-    existing_count = len(held_tickers) - len(exits)
+    exited = {e["ticker"] for e in exits}
+    existing_count = len(held_tickers) - len(exited)
     slots = max(0, MAX_POSITIONS - existing_count)
+
+    # Seed sector counts from positions being kept (not exited)
+    sector_counts: dict[str, int] = {}
+    for ticker in held_tickers:
+        if ticker not in exited:
+            sec = get_sector(ticker)
+            sector_counts[sec] = sector_counts.get(sec, 0) + 1
 
     for rank_idx, f in enumerate(forecasts, 1):
         if len(buys) >= slots:
@@ -172,6 +181,8 @@ def generate_trade_ticket(report_date: str = None, positions: dict = None) -> di
             continue
         if f["confidence"] == "red":
             continue
+        if sector_counts.get(get_sector(f["ticker"]), 0) >= MAX_SECTOR_POSITIONS:
+            continue
 
         per_slot = remaining_cap / max(slots - len(buys), 1)
         lots = int(per_slot / f["close"] / 100) * 100
@@ -179,6 +190,7 @@ def generate_trade_ticket(report_date: str = None, positions: dict = None) -> di
             continue
 
         limit = round(f["close"] * (1 + f["exp_ret"] / 2), 2)
+        sec = get_sector(f["ticker"])
         buys.append({
             "ticker": f["ticker"],
             "name": f["name"],
@@ -188,6 +200,7 @@ def generate_trade_ticket(report_date: str = None, positions: dict = None) -> di
             "estimated_thb": round(lots * f["close"]),
             "rationale": f"🟢↑ rank#{rank_idx} net_ret={f['net_ret']:+.2%}",
         })
+        sector_counts[sec] = sector_counts.get(sec, 0) + 1
         remaining_cap -= lots * f["close"]
 
     gross_sells = sum(e["estimated_thb"] for e in exits) + sum(r["estimated_thb"] for r in reduces)
