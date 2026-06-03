@@ -20,6 +20,53 @@ TRADING_MODE = os.environ.get("KRONOS_MODE", "paper")  # "paper" or "live"
 PORT = int(os.environ.get("KRONOS_PORT", "5555"))
 
 _calibration_cache: dict = {"date": None, "result": None}
+_forecast_cache: dict = {"date": None, "data": {}}
+
+
+def _get_cached_closes() -> dict[str, float]:
+    """Return {ticker: close} from today's forecast cache. Used for fill_price validation."""
+    today = str(date.today())
+    if _forecast_cache["date"] == today:
+        return _forecast_cache["data"]
+    try:
+        from kth.trading.trade_gen import load_forecasts
+        rows = load_forecasts(today)
+        closes = {r["ticker"]: r["close"] for r in rows}
+    except Exception:
+        closes = {}
+    _forecast_cache["date"] = today
+    _forecast_cache["data"] = closes
+    return closes
+
+
+def _validate_trade_request(trades: list[dict]) -> list[str]:
+    """Return list of error strings. Empty = valid."""
+    errors = []
+    closes = _get_cached_closes()
+    valid_actions = {"buy", "sell", "exit", "reduce"}
+    for i, t in enumerate(trades):
+        pfx = f"Trade {i + 1} ({t.get('ticker', '?')})"
+        action = t.get("action", "")
+        shares = t.get("shares")
+        fill_price = t.get("fill_price")
+
+        if action not in valid_actions:
+            errors.append(f"{pfx}: invalid action '{action}' — must be one of {sorted(valid_actions)}")
+        if not isinstance(shares, (int, float)) or shares <= 0:
+            errors.append(f"{pfx}: shares must be positive, got {shares!r}")
+        elif int(shares) % 100 != 0:
+            errors.append(f"{pfx}: shares must be a multiple of 100 (SET board lot), got {int(shares)}")
+        if not isinstance(fill_price, (int, float)) or fill_price <= 0:
+            errors.append(f"{pfx}: fill_price must be positive, got {fill_price!r}")
+        elif closes and t.get("ticker") in closes:
+            cached = closes[t["ticker"]]
+            deviation = abs(fill_price - cached) / cached if cached else 0
+            if deviation > 0.20:
+                errors.append(
+                    f"{pfx}: fill_price {fill_price} deviates {deviation:.0%} from cached close "
+                    f"{cached} — exceeds 20% sanity limit"
+                )
+    return errors
 
 def _get_calibration() -> dict:
     """Compute P5/P95 calibration once per day; return cached result otherwise."""
@@ -81,6 +128,9 @@ def api_trades():
         if not data or "trades" not in data:
             return jsonify({"error": "Missing trades array", "recorded": 0}), 400
         trades = data.get("trades", [])
+        errors = _validate_trade_request(trades)
+        if errors:
+            return jsonify({"error": "Validation failed", "details": errors}), 400
         results = []
         for t in trades:
             r = execute_trade(
@@ -134,11 +184,21 @@ def api_health():
                 last_forecast = dates[0]
                 stale = dates[0] != today_str
 
+    sanity_failures = []
+    sanity_log = Path(f"data/logs/sanity_{today_str}.json")
+    if sanity_log.exists():
+        try:
+            import json as _json
+            sanity_failures = _json.loads(sanity_log.read_text()).get("failures", [])
+        except Exception:
+            pass
+
     return jsonify({
         "last_forecast_date": last_forecast,
         "steps": steps,
         "stale": stale,
         "pipeline_log": str(log_path) if log_path.exists() else None,
+        "sanity_failures": sanity_failures,
     })
 
 
@@ -213,8 +273,17 @@ def cmd_generate():
             from datetime import datetime as _dt
             return _dt.fromtimestamp(p.stat().st_mtime).date() == date.today()
 
-        pending = [t for t in tickers if not _already_done(t)]
-        skipped = len(tickers) - len(pending)
+        # Skip tickers that failed price sanity check
+        sanity_log = PROJECT_ROOT / f"data/logs/sanity_{today_str}.json"
+        sanity_failures = set()
+        if sanity_log.exists():
+            import json as _json
+            sanity_failures = set(_json.loads(sanity_log.read_text()).get("failures", []))
+            if sanity_failures:
+                log(f"STEP2: excluding {len(sanity_failures)} sanity-failed tickers: {sorted(sanity_failures)}")
+
+        pending = [t for t in tickers if not _already_done(t) and t not in sanity_failures]
+        skipped = len(tickers) - len(pending) - len(sanity_failures)
         if skipped:
             log(f"STEP2: {skipped} tickers already forecasted today, running {len(pending)} remaining")
 

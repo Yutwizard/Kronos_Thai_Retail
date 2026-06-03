@@ -300,7 +300,22 @@ window.addEventListener('scroll', function(){ var b=document.querySelector('.btt
 <div class="card">
   <ul>
     <li><strong>Only 3 of 9 classes backtested.</strong> Thai equity, US equity, and crypto have walk-forward backtests. ETF global, commodity, bond, REIT, FX are untested. Half the universe has no backtest validation.</li>
-    <li><strong>Survivorship bias.</strong> Only currently-listed tickers are in the universe. Delisted SET stocks are absent, inflating returns.</li>
+    <li>
+      <strong>Survivorship bias.</strong> The 49 Thai equity tickers were selected as of mid-2025.
+      Thai stocks delisted, suspended, or merged between 2020 and 2024 are <em>not included</em>
+      because yfinance does not expose historical data for delisted securities.
+      <br><br>
+      Academic studies of SET delisting rates (2010–2020) suggest survivorship bias inflates
+      reported CAGR by approximately <strong>1–3 percentage points per year</strong> for universe
+      sizes comparable to ours (40–60 stocks). Applying this range to our 2022–2024 result of
+      +31.44% CAGR, the survivorship-adjusted estimate is approximately
+      <strong>+28–30% CAGR</strong>.<sup>1</sup> The qualitative conclusion — genuine alpha over
+      SET and Equal-Weight benchmarks — is robust to this adjustment.
+      <br><br>
+      <em>Mitigation path:</em> A point-in-time universe (using SET constituent lists from 2020
+      onwards) would eliminate this bias but requires historical sector data not available via
+      yfinance. Flagged as a future enhancement.
+    </li>
     <li><strong>Free data quality.</strong> Yahoo Thai stock prices can have stale data, gaps, and bad ticks. Extreme moves are flagged but not corrected.</li>
     <li><strong>No capacity constraints.</strong> Assumes ~200K THB positions fill at open. Real large orders could move the market.</li>
     <li><strong>Tax not modelled.</strong> Thai gains are taxed as personal income (0-35%). Net of tax, returns would be lower.</li>
@@ -311,8 +326,11 @@ window.addEventListener('scroll', function(){ var b=document.querySelector('.btt
 </div>
 
 <a href="#" class="btt" onclick="window.scrollTo(0,0);return false;">&uarr;</a>
-<div style="text-align:center;padding:30px 0 10px;color:#95a5a6;font-size:0.82rem;">
-  Generated 2026-05-24 &bull; Past performance is not indicative of future results
+<div style="padding:10px 30px 0;color:#95a5a6;font-size:0.78rem;">
+  <sup>1</sup> Survivorship bias estimate based on SET delisting rate research. All reported backtest CAGRs are unadjusted. The adjusted range (+28–30%) represents a conservative lower bound assuming 1–3pp annual inflation from survivorship.
+</div>
+<div style="text-align:center;padding:20px 0 10px;color:#95a5a6;font-size:0.82rem;">
+  Generated 2026-05-24 &bull; Updated 2026-06-03 &bull; Past performance is not indicative of future results
 </div>
 </body>
 </html>

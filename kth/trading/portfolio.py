@@ -277,6 +277,13 @@ def compute_metrics(mode: str = "paper") -> dict:
     # Market state
     market_state = _compute_market_state()
 
+    from kth.backtest.metrics import compute_drawdown_velocity, compute_bootstrap_pvalue
+    equity_series = pd.Series(values)
+    dd_velocity = compute_drawdown_velocity(equity_series)
+
+    daily_returns = pd.Series(values).pct_change().dropna()
+    bootstrap_pvalue = compute_bootstrap_pvalue(daily_returns)
+
     return {
         "sharpe": round(sharpe, 2),
         "drawdown": round(dd, 4),
@@ -288,6 +295,8 @@ def compute_metrics(mode: str = "paper") -> dict:
         "allocation_pct": round(alloc_pct, 2),
         "closed_trades": closed_count,
         "market_state": market_state,
+        "drawdown_velocity": dd_velocity,
+        "bootstrap_pvalue": bootstrap_pvalue,
     }
 
 

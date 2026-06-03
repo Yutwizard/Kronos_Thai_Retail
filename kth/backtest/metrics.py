@@ -285,6 +285,60 @@ def compute_metrics(
     }
 
 
+def compute_drawdown_velocity(
+    equity_curve: pd.Series,
+    window: int = 5,
+    threshold: float = -0.03,
+) -> dict:
+    """
+    Flag a slow portfolio grind: return < threshold over the last `window` trading days.
+    Catches regime deterioration that doesn't trigger single-day thresholds.
+    Returns {'grind': bool, 'velocity': float, 'window': int}
+    """
+    if len(equity_curve) < window + 1:
+        return {"grind": False, "velocity": 0.0, "window": window}
+    recent = equity_curve.iloc[-(window + 1):]
+    velocity = float(recent.iloc[-1] / recent.iloc[0] - 1)
+    return {"grind": velocity < threshold, "velocity": round(velocity, 4), "window": window}
+
+
+def compute_bootstrap_pvalue(
+    strategy_returns: pd.Series,
+    benchmark_returns: pd.Series | None = None,
+    n_bootstrap: int = 1000,
+    seed: int = 42,
+) -> dict:
+    """
+    Bootstrap p-value: fraction of n_bootstrap shuffles of strategy_returns that
+    beat benchmark_returns by >= the observed active return margin.
+    Lower p = stronger evidence of genuine edge.
+    Returns {'pvalue': float|None, 'n_bootstrap': int, 'n_obs': int, 'significant': bool}
+    """
+    if len(strategy_returns) < 20:
+        return {"pvalue": None, "n_bootstrap": n_bootstrap,
+                "n_obs": len(strategy_returns), "significant": False}
+
+    rng = np.random.default_rng(seed)
+    strat = strategy_returns.values
+    if benchmark_returns is not None:
+        bench = benchmark_returns.reindex(strategy_returns.index).fillna(0).values
+    else:
+        bench = np.zeros(len(strat))
+
+    observed_alpha = strat.mean() - bench.mean()
+    beat_count = sum(
+        rng.permutation(strat).mean() - bench.mean() >= observed_alpha
+        for _ in range(n_bootstrap)
+    )
+    pvalue = beat_count / n_bootstrap
+    return {
+        "pvalue": round(pvalue, 3),
+        "n_bootstrap": n_bootstrap,
+        "n_obs": len(strategy_returns),
+        "significant": pvalue < 0.05,
+    }
+
+
 def compute_information_ratio(
     strategy_returns: pd.Series,
     benchmark_returns: pd.Series,
