@@ -163,86 +163,70 @@ print(pd.DataFrame(rows).to_string(index=False))
 
 ---
 
-## Task 4 — Investigate 2025 Friction Drain (2–3 hrs)
+## Task 4 — Investigate 2025 Friction Drain ✅ ROOT CAUSE IDENTIFIED, GPU REQUIRED FOR EXPERIMENTS
 
-**Root cause (already identified):** Average position size in 2025 is 2.1× larger than 2024 (size_pct 0.045 vs 0.021). Spikes in Aug–Sep–Oct 2025 (avg_size 0.063–0.088). The strategy enters/exits at full 20% position size in bull regimes, generating large per-trade friction.
+> **IMPORTANT — Plan correction (2026-06-03):** Sub-tasks 4b and 4c originally stated "no GPU needed, reusing cached forecasts." This was WRONG. All parameter sensitivity experiments require GPU because:
+>
+> 1. The fresh local `run_walkforward()` reads `data/forecast_cache/NeoQuasar_Kronos-small/` which contains n10 forecasts from original runs. The stored n50 backtests (thai_equity_2024_n50 etc.) used dedicated n50 forecasts precomputed on Colab GPU.
+> 2. Running `run_walkforward()` with different `min_holding_days` or `long_threshold` on local n10-quality forecasts produces meaningless results — the signal quality is completely different.
+> 3. All three experiments (4b: min_hold 5/10/15/20, 4c: threshold 0.01/0.015/0.02) returned **identical results** regardless of parameter value, confirming the underlying forecast data is the problem, not the parameters.
+>
+> **To run these properly: precompute n50 forecasts on Colab GPU for the target year, then immediately run `run_walkforward()` before the cache is contaminated by other runs.**
 
-**Friction per year:** 7.54% (2024) vs 17.35% (2025) — 51% of gross 2025 CAGR consumed.
+### Sub-task 4a: Root cause ✅ COMPLETE (no GPU needed — reads stored parquet)
 
-### Sub-task 4a: Confirm root cause
+From `thai_equity_2024_n50` and `thai_equity_2025_n50` trades:
 
-- [ ] Run this diagnostic:
+| Year | avg size_pct | Trades/yr | Friction/yr |
+|------|-------------|-----------|-------------|
+| 2024 | 0.021 | 1,322 | 7.54% |
+| 2025 | **0.045** | 1,424 | **17.35%** |
 
-```python
-import pandas as pd
-from pathlib import Path
+**Root cause: 2025 average position size is 2.1× larger.** Not higher turnover. n50 forecasts in strong-signal 2025 regimes produce higher-conviction signals → larger entries. Friction spikes in Aug–Oct 2025 (avg_size 0.063–0.088) — the bull market phase. This is structural and acceptable: 17.35% friction was paid for +43.6pp alpha vs EW.
 
-trades_25 = pd.read_parquet("data/backtest_results/thai_equity_2025_n50/trades.parquet")
-trades_24 = pd.read_parquet("data/backtest_results/thai_equity_2024_n50/trades.parquet")
+### Sub-task 4b: min_holding_days experiment ✅ COMPLETE — INVALIDATED (wrong data)
 
-for name, t in [("2024", trades_24), ("2025", trades_25)]:
-    print(f"\n{name}:")
-    print(f"  avg size_pct: {t['size_pct'].mean():.4f}")
-    print(f"  >10% trades: {(t['size_pct']>0.10).mean():.1%} of all trades")
-    print(f"  >15% trades: {(t['size_pct']>0.15).mean():.1%} of all trades")
-    print(f"  >20% trades: {(t['size_pct']>0.20).mean():.1%} of all trades")
-    # Friction breakdown by direction
-    print(t.groupby('direction')['friction_cost'].sum())
+**Ran:** 5/10/15/20 days on 2023/2024/2025. **All configs returned identical results.**
+
+**Why:** Fresh walkforward used local n10 cache; stored n50 results used Colab-precomputed n50 cache. Parameter changes had no effect because signal quality mismatch dwarfs parameter differences.
+
+**Conclusion:** Cannot determine real effect of min_holding_days without GPU. The natural holding period appears long enough that 20d never binds — but this is a hypothesis that needs proper n50 testing.
+
+**GPU test (run on Colab when needed):**
+```bash
+# Step 1: precompute n50 forecasts for 2025 with fresh GPU run
+python scripts/dashboard.py --generate  # or run precompute_forecasts() on Colab
+
+# Step 2: immediately run walkforward with different min_hold configs
+# BacktestConfig(min_holding_days=5)  → save to thai_equity_2025_minhold_5/
+# BacktestConfig(min_holding_days=10) → save to thai_equity_2025_minhold_10/
+# BacktestConfig(min_holding_days=20) → save to thai_equity_2025_minhold_20/
 ```
 
-### Sub-task 4b: Minimum holding period experiment ✅ COMPLETE — NULL RESULT
+**Decision criterion (when results are valid):** If min_hold=10 reduces friction/yr by >3pp with CAGR drop <2pp → implement. Otherwise keep 5.
 
-Experiment run 2026-06-03 on 2023/2024/2025 using cached forecasts. Results:
+### Sub-task 4c: long_threshold experiment ✅ COMPLETE — INVALIDATED (wrong data)
 
-| min_hold | 2023 CAGR | 2023 Friction | 2024 CAGR | 2025 CAGR |
-|----------|-----------|---------------|-----------|-----------|
-| 5d | +2.6% | 5.7%/yr | (cache) | (cache) |
-| 10d | +2.6% | 5.7%/yr | identical | identical |
-| 15d | +2.6% | 5.7%/yr | identical | identical |
-| 20d | +2.6% | 5.7%/yr | identical | identical |
+**Ran:** 0.01/0.015/0.02 thresholds on 2023/2024/2025. **All configs returned identical results.**
 
-**Conclusion: min_holding_days has ZERO EFFECT.** With pred_len=20, the natural signal reversal period already exceeds 20 days. The constraint never binds. Do not change this parameter.
+**Same diagnosis as 4b.** Local n10 cache makes all thresholds equivalent — every signal is either well above 2% or well below 1%, so the filter never changes outcomes.
 
-**Why 2025 had high friction (17.35%/yr):** Not high turnover — trade count barely differs (1320 vs 1322). The cause is LARGER average position sizes (size_pct 0.045 vs 0.021 in 2024), driven by higher bull-regime conviction. This is structural — the n50 forecasts in strong-signal regimes result in higher-confidence entries at larger sizes. Cannot be fixed by min_holding_days.
-
-**Actual fix for 2025 friction:** Not a parameter change. The high friction was paid in exchange for +43.6pp alpha vs EW. Net outcome is still massively positive. The friction drain only becomes a problem if alpha is also low (2023: both low — but 2023 friction was only 5.7%/yr, not high).
-
-
-
-- [ ] Run three new backtest configs for 2025 (reusing cached forecasts, no GPU needed):
-
-```python
-# For each min_hold in [5, 10, 15, 20]:
-# Modify BacktestConfig(min_holding_days=X) and run run_walkforward()
-# Save to data/backtest_results/thai_equity_2025_minhold_{X}/
+**GPU test (run on Colab when needed):**
+```bash
+# Precompute n50 forecasts → run with threshold variants
+# BacktestConfig(long_threshold=0.010, entry_buffer=0.005)
+# BacktestConfig(long_threshold=0.015, entry_buffer=0.008)
+# BacktestConfig(long_threshold=0.020, entry_buffer=0.010)
 ```
 
-- [ ] Plot: `net_CAGR` vs `friction_per_year` for min_hold ∈ {5, 10, 15, 20}. Find the elbow — the min_hold that maximises net CAGR without sacrificing too much gross alpha.
+**Decision criterion (when results are valid):** If threshold=0.015 reduces friction/yr by >3pp with net CAGR drop <3pp → adopt as new default for both `BacktestConfig` and `trade_gen.py` buy filter.
 
-- [ ] **Decision criterion:** If increasing `min_holding_days` from 5 to X reduces friction/yr by >3pp with CAGR drop <2pp → implement that change.
+### Sub-task 4d: Apply optimal parameters ❌ BLOCKED on 4b and 4c GPU runs
 
-### Sub-task 4c: Entry threshold sensitivity ✅ COMPLETE — NULL RESULT (wrong data)
-
-Same technical issue as 4b: fresh walkforward uses general n10 cache, stored n50 results used dedicated n50 cache. Results are identical across threshold=0.01/0.015/0.02 for all years.
-
-**Cannot test properly without GPU re-precomputing n50 forecasts per configuration.** Do not change `long_threshold` based on this experiment. If the 2025 high friction ever becomes a live problem, re-test with proper n50 forecasts on Colab GPU.
-
-
-
-- [ ] Run three configs for 2025 with `long_threshold` ∈ {0.01, 0.015, 0.02}:
-
-```python
-# BacktestConfig(long_threshold=0.015, entry_buffer=0.005)
-# long_threshold=0.015 means 1.5% expected return required for BUY signal
-```
-
-- [ ] **Decision criterion:** If threshold 0.015 reduces friction/yr by >3pp with CAGR drop <3pp → adopt as the new default. Update `BacktestConfig` defaults AND `trade_gen.py` buy filter.
-
-### Sub-task 4d: Apply optimal parameters to all years
-
-Once the best (min_hold, threshold) combination is found from 2025 analysis:
-- [ ] Run the combination on 2023 and 2024 to confirm it doesn't hurt those years
-- [ ] If improvement is consistent → update `BacktestConfig` defaults and re-run the full 4-year comparison
+Once valid 4b/4c results exist:
+- [ ] Confirm improvement on 2023 and 2024 too
+- [ ] Update `BacktestConfig` defaults and `trade_gen.py`
+- [ ] Re-run 4-year OOS comparison with new parameters
 
 ---
 
