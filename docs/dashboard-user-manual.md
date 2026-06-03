@@ -122,7 +122,7 @@ venv/bin/python scripts/dashboard.py --serve
 
 > **Note to Windows/Mac users:** `crontab` and `systemd` are Linux tools. On Windows, use Task Scheduler. On Mac, use `launchd`. Alternatively, just run the commands manually each morning — no automation required.
 
-> **Timezone:** The crontab example uses `30 6` which means 06:30 <em>in your computer's local timezone</em>. If your machine is not set to Bangkok time (UTC+7), adjust the cron time accordingly. Thai market opens at 10:00 BKK, so any time between 06:00–09:00 BKK works.
+> **Timezone:** The crontab example uses `30 6` which means 06:30 *in your computer's local timezone*. If your machine is not set to Bangkok time (UTC+7), adjust the cron time accordingly. Thai market opens at 10:00 BKK, so any time between 06:00–09:00 BKK works.
 
 ---
 

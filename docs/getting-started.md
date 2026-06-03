@@ -397,7 +397,7 @@ You need ALL of these before switching to live mode:
 
 | # | Requirement | Why |
 |---|-------------|-----|
-| 1 | Paper traded ≥ 4 weeks | You need to experience both up weeks and down weeks |
+| 1 | Paper traded ≥ 20 trading days | You need to experience both up weeks and down weeks |
 | 2 | ≥ 10 round-trip trades | One lucky trade doesn't prove skill |
 | 3 | Win rate ≥ 50% | You should win more trades than you lose |
 | 4 | Sharpe ≥ 0.90 | Your risk-adjusted returns should be decent |
@@ -442,8 +442,8 @@ Visit http://localhost:5555/api/phase2_gate — it shows which checks pass/fail.
 ├─────────────────────────────────────────────────────────────┤
 │ SETUP (first time only, ~30 min) — see §2 for details       │
 │   cd ~                                                      │
-│   git clone https://github.com/shiyu-coder/Kronos.git kronos│
-│   git clone <kronos-th-repo-url> kronos-th                  │
+│   git clone https://github.com/shiyu-coder/Kronos.git kronos_repo│
+│   git clone <kronos-th-repo-url> kronos-th                   │
 │   cd kronos-th                                              │
 │   python3 -m venv venv                                      │
 │   source venv/bin/activate                                  │
