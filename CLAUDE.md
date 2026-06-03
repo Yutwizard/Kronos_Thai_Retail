@@ -69,7 +69,7 @@ Layer 2: Feature pipeline       kth/data/loader.py                      ✅ done
 Layer 1: Universe definition    kth/data/universe.py                    ✅ done
 ```
 
-**Active work:** 4-phase QFM enhancement plan in `docs/superpowers/plans/2026-06-03-phase*.md` — start with Phase 1 (15 min bug fixes).
+**All 15 QFM enhancements ✅ complete (2026-06-03).** Pending: 2023 n=50 backtest (~12 hrs GPU). Plan files archived to `docs/superpowers/archive/plans/`.
 
 **Library code** lives in `kth/` (tested, reused across notebooks). **Research narrative** lives in `notebooks/` (exploratory, with plots).
 
@@ -101,16 +101,20 @@ columns: timestamps, open, high, low, close, volume, amount
 - `download_universe()` pauses 0.5s between tickers and retries with exponential backoff (2s / 4s / 8s, 3 attempts).
 - Individual ticker failures return `None` and are logged — they don't abort the batch.
 
-## Planned enhancements (4-phase QFM plan — 2026-06-03)
+## Completed enhancements (4-phase QFM plan — 2026-06-03) ✅
 
-All core modules are ✅ built. The active work queue is a 4-phase enhancement plan. See `docs/superpowers/plans/2026-06-03-phase*.md` for full task lists.
+All 15 items shipped. Plan files archived. Bootstrap p-value bug fixed post-verification (`df80804`).
 
-| Phase | Module(s) | What gets added | Est. |
+| Phase | Module(s) | What was added | Status |
 |---|---|---|---|
-| **1 (P0)** | `trade_gen.py` | Fix hardcoded `0.00268` friction; dedup `INITIAL_CAPITAL` | 15 min |
-| **2 (P1)** | `universe.py`, `trade_gen.py`, `portfolio.py`, `dashboard.py` | SECTOR dict, sector guard (max 2/sector), atomic JSON write, forecast recovery | ~2 hrs |
-| **3 (P2)** | `metrics.py`, `trade_gen.py`, `portfolio.py`, `cron_pipeline.sh` | IR, batting avg, calibration check, T+2 warning, model version log, LINE Notify | ~4 hrs |
-| **4 (P3/P4)** | `download_data.py`, `dashboard.py`, `metrics.py`, `backtest-methodology.html` | Price sanity, POST validation, drawdown velocity, bootstrap p-value, survivorship bias | ~6 hrs |
+| **1 (P0)** | `trade_gen.py` | Per-ticker friction from FRICTION dict; single `INITIAL_CAPITAL` source | ✅ `5a20fa9` |
+| **2 (P1)** | `universe.py`, `trade_gen.py`, `portfolio.py`, `dashboard.py` | SECTOR dict + `get_sector()`, sector guard (max 2/sector), atomic JSON write, forecast recovery | ✅ `5441065` |
+| **3 (P2)** | `metrics.py`, `trade_gen.py`, `portfolio.py`, `cron_pipeline.sh` | IR, batting avg, calibration, T+2 warning, model version + forecast_date in log, LINE Notify | ✅ `d8a05fa` |
+| **4 (P3/P4)** | `download_data.py`, `dashboard.py`, `metrics.py`, `backtest-methodology.html` | Price sanity filter, POST validation, drawdown velocity, bootstrap p-value (centered resampling), survivorship bias disclosure | ✅ `23d693a` + `df80804` |
+
+**Bootstrap p-value distinction** (important — do not confuse):
+- `compute_bootstrap_pvalue()` → live dashboard `/api/risk` only, centered resampling, shows edge in live paper trading
+- Historical backtest p-values (p=0.015/0.257/0.353) → t-test in `compute_metrics()`, stored in `data/backtest_results/`, never changed
 
 Target model sizes: **Kronos-small** (24.7M params) — confirmed in production. Kronos-base (102.3M) requires T4 16GB.
 

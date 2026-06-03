@@ -1,6 +1,6 @@
 # AGENTS.md — Kronos-TH
 
-> All 5 layers fully built. Active work: 4-phase QFM enhancement plan (Phase 1 = 15 min bug fixes).
+> All 5 layers + 15-item QFM enhancement plan ✅ complete. Pending: 2023 n=50 backtest (~12 hrs GPU).
 > When in doubt, read `PROJECT_STRUCTURE.md` — it is the authoritative design doc.
 
 ## Superpower workflow
@@ -23,7 +23,7 @@ Priority order:
 ## Project type
 - **Not a deployable app.** No CI, no build step, no test framework, no lint config.
 - **Colab-first:** The real workflow is Jupyter notebooks on Google Colab (T4 GPU). Local Python scripts are for offline verification only.
-- **Current state:** All 5 layers ✅ built. Layer 5 is a local Flask dashboard (`scripts/dashboard.py`) for paper/live paper trading with a daily cron pipeline. The 4-phase QFM enhancement plan (see §below) is the active work queue.
+- **Current state:** All 5 layers ✅ built. Layer 5 is a local Flask dashboard (`scripts/dashboard.py`) for paper/live paper trading with a daily cron pipeline. 15-item QFM enhancement plan ✅ complete (2026-06-03). Pending: 2023 n=50 backtest (~12 hrs GPU).
 
 ## Verify the data layer (offline)
 ```bash
@@ -105,22 +105,31 @@ Key insight: 21-month fold windows needed (not 6mo) so val/test have ≥420 rows
 - Crypto + US equity FT backtests confirm: zero-shot wins in both markets
 - All FT backtests executed per approved specs
 
-### 4-Phase QFM Enhancement Plan (2026-06-03)
-15 enhancements identified from quant fund manager + software engineer review. Phased by priority:
+### 4-Phase QFM Enhancement Plan ✅ COMPLETE (2026-06-03)
+15 enhancements from quant fund manager + software engineer review — all shipped:
 
-| Phase | Focus | Items | Est. Time | Plan File |
-|-------|-------|-------|-----------|-----------|
-| **Phase 1 (P0)** | Bug fixes | 2 | 15 min | `docs/superpowers/plans/2026-06-03-phase1-p0-bug-fixes.md` |
-| **Phase 2 (P1)** | Resilience | 3 | ~2 hrs | `docs/superpowers/plans/2026-06-03-phase2-p1-resilience.md` |
-| **Phase 3 (P2)** | Professional metrics | 5 | ~4 hrs | `docs/superpowers/plans/2026-06-03-phase3-p2-professional-metrics.md` |
-| **Phase 4 (P3/P4)** | Polish | 5 | ~6 hrs | `docs/superpowers/plans/2026-06-03-phase4-p3p4-polish.md` |
+| Phase | Focus | Items | Status | Commits |
+|-------|-------|-------|--------|---------|
+| **Phase 1 (P0)** | Bug fixes | 2 | ✅ | `5a20fa9` |
+| **Phase 2 (P1)** | Resilience | 4 | ✅ | `5441065` |
+| **Phase 3 (P2)** | Professional metrics | 5 | ✅ | `d8a05fa` |
+| **Phase 4 (P3/P4)** | Polish | 5 | ✅ | `23d693a` + `df80804` |
 
-Key decisions locked: SECTOR dict (max 2 positions/sector), LINE_NOTIFY_TOKEN env var, T+2 warning-only, bootstrap p-value n=1000 inline in Signal Health.
+**Key conventions added (all now live):**
+- `kth/data/universe.py` — `SECTOR` dict + `get_sector()` (50 tickers → 10 SET sectors)
+- `kth/trading/trade_gen.py` — sector guard (max 2 positions/sector), per-ticker friction, T+2 warning
+- `kth/trading/portfolio.py` — atomic `os.replace()` write, `MODEL_VERSION`, `forecast_date` in trade log
+- `kth/backtest/metrics.py` — IR, batting average, calibration, drawdown velocity, bootstrap p-value
+- `scripts/cron_pipeline.sh` — LINE Notify on failure via `$LINE_NOTIFY_TOKEN`
+- `scripts/download_data.py` — price sanity filter (>30% move → exclude from forecast)
+- `scripts/dashboard.py` — POST /api/trades validation, forecast recovery, calibration wired to `/api/risk`
 
-**New conventions from Phase 2 onwards:**
-- `kth/data/universe.py` will gain a `SECTOR` dict + `get_sector()` helper (all 50 thai_equity tickers mapped to 10 SET sectors).
-- `kth/trading/portfolio.py` writes use atomic `os.replace()` pattern.
-- `scripts/cron_pipeline.sh` sends LINE Notify on failure via `$LINE_NOTIFY_TOKEN` env var.
+**Bootstrap p-value clarification (fix applied in `df80804`):**
+- `compute_bootstrap_pvalue()` uses **centered bootstrap resampling** (not permutation — permutation preserves the mean, making the test trivially non-significant).
+- This is for the **live dashboard only** — assesses whether live paper trading returns show a real edge.
+- Historical backtest p-values (p=0.015, p=0.257, p=0.353) use a **t-test** in `compute_metrics()` and were never changed.
+
+Plan files archived to `docs/superpowers/archive/plans/`.
 
 ## What not to build yet
 - Do not add live order execution, broker API integration, or intraday data — all explicitly out of scope per `PROJECT_STRUCTURE.md` §12. The local dashboard is for paper trading + broker-ready CSV exports only.
@@ -137,14 +146,13 @@ Key decisions locked: SECTOR dict (max 2 positions/sector), LINE_NOTIFY_TOKEN en
 7. `docs/user-manual.md` — full methodology, backtest results, and usage instructions
 8. `docs/monthly-walkthrough.html` — 21-day simulated month with real trades and portfolio outcomes
 9. `docs/superpowers/specs/` — approved design specs for all layers (6 active, 5 archived)
-10. `docs/superpowers/plans/` — implementation plans (7 active, 10 archived). Key: expanded backtest, OOS yearly, n50 completion, 4-phase QFM enhancements
-11. `docs/superpowers/archive/` — completed/superseded plans and specs
+10. `docs/superpowers/plans/` — implementation plans (3 active, 14 archived). Active: expanded backtest, OOS yearly, n50 completion
+11. `docs/superpowers/archive/` — completed/superseded plans (incl. all 4 QFM phase plans)
 12. `docs/superpowers/specs/2026-06-02-real-market-dashboard-design.md` — real-market dashboard design spec
-13. `docs/superpowers/plans/2026-06-02-real-market-dashboard.md` — dashboard implementation plan
-14. `docs/superpowers/plans/2026-06-03-phase1-p0-bug-fixes.md` — P0: friction constant + INITIAL_CAPITAL dedup (15 min)
-15. `docs/superpowers/plans/2026-06-03-phase2-p1-resilience.md` — P1: sector guard, atomic write, forecast recovery (~2 hrs)
-16. `docs/superpowers/plans/2026-06-03-phase3-p2-professional-metrics.md` — P2: IR, calibration, T+2 warning, model version, LINE Notify (~4 hrs)
-17. `docs/superpowers/plans/2026-06-03-phase4-p3p4-polish.md` — P3/P4: sanity filter, validation, drawdown velocity, bootstrap p-value, survivorship docs (~6 hrs)
+13. `kth/data/loader.py` — schema conversion and caching implementation
+14. `kth/data/universe.py` — universe, friction, and sector definitions
+15. `kth/models/kronos_wrapper.py` — KronosTH wrapper (adapted to real Kronos API)
+16. `kth/models/_kronos_bridge.py` — import bridge for non-pip-installable Kronos repo
 14. `kth/data/loader.py` — actual implementation of schema conversion and caching
 15. `kth/data/universe.py` — universe + friction definitions
 16. `kth/models/kronos_wrapper.py` — KronosTH wrapper (adapted to real Kronos API)

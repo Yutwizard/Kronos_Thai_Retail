@@ -93,8 +93,11 @@ A regime warning triggered when the Portfolio Value drops more than 3% over 5 co
 _Avoid_: Grind (too informal), slow drawdown
 
 **Bootstrap p-value**:
-A statistical measure of whether the strategy's live alpha is real or luck. Computed by shuffling the strategy's daily returns 1,000 times and counting what fraction of shuffles beat the Equal-Weight Benchmark by at least the observed margin. p < 0.05 = edge confirmed; p ≥ 0.15 = no confirmed edge. Displayed inline in the Signal Health row. Computed by `compute_bootstrap_pvalue()` (planned Phase 4).
-_Avoid_: p-value (use full term to distinguish from other statistical tests)
+A statistical measure of whether the **live paper trading** strategy's alpha is real or luck. Uses centered bootstrap resampling (n=1,000): computes active returns (strategy − zero benchmark), centers them under H₀ (subtracts observed mean), resamples with replacement, counts the fraction where resampled mean ≥ observed mean. p < 0.05 = edge confirmed; p ≥ 0.15 = no confirmed edge. Displayed inline in the Signal Health row. Computed by `compute_bootstrap_pvalue()` in `kth/backtest/metrics.py`, called from `portfolio.compute_metrics()`, surfaced via `/api/risk`.
+**Critical distinction — two separate p-value mechanisms exist:**
+1. `compute_bootstrap_pvalue()` — live dashboard only, centered resampling, grows as paper trading history accumulates (needs ≥20 days; shows `null` before that).
+2. Historical backtest p-values (p=0.015/0.257/0.353 in AGENTS.md) — computed via t-test in `kth/backtest/metrics.compute_metrics()`, stored in `data/backtest_results/`. Never recalculated by the dashboard.
+_Avoid_: p-value (use full term); confusing live bootstrap p-value with historical t-test p-value
 
 **Sector Concentration**:
 A portfolio-level risk flag triggered when the buy loop would place more than 2 positions in the same SET sector (e.g., Banking, Energy, Property). Enforced by a hard filter in `trade_gen.py` using the `SECTOR` dict in `universe.py`. Not a warning — it silently skips over-concentrated picks and continues to the next ranked ticker.

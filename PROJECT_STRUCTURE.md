@@ -488,24 +488,27 @@ See full results in `docs/user-manual.md` §6.
 - Whether `^SET.BK` works on Yahoo (we have a backup plan: scrape from SET website if needed)
 - How well Kronos generalizes zero-shot to Thai mid-caps — this is the real research question
 
-### Active enhancement plan (2026-06-03)
+### QFM Enhancement Plan ✅ COMPLETE (2026-06-03)
 
-4-phase QFM improvement plan in response to quant fund manager + software engineer review. 15 items across correctness, resilience, professional metrics, and statistical disclosure.
+4-phase, 15-item improvement plan — all shipped. Plan files archived.
 
-**Open statistical questions identified:**
-- p-values: only 2024 (p=0.015) is significant. 2025 (p=0.257) and 2026 (p=0.353) are not. Live bootstrap p-value planned (Phase 4) to track this in real-time.
-- P5/P95 calibration: never verified against actual outcomes. Calibration check planned (Phase 3).
-- Survivorship bias: acknowledged but not quantified. Formal disclosure (~1–3% CAGR/yr inflation) planned (Phase 4).
+**Statistical questions — resolved:**
+- Historical backtest p-values (p=0.015/0.257/0.353) use a **t-test** in `compute_metrics()` — unchanged. 2024 is significant; 2025/2026 are not.
+- Live dashboard now tracks `compute_bootstrap_pvalue()` (centered bootstrap resampling, n=1000) in `/api/risk` — will accumulate significance as paper trading equity curve grows.
+- P5/P95 calibration check: `compute_calibration()` added to `metrics.py`, wired to `/api/risk`, reports `insufficient_data` until ≥10 historical forecast dates accumulate.
+- Survivorship bias: formal disclosure added to `docs/backtest-methodology.html` (~+28–30% CAGR adjusted estimate).
 
-**Open resilience issues identified:**
-- Hardcoded friction rate `0.00268` in `trade_gen.py` — fixed in Phase 1.
-- Duplicated `INITIAL_CAPITAL` constant — fixed in Phase 1.
-- No sector concentration guard — sector guard added in Phase 2.
-- Portfolio JSON not written atomically — atomic write in Phase 2.
-- Forecast pipeline loses progress on crash — recovery logic in Phase 2.
+**Bootstrap p-value clarification (bug fixed `df80804`):**
+Permutation preserves the mean exactly → always non-significant. Fixed to centered bootstrap resampling: center active returns under H0 (subtract observed mean), resample with replacement, count fraction ≥ observed mean. Verified: consistent +1%/day → p=0.0; random → p≈0.5.
 
-See plan files: `docs/superpowers/plans/2026-06-03-phase{1..4}-*.md`
+**Resilience issues — all fixed:**
+- `trade_gen.py`: friction from FRICTION dict (not hardcoded 0.00268); INITIAL_CAPITAL from portfolio.py; sector guard (max 2/sector); T+2 warning; per-ticker friction in cash flow.
+- `portfolio.py`: atomic JSON write via os.replace(); model_version + forecast_date in trade log.
+- `dashboard.py`: forecast recovery (skip completed tickers); POST /api/trades validation; sanity failures surfaced in /api/health.
+- `download_data.py`: price sanity filter (>30% move → exclude from forecast, write to sanity log).
+- `cron_pipeline.sh`: LINE Notify on failure via $LINE_NOTIFY_TOKEN.
+- `metrics.py`: IR, batting average, calibration, drawdown velocity, bootstrap p-value.
 
 ---
 
-*Document version: 2026-06-03. Updated: dashboard live, 4-phase enhancement plan added.*
+*Document version: 2026-06-03. Updated: QFM plan complete, bootstrap p-value fix documented.*
