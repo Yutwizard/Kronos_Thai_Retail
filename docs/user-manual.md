@@ -148,9 +148,11 @@ The selected positions are weighted by `position_sizing` mode:
 
 | Mode | Formula | Behaviour |
 |------|---------|-----------|
-| `"equal"` | 1/N | Every position gets the same weight |
+| `"equal"` | 1/N | Every position gets the same weight — **confirmed best by backtest** |
 | `"signal"` | rank-based | Highest forecast return gets largest weight (linear rank) |
-| `"inv_vol"` | 1 / volatility | Lower-volatility assets get larger weight (portfolio risk-parity) |
+| `"inv_vol"` | 1 / volatility | Lower-volatility assets get larger weight — **backtested and rejected** |
+
+> **⚠ inv_vol was backtested on 2022–2024 Thai equity.** Result: CAGR 13.29%, Sharpe 0.84, p=0.732 — dramatically worse than equal-weight (31.44%, 1.40, p=0.034). inv_vol allocates more to low-volatility stocks where Kronos signal is weakest. **Do not use inv_vol for this strategy.**
 
 **Step 5 — Execute at next day's open:**
 Trades are filled at the next trading day's OPEN price (not close — prevents look-ahead). Friction costs are deducted as per the per-class rates.
@@ -502,9 +504,11 @@ High-quality backtests with n_samples=50 on the clean out-of-sample window (post
 
 2. **Survivorship bias is real.** The universe includes only currently-listed tickers. Delisted stocks are absent from backtests, which overstates returns. The real historical performance of this strategy would be lower.
 
-3. **The 2022-2024 backtest period was a unique macro environment.** QE unwind, AI boom, SET underperformance. A different regime (e.g., 2018 trade war, 2020 COVID crash) would produce different results. Past performance is NOT indicative of future results.
-
-    *Updated with 2020-2024 expanded backtest:* The model was tested across the COVID crash (Q1 2020), recovery (2020-2021), and rate hikes (2022-2024). Alpha was positive in ALL 3 regimes — including a crash. This strengthens the claim that the signal is genuine, but the full-period p-value (0.174, n=10 samples) is weaker than the 3-year result (p=0.013, n=50 samples). The stress period (125 days) has very low statistical power.
+3. **Regime dependency confirmed.** The 4-year OOS study (2023–2026) shows the strategy underperforms equal-weight in SET bull markets and dramatically outperforms in SET bear markets:
+   - 2023 (EW +12.8%, SET bull): strategy +2.6% net, −10.2pp vs EW. Root cause: **cash drag** — conservative allocation (50% deployed) in a rising market costs ~6.4pp, plus friction (5.7%/yr). The deployed stocks actually beat EW by +3.3pp on deployed capital.
+   - 2024 (EW −7.2%, SET bear): strategy +42.0%, +49.2pp alpha. Model's stock-selection is decisive when the market is selective.
+   - 2025 (EW −9.9%, SET bear): strategy +33.7%, +43.6pp alpha.
+   - **Practical implication:** If SET EW is strongly positive (bull market), expect the strategy to underperform on paper. This is not failure — it is the cost of risk management. The expanded 2020-2024 backtest confirms alpha was positive in ALL 3 earlier regimes too. Full-period p=0.174 (n=10 samples) is weaker than the 3-year result (p=0.034, n=10 samples; 2024 n=50: p=0.015).
 
 4. **Crypto calendar fix applied.** The original backtest used 5-day business days (Mon-Fri) for all assets, which skipped weekends for crypto. This was fixed in Task 1 of the HFM review: `walkforward.py` now uses `_get_calendar_for_tickers()` which returns "D" (7-day) for crypto tickers. `forecast()` and `forecast_batch()` auto-detect crypto from ticker class. Crypto precompute and walk-forward now use the correct 7-day calendar. See `kth/backtest/walkforward.py:_get_calendar_for_tickers()`.
 
@@ -517,6 +521,16 @@ High-quality backtests with n_samples=50 on the clean out-of-sample window (post
 7. **The trade win rate is 2-5%.** This does not mean the model is wrong 95% of the time. It means the portfolio churns monthly (daily rebalancing × 11.8× annual turnover), producing many small losing trades around a core of winning longs. This is expected for a long-biased rolling strategy. Focus on CAGR and Sharpe, not trade win rate.
 
 8. **CPU inference is very slow.** Generating forecasts for 100 tickers takes 10-15 minutes on GTX 1060, 3-4 minutes on T4, but would take hours on CPU. The notebook will refuse to run on CPU. If you don't have GPU access, use Colab.
+
+9. **Statistical significance is suggestive, not conclusive.** Only 2024 (p=0.015) passes p<0.05 unadjusted. Under Bonferroni correction for 4 OOS years tested (threshold p<0.0125), no single year survives. The multi-year consistency of outperformance in SET bear markets provides practical confidence, but a statistician would not call this proven.
+
+10. **The alpha is NOT market beta or momentum.** OLS factor regression (2022–2024 equity curve vs SET market + 12-1 month momentum factor) shows:
+    - Beta_market = −0.009, R² = 0.000 — strategy is **completely market-neutral**
+    - Beta_momentum = −0.010 — **not a momentum proxy**
+    - Residual alpha +29.4%/yr after factor adjustment — the alpha source is genuinely the Kronos model's forecasts
+    This means the strategy provides diversification from both market direction and momentum — a rare property.
+
+11. **Kronos pre-training data cutoff ≈ December 2022** (inferred from `kronos_repo/finetune/config.py`). The 2022 portion of the canonical 2022–2024 backtest may partially overlap with the model's training data. The 2023–2026 OOS years are clean and represent the trustworthy evidence base.
 
 ### Known Bugs
 

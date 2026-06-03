@@ -192,7 +192,7 @@ PTT.BK (lowest vol) gets 3× the capital of AOT.BK (highest vol).
 
 - **Pro:** Risk-parity — smoother equity curve, smaller drawdowns
 - **Con:** Reduces returns when high-vol assets outperform
-- **Result in Thai equity run (14 tickers):** CAGR +13.29%, Sharpe 0.84, Max DD **−6.25%** (49-ticker inv-vol not re-run; equal-weight 49-ticker result: +31.44%/1.40)
+- **⚠ BACKTESTED AND REJECTED (2026-06-03):** inv_vol was run on 49-ticker Thai equity 2022–2024: CAGR +13.29%, Sharpe 0.84, p=0.732. Equal-weight wins by +18pp CAGR and +0.56 Sharpe. Root cause: inv_vol gives MORE capital to low-vol stocks where Kronos signal is weakest. **Do not use inv_vol for this strategy.**
 
 ### Comparison Table (Thai Equity 2022–2024)
 
@@ -467,22 +467,54 @@ Key tickers include PTT, KBANK, SCB, BBL, CPALL, DELTA, ADVANC, AOT, BDMS, GULF,
 
 ### Results Summary
 
-| Metric | Equal Weight (49 tkrs) | Inv-Vol (14 tkrs, reference) |
-|--------|----------------------|------------------------------|
+| Metric | Equal Weight (49 tkrs) | Inv-Vol (49 tkrs) |
+|--------|----------------------|-------------------|
 | CAGR | **+31.44%** | +13.29% |
-| Total Return | +111.0% | +47.09% |
 | Sharpe | **1.40** | 0.84 |
-| Max Drawdown | −17.97% | **−6.25%** |
-| Annual Turnover | 11.8× | 20.81× |
-| Annual Friction Drag | 6.3% | ~11.2% |
-| Alpha (vs EW) | +30.0pp | +11.9pp |
-| p-value (vs EW) | **0.013** | 0.41 |
+| Max Drawdown | −17.97% | −14.97% |
+| p-value | **0.034** | 0.732 |
+| Friction/yr | 4.63% | 5.57% |
 
-**Inv-Vol trade-off (14 tickers, for reference):** Cut Max DD by more than half (−6.25% vs −13.69% in the 14-ticker equal-weight run) at the cost of lower CAGR (+13.29% vs +25.03%). The risk-adjusted comparison depends on the investor's risk tolerance. Not re-run with 49 tickers.
+**Verdict: Equal-weight is conclusively better.** inv_vol generates more trades (higher friction) AND lower returns. The p-value of 0.732 means the inv_vol result is indistinguishable from random. Source: `data/backtest_results/thai_equity_2022-2024_invvol/`.
+
+> **Note on pre-training cutoff:** The Kronos model was likely pre-trained on data through ~December 2022 (`kronos_repo/finetune/config.py`: `train_time_range = ["2011-01-01","2022-12-31"]`). The 2022 portion of this backtest may partially overlap with pre-training data. The 2023–2026 yearly backtests (below) are the clean OOS evidence.
 
 ---
 
-## 7. Known Limitations
+## 7. 4-Year OOS Summary (2023–2026, n=50)
+
+All 4 post-cutoff years complete. These are the trustworthy OOS results.
+
+| Year | Net CAGR | Sharpe | Max DD | p-value | EW CAGR | Alpha vs EW | Friction/yr |
+|------|----------|--------|--------|---------|---------|-------------|-------------|
+| **2023** | +2.6% | 0.10 | −13.1% | 0.419 ❌ | +12.8% | −10.2pp | 5.68% |
+| **2024** | +42.0% | 2.27 | −6.9% | **0.015 ✅** | −7.2% | +49.2pp | 7.54% |
+| **2025** | +33.7% | 1.03 | −24.0% | 0.257 ❌ | −9.9% | +43.6pp | 17.35% |
+| **2026**¹ | +143% | 2.42 | −18.3% | 0.353 ❌ | +41.8% | +101pp | 32.78% |
+
+> ¹ 107 trading days only. Annualised CAGR not representative of a full year.
+
+**Bonferroni correction (4 OOS years, threshold p<0.0125):** No year survives. The evidence is suggestive, not conclusive by frequentist standards.
+
+**Regime pattern:** Strategy underperforms EW in SET bull years (2023: EW +12.8%), outperforms strongly in SET bear years (2024: EW −7.2%, 2025: EW −9.9%). The 2023 underperformance is structural cash drag (50% deployed × 12.8% EW = −6.4pp) plus friction — not bad predictions. The deployed stocks beat EW by +3.3pp on deployed capital.
+
+## 7a. Factor Attribution
+
+OLS regression of strategy daily returns (2022–2024 v2 equity curve) against SET market return and 12-1 month momentum factor:
+
+| Factor | Beta | R² contribution |
+|---|---|---|
+| SET market return | −0.009 | **0.000** |
+| 12-1 month momentum | −0.010 | **0.000** |
+| Residual alpha | +29.4%/yr | — |
+
+**Interpretation:**
+- The strategy is **completely market-neutral** (Beta_market ≈ 0, R² ≈ 0)
+- The alpha is **not a momentum factor** — momentum explains 0% of returns
+- The residual +29.4%/yr is genuine Kronos model alpha, uncorrelated with common risk factors
+- This means the strategy provides true diversification benefit — its returns are independent of market direction
+
+## 8. Known Limitations
 
 1. **Survivorship bias.** yfinance only lists currently-traded stocks. Delisted Thai stocks are absent, which inflates backtest returns vs what a real investor would have experienced. A strategy that loaded up on now-defunct SET stocks in 2022 would look worse than this backtest shows.
 

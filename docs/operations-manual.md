@@ -328,7 +328,11 @@ Use the example template:
 - Confidence scaling: PTT 🟢 → 25%, AAPL 🟢 → 25%, BTC 🟡 → 12.5%
 - Remaining: 100% - 25% - 25% - 12.5% = **37.5% cash**
 
-> **Note on cash drag:** The backtest always deploys 100% of capital (equal-weight across all positions). Confidence-based sizing in real trading leaves more cash — 50-80% deployment is normal. This is intentional: sitting in cash when conviction is low prevents you from trading on noise. The backtest's CAGR already accounts for friction, not for cash drag. Expect 1-3% of CAGR to come from cash allocation drag in real trading.
+> **Note on cash drag and regime dependency:** The 4-year OOS study (2023–2026) confirms the strategy underperforms equal-weight in SET bull markets and strongly outperforms in SET bear markets.
+> - **SET bull (EW positive, e.g. 2023 EW +12.8%):** strategy holds 50% cash → costs ~6.4pp vs a fully-deployed equal-weight portfolio, even when stock picks are correct. This is intentional risk management, not model failure.
+> - **SET bear (EW negative, e.g. 2024 EW −7.2%, 2025 EW −9.9%):** strategy's selective positions crush equal-weight by 43–49pp.
+> - **In a strong SET bull market, use BEAR allocation (5%) or NEUTRAL (10%) to limit capital at risk.** The strategy's edge comes from stock selection in diverging markets — in a rising-tide market, concentration in 5 picks is a disadvantage vs the full 49-stock equal-weight.
+> - **Signal to shift allocation up:** When the weekly Quant PM view shows >5 tickers with bullish 🟢↑ signals AND the SET index has been declining for 4+ consecutive weeks, consider moving from BEAR to NEUTRAL.
 
 #### Step 4.4 — Execute over 2-3 days
 
