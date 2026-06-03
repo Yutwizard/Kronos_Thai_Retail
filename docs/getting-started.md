@@ -159,15 +159,23 @@ python scripts/dashboard.py --serve
 
 Open your browser and go to: **http://localhost:5555**
 
-### Option B: Google Colab (No GPU Required)
+### Option B: Google Colab (No GPU, Notebook Workflow)
 
-If you don't have an NVIDIA GPU:
+If you don't have an NVIDIA GPU, you can use Google Colab's free T4 GPU — but note this is a **different workflow** from the dashboard:
+
+- **Google Colab** = Jupyter notebooks, covers all 100 tickers (Thai + US + crypto + ETFs), no dashboard UI
+- **Local GPU** = Flask dashboard, 49 Thai stocks only, web-based interface
+
+Choose one path and stick with it. The dashboard is recommended for daily trading.
+
 1. Go to https://colab.research.google.com
 2. Upload `notebooks/01_data_layer.ipynb` and run it to download data
 3. Upload `notebooks/05_decision_report.ipynb` for daily forecasts
 4. Set `REPORT_MODE = "morning"` in Cell 0, run all cells
 
 Colab gives you a **free T4 GPU**. Forecasts take ~3 minutes instead of 12.
+
+> **If you're on Colab:** Follow the [Operations Manual](operations-manual.md) daily routine instead of the dashboard steps below. The decision rules are the same, but the interface is different.
 
 ### What You Should See
 
@@ -212,7 +220,9 @@ The backtest says the strategy makes +31.44% per year, but:
 - You need to build trust in the system before risking real THB
 - You need to learn the dashboard and the daily routine without pressure
 
-**How long should you paper trade?** At least 4 weeks (20 trading days) and at least 10 round-trip trades. The dashboard has a built-in gate that won't let you switch to live mode until you meet these minimums AND your paper results are good.
+**How long should you paper trade?** At least 20 trading days and at least 10 round-trip trades. The dashboard has a built-in gate that won't let you switch to live mode until you meet these minimums AND your paper results are good.
+
+> **Note on trading days:** The Stock Exchange of Thailand is closed on weekends and Thai public holidays (Songkran, New Year, King's birthday, etc.). "20 trading days" means ~4-5 calendar weeks depending on holidays. The Phase 2 gate counts calendar days — holidays don't reset your progress.
 
 ---
 
@@ -265,6 +275,8 @@ The backtest says the strategy makes +31.44% per year, but:
 ---
 
 ## 6. Your First Week — Day-by-Day
+
+> **Start any day.** The Monday–Friday labels are for illustration. Your "Day 1" is whenever you first run the dashboard — a Wednesday, a Thursday, any day the market is open.
 
 ### Monday — First Day
 
@@ -364,6 +376,15 @@ Every new trader is scared. Here's what helps:
 3. **Follow the system exactly.** The biggest source of losses in backtesting came from NOT the model being wrong, but from a human ignoring exit signals because "it might go back up."
 4. **Remember:** The SET index lost −5.29% per year over 2022–2024. The strategy made +31.44%. Even if the strategy underperforms its backtest by half, you're still beating the market.
 
+### Trading Psychology — Quick Tips
+
+| Feeling | What It Is | What To Do |
+|---------|-----------|------------|
+| Boredom (no signals for days) | Normal — 70% of days have no trade signals | Stay in cash. Boredom is better than bad trades. |
+| FOMO (a stock you sold keeps going up) | Fear Of Missing Out | Trust the model. It exited for a reason. There will be other opportunities. |
+| Revenge trading (lost money, want it back) | Emotional reaction to loss | Close the dashboard. Come back tomorrow. Never trade angry. |
+| Overconfidence (won 5 in a row) | Dangerous — leads to ignoring risk limits | Check the Allocation tile. If it says NEUTRAL, stay at 10%. Don't override it. |
+
 ---
 
 ## 9. Graduating to Real Money (Phase 2)
@@ -419,36 +440,35 @@ Visit http://localhost:5555/api/phase2_gate — it shows which checks pass/fail.
 ┌─────────────────────────────────────────────────────────────┐
 │                    KRONOS-TH CHEAT SHEET                     │
 ├─────────────────────────────────────────────────────────────┤
-│ SETUP (first time only, ~30 min)                            │
-│   Terminal:                                                 │
-│     cd ~/kronos-th                                          │
-│     python3 -m venv venv                                    │
-│     source venv/bin/activate                                │
-│     pip install -e .                                        │
-│     python scripts/download_data.py                         │
+│ SETUP (first time only, ~30 min) — see §2 for details       │
+│   cd ~                                                      │
+│   git clone https://github.com/shiyu-coder/Kronos.git kronos│
+│   git clone <kronos-th-repo-url> kronos-th                  │
+│   cd kronos-th                                              │
+│   python3 -m venv venv                                      │
+│   source venv/bin/activate                                  │
+│   pip install -r requirements.txt                           │
+│   pip install -r requirements-ml.txt                        │
+│   pip install -e .                                          │
+│   python scripts/download_data.py                           │
 ├─────────────────────────────────────────────────────────────┤
 │ EVERY MORNING (15 min)                                      │
-│   Terminal:                                                 │
-│     cd ~/kronos-th                                          │
-│     source venv/bin/activate                                │
-│     python scripts/dashboard.py --generate  (12 min, GPU)   │
-│     python scripts/dashboard.py --serve                     │
+│   cd ~/kronos-th                                            │
+│   source venv/bin/activate                                  │
+│   python scripts/dashboard.py --generate  (12 min, GPU)     │
+│   python scripts/dashboard.py --serve                       │
 │   Browser: http://localhost:5555                            │
 │                                                             │
 │   1. Risk Bar → Normal? Not EXIT?                           │
 │   2. Trade Ticket → Exits SAME DAY. Buys within 2 days.     │
 │   3. Click "Record Paper Trade"                             │
-│   4. Scan Positions → any >−10% loss?                        │
-│   5. Full Ranking → sanity check                              │
+│   4. Scan Positions → any >−10% loss?                       │
+│   5. Full Ranking → sanity check                            │
 ├─────────────────────────────────────────────────────────────┤
 │ COLORS: 🟢=confident 🟡=moderate 🔴=unsure/skip             │
 │ STOP TRADING: Market=Turmoil or Allocation=EXIT              │
 │ REDUCE EXPOSURE: DD <−7% (orange/red)                       │
 │ ALL LIQUIDATED: DD crosses −10% (stop-loss triggers)        │
-├─────────────────────────────────────────────────────────────┤
-│ SETUP (first time only, ~30 min)                             │
-│   See docs/getting-started.md §2 for full installation       │
-│   This card assumes you've already completed setup           │
 └─────────────────────────────────────────────────────────────┘
 ```
 

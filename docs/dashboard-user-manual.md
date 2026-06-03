@@ -1,9 +1,12 @@
 # Kronos-TH — Local Dashboard User Manual
 
-> Step-by-step guide for the real-market dashboard. Paper trading first, broker-ready CSV export when ready.
-> Thai equity only. 500,000 THB starting capital. Not financial advice.
+> **Reference manual — detailed step-by-step procedures.**
 >
-> **New to all of this?** Start with the [Getting Started Guide](getting-started.md) instead — it explains everything from zero, including installation, paper trading, and a day-by-day first week walkthrough. This manual is the detailed reference for daily operations.
+> **Read this first:** [Getting Started Guide](getting-started.md) — installation, glossary, paper trading basics, day-by-day first week walkthrough.
+>
+> This manual assumes you've completed setup and understand the basic concepts (paper trading, confidence flags, allocation bands). It provides the full daily/weekly/monthly/quarterly operating procedures for the dashboard. If you encounter a term you don't recognize, check the [glossary](getting-started.md#5-glossary--words-you-need-to-know).
+>
+> Thai equity only. 500,000 THB starting capital. Not financial advice.
 
 ---
 
@@ -119,7 +122,7 @@ venv/bin/python scripts/dashboard.py --serve
 
 > **Note to Windows/Mac users:** `crontab` and `systemd` are Linux tools. On Windows, use Task Scheduler. On Mac, use `launchd`. Alternatively, just run the commands manually each morning — no automation required.
 
-### Timezone
+> **Timezone:** The crontab example uses `30 6` which means 06:30 <em>in your computer's local timezone</em>. If your machine is not set to Bangkok time (UTC+7), adjust the cron time accordingly. Thai market opens at 10:00 BKK, so any time between 06:00–09:00 BKK works.
 
 ---
 
@@ -333,6 +336,35 @@ If your live numbers are below the backtest range for 2+ consecutive months, rev
 - **Day 3:** Adjust existing positions (size up/down)
 
 Never execute all trades on one day — spread to reduce market impact.
+
+---
+
+## 6.5 Quarterly Performance Review (15 min)
+
+**When:** End of March, June, September, December.
+
+### Step 1: Export Monthly Logs
+
+Check the risk bar metrics for the past 3 months (you should have these from your daily log notes). The dashboard tracks the equity curve automatically.
+
+### Step 2: Compare to Backtest Benchmarks
+
+| Metric | Expected Range | Red Flag |
+|--------|---------------|----------|
+| CAGR (annualized) | 14% to 48% (backtest 31.44% ± 1.5σ) | Below 14% for 2 quarters |
+| Sharpe | > 0.9 | Below 0.5 for 2 quarters |
+| Win Rate | > 50% | Below 40% for 2 quarters |
+| Max Drawdown | > −18% | Crosses −10% (emergency trigger) |
+
+If any metric is in the red flag zone for 2 consecutive quarters, review:
+1. Are you over-trading? (friction > 6% of AUM/year)
+2. Are you ignoring bearish exit signals?
+3. Is the model degrading? (run the [weekly signal check](#step-2-review-signal-accuracy))
+
+### Step 3: Adjust Band Caps
+
+- Trailing Sharpe > 1.5 for 2 consecutive quarters → raise BULL cap to max 25%
+- Trailing Sharpe < 0.5 for 2 consecutive quarters → revert to default bands (BULL 15%, NEUTRAL 10%)
 
 ---
 
