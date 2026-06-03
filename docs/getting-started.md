@@ -138,6 +138,30 @@ python -c "from kth.trading.portfolio import init_portfolio; pf = init_portfolio
 
 You should see: `Cash: 500000.0 THB — setup OK!`
 
+### Step 2.7: Set Up LINE Notify Alerts (Optional but Recommended)
+
+If the morning cron pipeline fails, the dashboard shows stale data — you won't know until you open it. LINE Notify sends a push notification to your phone instead.
+
+**One-time setup (2 minutes):**
+
+1. Go to **notify.line.me/my** → scroll down → "Generate token" → name it "Kronos-TH" → Copy the token.
+
+2. Add to your shell profile (`~/.bashrc` or `~/.zshrc`):
+
+```bash
+export LINE_NOTIFY_TOKEN="paste-your-token-here"
+```
+
+3. Reload your shell:
+
+```bash
+source ~/.bashrc   # or source ~/.zshrc
+```
+
+After this, if the `cron_pipeline.sh` fails (download or forecast step), you'll receive a push message: *"🚨 Kronos-TH STEP2 FAILED (forecast) on 2026-06-03. Check data/logs/cron_2026-06-03.log"*
+
+> If you skip this step, the system still works — you just won't get alerts on cron failures.
+
 ---
 
 ## 3. Your First Run
@@ -271,6 +295,11 @@ The backtest says the strategy makes +31.44% per year, but:
 | **HistVol** | Historical Volatility. How much a stock's price has jumped around over the past year. Higher = riskier. |
 | **SET** | The Stock Exchange of Thailand. The main Thai stock market index. |
 | **Zero-shot** | The model uses its pre-trained knowledge without additional fine-tuning. Backtests showed fine-tuning did NOT improve results for Thai equity, so the dashboard uses zero-shot only. |
+| **Sector Guard** | A buy-list rule that limits picks to 2 per SET sector (Banking, Energy, Property, etc.). If the top 5 signals are all Banking stocks, only 2 appear in the buy list. Prevents sector concentration risk. |
+| **T+2 Settlement** | Thai equity trades settle 2 business days after execution. When you sell on Monday, cash arrives Wednesday. The dashboard shows a yellow warning if you have exits and buys on the same day — buy from your existing cash, not from the sale proceeds. |
+| **Grind** | A Risk Bar tile that turns red when the portfolio drops >3% over 5 consecutive days, even if the −10% circuit breaker hasn't triggered yet. Action: reduce allocation band by one step immediately. |
+| **Band Coverage (Calibration)** | In the Signal Health row — what % of past actual stock prices fell within the model's P5/P95 forecast band. Should be 80–95%. Below 80% means the model is overconfident (bands too narrow). Shows "—" until 20+ forecast dates accumulate. |
+| **Bootstrap p-value** | In the Signal Health row — a statistical test of whether your live paper trading edge is real or luck. p < 0.05 = confirmed edge. Shows "—" until ≥20 trading days. This is NOT the same as the backtest p-values shown in the user manual. |
 
 ---
 

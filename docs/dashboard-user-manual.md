@@ -170,6 +170,10 @@ Cash flow: +497,000 (sells) −92,720 (buys) −1,580 (friction) = +402,700 THB 
 
 4. **Check the cash flow.** If net cash flow after friction is negative, skip the trade. Friction matters at small scale.
 
+5. **T+2 warning (yellow banner).** If exits and buys appear on the same day, a banner reads: *"Exit proceeds settle [date] (T+2). Today's buys draw from existing cash only."* Thai equity settles in 2 business days — don't assume the exit cash is available for new buys on the same day. Only buy using pre-existing cash.
+
+6. **Sector guard (silent).** The buy list never shows more than 2 picks from the same SET sector. If the top 5 ranked stocks are all Banking, only 2 will appear. This is intentional — concentrated sector exposure amplifies single-sector shocks. You'll notice it when a highly-ranked ticker is absent; this is the system protecting you.
+
 ### Step 3: Record Paper Trades (2 minutes)
 
 Click the **"Record Paper Trade"** button. This records all exits and buys in today's ticket as simulated trades at the limit prices shown.
@@ -219,7 +223,7 @@ Allocation: NEUTRAL 10%
 ┌─────────────────────────────────────────────────────────────┐
 │ HEADER: Kronos-TH Dashboard | 📋 PAPER | Date/Time         │
 ├─────────────────────────────────────────────────────────────┤
-│ RISK BAR: Market | Alloc | Sharpe | Drawdown | P&L | Win | Exp │
+│ RISK BAR: Market | Alloc | Sharpe | Drawdown | Grind | P&L | Win | Exp │
 ├─────────────────────────────────────────────────────────────┤
 │ TRADE TICKET (hero, full width)                             │
 │  ▼ EXIT: KBANK.BK 3,500 market                              │
@@ -245,22 +249,35 @@ Allocation: NEUTRAL 10%
 
 ### Risk Bar Reference
 
-| Metric | Source | Normal Range |
-|--------|--------|-------------|
-| Market State | Median band width + red flag count | Normal |
-| Allocation | Trailing Sharpe (12-week) | BULL 15% to EXIT 0% |
-| Trailing Sharpe | Paper portfolio equity curve | > 1.0 is good |
-| Drawdown | Peak-to-trough | > −3% green, < −7% red |
-| P&L MTD | Month-to-date | Positive is good |
-| Win Rate | FIFO-matched closed trades | > 50% is good |
-| Exposure | Position value / total value | 5–20% typical |
+| Metric | Source | Normal Range | Action if bad |
+|--------|--------|-------------|---------------|
+| Market State | Median band width + red flag count | Normal | Turmoil → stay cash |
+| Allocation | Trailing Sharpe (12-week) | BULL 15% to EXIT 0% | EXIT → liquidate |
+| Trailing Sharpe | Paper portfolio equity curve | > 1.0 is good | < 0 → EXIT band |
+| Drawdown | Peak-to-trough | > −3% is fine | −10% → circuit breaker |
+| **Grind** | 5-day portfolio return | 0% (flat) | < −3% over 5 days → reduce allocation now, before −10% triggers |
+| P&L MTD | Month-to-date | Positive | Negative streak → weekly review |
+| Win Rate | FIFO-matched closed trades | > 50% is good | < 40% for 2 wks → half sizes |
+| Exposure | Position value / total value | 5–20% typical | > 25% → concentrated |
+
+> **Grind** is a slow-regime warning. The circuit breaker triggers at −10% drawdown; Grind triggers at −3% over 5 consecutive days — catching deterioration before it becomes a crisis. When Grind fires: reduce your allocation band by one step (e.g. BULL→NEUTRAL) and do not open new positions until the tile clears.
 
 ### Signal Health Row (collapsible, below risk bar)
 
-Expands when forecasts are stale or model performance degrades:
+Four metrics displayed inline. All show "—" until enough live trading history exists.
 
+| Metric | What it means | Threshold |
+|--------|--------------|-----------|
+| Trailing accuracy | % of last 20 trades where model predicted direction correctly | < 45% → 🚨 model review |
+| Live vs backtest Sharpe | Difference between your live Sharpe and backtest Sharpe (1.40) | > 0.5 gap → investigate execution |
+| **Band coverage** | % of past prices that actually fell within the model's P5/P95 band | 80–95% = good; < 80% = overconfident; shows "—" until 20+ forecast dates accumulate |
+| **Bootstrap p-value** | Statistical test: is your live alpha real or luck? Centered resampling, n=1,000 | p < 0.05 ✅ edge confirmed; p ≥ 0.15 ❌ no confirmed edge; "—" until ≥ 20 trading days |
+
+> **Important:** The bootstrap p-value here is for your **live paper trading only**. The historical backtest p-values (p=0.015 in 2024 etc.) are a separate t-test and are not affected by this metric.
+
+Alerts:
 - "⚠ Forecasts from 2026-06-01 — stale" → cron failed. Run `--generate` manually.
-- "🚨 Model review recommended — halve position sizes" → accuracy < 45% or Sharpe < 0.5 for 2+ weeks.
+- "🚨 Model review recommended — halve position sizes" → accuracy < 45% or live Sharpe < 0.5 for 2+ weeks.
 
 ---
 

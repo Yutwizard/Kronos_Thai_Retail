@@ -505,11 +505,18 @@ Median band width: 38%
 |---------|-------|-----|
 | Notebook says "No module named kth" | kth package not installed | `python -m pip install -e .` |
 | GPU out of memory | Model + batch too large | Reduce `n_samples = 5` in Cell 0 |
-| Forecasts looking stale | Cache not refreshed | Delete `data/forecast_cache/NeoQuasar_Kronos-small/` and re-run |
-| `pd.bdate_range` error | Old cached file | Delete `data/forecast_cache/NeoQuasar_Kronos-small/` and re-run |
+| Forecasts looking stale | Cache not refreshed | Delete `data/forecast_cache/NeoQuasar_Kronos-small/YYYY-MM-DD/` for today and re-run |
+| `pd.bdate_range` error | Old cached file | Delete full `data/forecast_cache/NeoQuasar_Kronos-small/` and re-run |
 | 60/40 benchmark = 0.00 | TLT.parquet not cached | Run `python -c "from kth.data.loader import download_universe; download_universe(['TLT'], period='max')"` |
-| Missing tickers in Morning Brief | Ticker has <400 rows of history | Tick the "skipped" line in Cell 3 output — GULF.BK etc. need more data |
+| Missing tickers in Morning Brief | Ticker has <400 rows of history | GULF.BK etc. need more data — check `data/raw/GULF.BK.parquet` row count |
 | All signals 🟡 | Typical on volatile days | Accept it. The model only produces 🟢 on ~30% of days. |
+| "⚠ 1 ticker excluded — price anomaly: DELTA.BK" | Price moved >30% since last bar | Check `data/logs/sanity_YYYY-MM-DD.json`. If it's a real corporate action, wait for yfinance to adjust. If it's a data error, delete and re-download that ticker's parquet. |
+| Cron failed — no LINE Notify received | `LINE_NOTIFY_TOKEN` not set | Add `export LINE_NOTIFY_TOKEN="your-token"` to `~/.bashrc` and reload shell. Get your token at notify.line.me/my. |
+| Top-ranked ticker not in buy list | Sector concentration guard | System limits 2 positions per SET sector. If 2 Banking stocks are already held, no new Banking picks appear. This is intentional. |
+| T+2 warning in trade ticket | Exits and buys on same day | Exit proceeds won't settle until T+2. Buy only from existing cash balance, not sale proceeds. Normal Thai equity settlement. |
+| Grind tile shows red | Portfolio dropped >3% over 5 days | Reduce allocation band by one step immediately (e.g. BULL→NEUTRAL). Do not open new positions until Grind clears (5-day return > −3%). |
+| Bootstrap p-value shows "—" | < 20 trading days of history | Normal. Shows after ≥ 20 paper trading days. Not related to backtest p-values. |
+| Band coverage shows "—" | No historical forecast cache | Shows after 20+ forecast dates accumulate. Calibration compares P5/P95 bands to actual outcomes. |
 
 ---
 
@@ -519,26 +526,37 @@ Median band width: 38%
 ┌─────────────────────────────────────────────────────────────┐
 │                  KRONOS-TH QUICK REFERENCE                   │
 ├──────────────┬──────────────────────────────────────────────┤
-│ DAILY        │ 1. Open notebook, set REPORT_MODE="morning"  │
-│ (~15 min)    │ 2. Run all cells, wait 12 min for forecasts  │
-│              │ 3. Scan bullish top-10, bearish bottom-10    │
-│              │ 4. Check holdings vs bearish list            │
-│              │ 5. If you hold a bearish 🟢↓ → consider exit  │
+│ DAILY        │ 1. Dashboard opens at http://localhost:5555  │
+│ (~15 min)    │ 2. Check Risk Bar: Market / Alloc / Grind    │
+│              │ 3. Grind tile RED → reduce allocation now    │
+│              │ 4. Review Trade Ticket exits (urgent!)       │
+│              │ 5. Note T+2 warning if exits + buys same day │
+│              │ 6. Record paper trades, log note             │
 ├──────────────┼──────────────────────────────────────────────┤
-│ WEEKLY       │ 1. Set REPORT_MODE="quant"                   │
-│ (~15 min)    │ 2. Check HistVol for regime changes          │
-│              │ 3. Note allocation drift                      │
+│ WEEKLY       │ 1. Check Signal Health row (collapsible)     │
+│ (~15 min)    │ 2. Band coverage < 80% → model overconfident │
+│              │ 3. Bootstrap p-value trend (improving?)      │
+│              │ 4. Check allocation drift (positions >25%)   │
+│              │ 5. Note sector concentration — max 2/sector  │
 ├──────────────┼──────────────────────────────────────────────┤
-│ MONTHLY      │ 1. Set REPORT_MODE="trader"                  │
-│ (~30 min)    │ 2. Apply 3-filter rule per position          │
+│ MONTHLY      │ 1. Apply 3-filter rule per position          │
+│ (~30 min)    │ 2. Compare live CAGR vs backtest 31.44%      │
 │              │ 3. Build trade list, spread over 2-3 days    │
+│              │ 4. Adjust allocation bands if Sharpe changed │
 ├──────────────┼──────────────────────────────────────────────┤
 │ QUARTERLY    │ 1. Compare your CAGR vs backtest benchmarks  │
 │ (~30 min)    │ 2. Review position sizing compliance         │
 │              │ 3. Adjust allocation targets if needed       │
 └──────────────┴──────────────────────────────────────────────┘
+
+NEW ALERTS TO KNOW:
+  🔴 GRIND    Portfolio dropped >3% over 5 days → reduce allocation
+  ⚠ T+2      Exit proceeds settle T+2, buy from existing cash only
+  ⚠ SANITY   Ticker excluded (>30% price move) — check sanity log
+  p=0.05 ✅  Bootstrap p-value: live alpha is statistically real
+  p=0.30 ❌  Bootstrap p-value: no confirmed edge yet (keep going)
 ```
 
 ---
 
-*Document version: 2026-06-02. Superseded by dashboard for daily operations. Remains authoritative for decision rules. Any questions: open a GitHub issue.*
+*Document version: 2026-06-03. Updated: sector guard, T+2 warning, Grind tile, Signal Health, sanity filter, bootstrap p-value, LINE Notify documented. Superseded by dashboard for daily operations. Remains authoritative for decision rules.*
