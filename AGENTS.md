@@ -119,11 +119,11 @@ Key insight: 21-month fold windows needed (not 6mo) so val/test have ≥420 rows
 6. `docs/operations-manual.md` — decision rules reference (original notebook workflow)
 7. `docs/user-manual.md` — full methodology, backtest results, and usage instructions
 8. `docs/monthly-walkthrough.html` — 21-day simulated month with real trades and portfolio outcomes
-9. `docs/superpowers/specs/` — approved design specs for all layers
-10. `docs/superpowers/plans/` — implementation plans (specs → bite-sized tasks)
-11. `docs/superpowers/specs/2026-06-02-real-market-dashboard-design.md` — real-market dashboard design spec
-12. `docs/superpowers/plans/2026-06-02-real-market-dashboard.md` — dashboard implementation plan
-13. `docs/superpowers/specs/2026-05-16-local-testing-design.md` — local testing pipeline (CPU + GPU)
+9. `docs/superpowers/specs/` — approved design specs for all layers (6 active, 5 archived)
+10. `docs/superpowers/plans/` — implementation plans (6 active, 7 archived). Key: expanded backtest, OOS yearly, n50 completion
+11. `docs/superpowers/archive/` — completed/superseded plans and specs
+12. `docs/superpowers/specs/2026-06-02-real-market-dashboard-design.md` — real-market dashboard design spec
+13. `docs/superpowers/plans/2026-06-02-real-market-dashboard.md` — dashboard implementation plan
 14. `kth/data/loader.py` — actual implementation of schema conversion and caching
 15. `kth/data/universe.py` — universe + friction definitions
 16. `kth/models/kronos_wrapper.py` — KronosTH wrapper (adapted to real Kronos API)
