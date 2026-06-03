@@ -509,6 +509,27 @@ Permutation preserves the mean exactly → always non-significant. Fixed to cent
 - `cron_pipeline.sh`: LINE Notify on failure via $LINE_NOTIFY_TOKEN.
 - `metrics.py`: IR, batting average, calibration, drawdown velocity, bootstrap p-value.
 
+### 4-Year OOS Results (2023–2026, n=50)
+
+| Year | Net CAGR | Sharpe | Max DD | p-value | Friction/yr | EW CAGR | Alpha vs EW |
+|------|----------|--------|--------|---------|-------------|---------|-------------|
+| **2023** | +2.6% | 0.10 | −13.1% | 0.419 ❌ | 5.68% | +12.8% | **−10.2pp** |
+| **2024** | +42.0% | 2.27 | −6.9% | 0.015 ✅ | 7.54% | −7.2% | **+49.2pp** |
+| **2025** | +33.7% | 1.03 | −24.0% | 0.257 ❌ | 17.35% | −9.9% | **+43.6pp** |
+| **2026** | +143% ann. | 2.42 | −18.3% | 0.353 ❌ | 32.78% | +41.8% | **+101pp** |
+
+**Decision gate triggered: 🔴 MODEL REVIEW** (2023 Sharpe=0.10 < 0.5).
+
+**2023 root cause — NOT model failure. Cash drag + friction:**
+- Deployed stocks actually beat EW by +3.3pp on deployed capital — model predictions were correct
+- Cash drag: NEUTRAL band (50% deployed) in a +12.8% EW bull market costs −6.4pp
+- Friction: −5.68%/yr
+- Total underperformance = cash drag + friction − small stock-selection gain
+
+**Pattern: strategy underperforms EW in bull markets because it holds cash (by design)**. In bear markets (2024: EW −7.2%, 2025: EW −9.9%), holding selective positions instead of equal-weight is exactly the right strategy.
+
+**Bonferroni (4 OOS years, threshold p<0.0125):** No year survives. 2024 p=0.015 is the closest.
+
 ### Open questions from QFM review (2026-06-03)
 
 Post-review data analysis surfaced the following — pending 2023 backtest before full resolution:

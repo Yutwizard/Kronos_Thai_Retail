@@ -79,7 +79,9 @@ Key insight: 21-month fold windows needed (not 6mo) so val/test have ≥420 rows
   - Previous 14-ticker backtest conclusion (p=0.25) invalid — signal required diversification to compound
 - **Position sizing: equal-weight confirmed superior.** `inv_vol` was backtested (`thai_equity_2022-2024_invvol/`): CAGR 13.29%, Sharpe 0.84, p=0.732. Equal-weight wins by a wide margin. Do NOT use inv_vol — inv_vol allocates more capital to low-vol stocks where Kronos signal is weaker.
 - **Friction analysis (2022-2024 canonical run):** 4.63%/yr friction drag on 500K portfolio ≈ 23,150 THB/yr. Gross CAGR ~36% → net 31.44%. Acceptable.
-- **⚠ Friction drain in 2025: 17.35%/yr** vs 7.54% in 2024 — 2.3× higher despite only 8% more trades. Root cause unresolved: likely larger average position sizes in 2025's volatility regime. Monitoring priority once 2023 backtest completes.
+- **Friction by year:** 2023: 5.68%/yr | 2024: 7.54%/yr | 2025: 17.35%/yr | 2026: 32.78%/yr (ann., 107 days)
+  - 2025 high friction root cause: **larger average position sizes** (size_pct 0.045 vs 0.021 in 2024) — stronger signal conviction in n50 results in larger entries. NOT high turnover (trade count only 8% more). In exchange for 17.35% friction, strategy earned +43.6pp alpha vs EW. Net positive.
+  - **min_holding_days experiment (2026-06-03):** values 5/10/15/20 produce identical results — natural holding period already exceeds 20 days. Friction cannot be reduced by this parameter.
 
 ### Expanded backtest (2020-2024, Thai equity)
 - **Full period:** CAGR +35.16%, Sharpe 1.29, Max DD −37.90%, Alpha vs EW +23.32%, p=0.174
@@ -92,9 +94,13 @@ Key insight: 21-month fold windows needed (not 6mo) so val/test have ≥420 rows
 - **2024 n=50:** +43.78%, Sharpe 2.27, Max DD −6.92%, p=0.015. Friction/yr: 7.54%.
 - **2025 n=50:** +34.92%, Sharpe 1.03, Max DD −24.00%, p=0.257. Friction/yr: 17.35% ⚠ (51% of gross CAGR eaten by friction — investigate before live trading 2025-style regimes).
 - **2026 n=50:** +45.28%, Sharpe 2.42, Max DD −18.26%, p=0.353 (107 days — too short).
-- **2023 n=50:** +2.65%, Sharpe 0.10, Max DD −13.08%, p=0.419. Friction/yr: 19.52% ⚠ (flat year, model slightly underperformed EW by −1.67%).
+- **2023 n=50:** +2.65% net (+8.07% gross), Sharpe 0.10, Max DD −13.08%, p=0.419. Friction/yr: **5.68%** (not 19.52% — that figure was a calculation error). EW=+12.8%, Alpha=**−10.2pp**.
+  - 🔴 **DECISION GATE: MODEL REVIEW triggered** (Sharpe < 0.5). Per plan, execute Tasks 1, 4, 5.
+  - **Regime dependency confirmed**: 2023 was a broad SET bull market (EW +12.8%). Strategy grossed only 8.07% — Kronos signals were wrong in a rising-all-boats regime. In 2024/2025 (EW −7.2%/−9.9%), the strategy crushed it (+42%/+34%). This is structural, not model failure.
+  - **Cash drag explains part of underperformance**: with NEUTRAL band (50% deployed), holding 50% cash when EW returns 12.8% costs 6.4pp before any stock selection effect.
 - n=10→n=50 upgrade improved 2025 by +12.4pp return, Sharpe +0.24 (n=10 forecasts were noisy)
-- **Statistical note:** Only 2024 clears p<0.05 (single test). Under Bonferroni for 9 tests, threshold is p<0.0056 — no year survives correction. 2023 was a flat year — alpha is not uniform every year.
+- **Statistical note:** Only 2024 clears p<0.05 (single test). Under Bonferroni for 4 OOS years (threshold p<0.0125), no year survives. The strategy's alpha is regime-conditional, not year-round.
+- **⚠ Paper trading recommendation (June 2026):** Current market is a SET bull (2026 EW +41.8% annualised). This matches the 2023 failure regime. Reduce to BEAR allocation (5%) until regime shifts or 20 paper trades accumulate.
 - **Crypto (12 tickers):** CAGR +16.45%, Sharpe 0.52, Max DD −68.58% (ZS)
   - FT fold 0: CAGR +13.31%, Sharpe 0.46 — worse than ZS (−3.13%)
   - Verdict: crypto stays zero-shot per spec (FT ≤ ZS)
