@@ -1,6 +1,6 @@
 # AGENTS.md — Kronos-TH
 
-> All 5 layers + 15-item QFM enhancement plan ✅ complete. Pending: 2023 n=50 backtest (~12 hrs GPU).
+> All 5 layers + 15-item QFM enhancement plan ✅ complete. 2023 n=50 backtest ✅ complete. All 4 OOS years now done.
 > When in doubt, read `PROJECT_STRUCTURE.md` — it is the authoritative design doc.
 
 ## Superpower workflow
@@ -23,7 +23,7 @@ Priority order:
 ## Project type
 - **Not a deployable app.** No CI, no build step, no test framework, no lint config.
 - **Colab-first:** The real workflow is Jupyter notebooks on Google Colab (T4 GPU). Local Python scripts are for offline verification only.
-- **Current state:** All 5 layers ✅ built. Layer 5 is a local Flask dashboard (`scripts/dashboard.py`) for paper/live paper trading with a daily cron pipeline. 15-item QFM enhancement plan ✅ complete (2026-06-03). Pending: 2023 n=50 backtest (~12 hrs GPU).
+- **Current state:** All 5 layers ✅ built. Layer 5 is a local Flask dashboard (`scripts/dashboard.py`) for paper/live paper trading with a daily cron pipeline. 15-item QFM enhancement plan ✅ complete (2026-06-03). All 4 OOS years (2023-2026) completed with n=50.
 
 ## Verify the data layer (offline)
 ```bash
@@ -137,6 +137,9 @@ Key insight: 21-month fold windows needed (not 6mo) so val/test have ≥420 rows
 
 Plan files archived to `docs/superpowers/archive/plans/`.
 
+### Known unknowns
+- **Kronos pre-training cutoff:** The model card does not document a training data cutoff date. The README states "trained on data from over 45 global exchanges" but no date range. All backtests since 2022 should be treated as partially in-sample until confirmed otherwise. The 2023-2026 OOS window (post plausible late-2022 cutoff) is the conservative estimate.
+
 ## What not to build yet
 - Do not add live order execution, broker API integration, or intraday data — all explicitly out of scope per `PROJECT_STRUCTURE.md` §12. The local dashboard is for paper trading + broker-ready CSV exports only.
 - Do not add `pytest`, `tox`, or CI config unless explicitly asked.
@@ -152,15 +155,11 @@ Plan files archived to `docs/superpowers/archive/plans/`.
 7. `docs/user-manual.md` — full methodology, backtest results, and usage instructions
 8. `docs/monthly-walkthrough.html` — 21-day simulated month with real trades and portfolio outcomes
 9. `docs/superpowers/specs/` — approved design specs for all layers (6 active, 5 archived)
-10. `docs/superpowers/plans/` — implementation plans (4 active, 14 archived). Active: expanded backtest, OOS yearly, n50 completion, **post-2023 actions (execute when 2023 run completes)**
+10. `docs/superpowers/plans/` — implementation plans (4 active, 14 archived). Key: expanded backtest, OOS yearly, n50 completion, post-2023 actions
 11. `docs/superpowers/archive/` — completed/superseded plans (incl. all 4 QFM phase plans)
 12. `docs/superpowers/specs/2026-06-02-real-market-dashboard-design.md` — real-market dashboard design spec
 13. `kth/data/loader.py` — schema conversion and caching implementation
 14. `kth/data/universe.py` — universe, friction, and sector definitions
 15. `kth/models/kronos_wrapper.py` — KronosTH wrapper (adapted to real Kronos API)
 16. `kth/models/_kronos_bridge.py` — import bridge for non-pip-installable Kronos repo
-14. `kth/data/loader.py` — actual implementation of schema conversion and caching
-15. `kth/data/universe.py` — universe + friction definitions
-16. `kth/models/kronos_wrapper.py` — KronosTH wrapper (adapted to real Kronos API)
-17. `kth/models/_kronos_bridge.py` — import bridge for non-pip-installable Kronos repo
 
