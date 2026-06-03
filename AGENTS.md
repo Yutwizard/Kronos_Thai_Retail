@@ -72,9 +72,14 @@ Key insight: 21-month fold windows needed (not 6mo) so val/test have ≥420 rows
 
 ### Backtest results (zero-shot, 2022-2024)
 - **Thai equity (49 tickers):** CAGR +31.44%, Sharpe 1.40, Max DD −17.97%
+  - Source: `data/backtest_results/thai_equity_2022-2024_v2/` (n_samples=10, equal-weight). The original `thai_equity_2022-2024/` run differs (25.03%, Sharpe 1.29) — v2 is canonical.
   - Benchmark comparison: SET −5.29% (Sharpe −0.63), SPY +8.33% (0.44), equal-weight +1.44% (0.00)
+  - Single-run p=0.034 (t-test). n=50 bootstrap 2024: p=0.015. Bonferroni-corrected threshold (9 tests): p<0.0056 — neither survives correction.
   - Signal is genuine — model adds ~30pp alpha over equal-weight, beats all 4 benchmarks
   - Previous 14-ticker backtest conclusion (p=0.25) invalid — signal required diversification to compound
+- **Position sizing: equal-weight confirmed superior.** `inv_vol` was backtested (`thai_equity_2022-2024_invvol/`): CAGR 13.29%, Sharpe 0.84, p=0.732. Equal-weight wins by a wide margin. Do NOT use inv_vol — inv_vol allocates more capital to low-vol stocks where Kronos signal is weaker.
+- **Friction analysis (2022-2024 canonical run):** 4.63%/yr friction drag on 500K portfolio ≈ 23,150 THB/yr. Gross CAGR ~36% → net 31.44%. Acceptable.
+- **⚠ Friction drain in 2025: 17.35%/yr** vs 7.54% in 2024 — 2.3× higher despite only 8% more trades. Root cause unresolved: likely larger average position sizes in 2025's volatility regime. Monitoring priority once 2023 backtest completes.
 
 ### Expanded backtest (2020-2024, Thai equity)
 - **Full period:** CAGR +35.16%, Sharpe 1.29, Max DD −37.90%, Alpha vs EW +23.32%, p=0.174
@@ -84,11 +89,12 @@ Key insight: 21-month fold windows needed (not 6mo) so val/test have ≥420 rows
 - Caveat: full-period p not significant (0.174) due to crash noise; n_samples=10 vs 50 in 3-year run
 
 ### Yearly n=50 backtests (clean OOS, 2023-2026)
-- **2024 n=50:** +43.78%, Sharpe 2.27, Max DD −6.92%, p=0.015 (significant)
-- **2025 n=50:** +34.92%, Sharpe 1.03, Max DD −24.00%, p=0.257
-- **2026 n=50:** +45.28%, Sharpe 2.42, Max DD −18.26%, p=0.353 (107 days, short period)
-- **2023 n=50:** pending (252 days, ~12 hrs)
+- **2024 n=50:** +43.78%, Sharpe 2.27, Max DD −6.92%, p=0.015. Friction/yr: 7.54%.
+- **2025 n=50:** +34.92%, Sharpe 1.03, Max DD −24.00%, p=0.257. Friction/yr: 17.35% ⚠ (51% of gross CAGR eaten by friction — investigate before live trading 2025-style regimes).
+- **2026 n=50:** +45.28%, Sharpe 2.42, Max DD −18.26%, p=0.353 (107 days — too short).
+- **2023 n=50:** ⬜ running (~12 hrs GPU). This is the most credible OOS year — no pre-training overlap risk.
 - n=10→n=50 upgrade improved 2025 by +12.4pp return, Sharpe +0.24 (n=10 forecasts were noisy)
+- **Statistical note:** Only 2024 clears p<0.05 (single test). Under Bonferroni for 9 tests, threshold is p<0.0056 — no year survives correction. 2023 result will be the critical data point.
 - **Crypto (12 tickers):** CAGR +16.45%, Sharpe 0.52, Max DD −68.58% (ZS)
   - FT fold 0: CAGR +13.31%, Sharpe 0.46 — worse than ZS (−3.13%)
   - Verdict: crypto stays zero-shot per spec (FT ≤ ZS)

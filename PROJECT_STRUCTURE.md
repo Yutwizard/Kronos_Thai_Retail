@@ -509,6 +509,21 @@ Permutation preserves the mean exactly → always non-significant. Fixed to cent
 - `cron_pipeline.sh`: LINE Notify on failure via $LINE_NOTIFY_TOKEN.
 - `metrics.py`: IR, batting average, calibration, drawdown velocity, bootstrap p-value.
 
+### Open questions from QFM review (2026-06-03)
+
+Post-review data analysis surfaced the following — pending 2023 backtest before full resolution:
+
+**Confirmed (do not re-investigate):**
+- `inv_vol` position sizing was backtested in `thai_equity_2022-2024_invvol/`: CAGR 13.29%, Sharpe 0.84, p=0.732. **Equal-weight is conclusively better.** inv_vol allocates more to low-signal, low-vol stocks. Do not use.
+- Canonical 2022-2024 result is `thai_equity_2022-2024_v2/` (CAGR 31.44%, Sharpe 1.40, p=0.034). The original `thai_equity_2022-2024/` run (CAGR 25.03%, Sharpe 1.29) used different data — v2 is the one in AGENTS.md.
+- Bonferroni correction (9 tests, threshold p<0.0056): no year survives. 2024 p=0.015 is the closest. Statistical evidence is suggestive, not conclusive.
+
+**Open — investigate after 2023 backtest completes:**
+- **2025 friction drain (17.35%/yr vs 7.54% in 2024):** 2.3× more friction despite only 8% more trades. Likely cause: larger average position sizes in high-volatility 2025 regime (more capital deployed per trade). If structural, may need higher entry threshold to reduce turnover in volatile regimes.
+- **Kronos pre-training cutoff:** Unverified. If training data overlaps 2022–2024, the canonical backtest is not out-of-sample. Check Kronos paper/model card.
+- **Factor attribution:** Is the alpha genuinely predictive or a dressed momentum factor? Regress daily returns on SET 12-1 momentum factor.
+- **2023 n=50 result:** The most credible OOS year. p-value here determines whether the strategy has demonstrated statistically robust edge.
+
 ---
 
-*Document version: 2026-06-03. Updated: QFM plan complete, bootstrap p-value fix documented.*
+*Document version: 2026-06-03. Updated: QFM review findings, inv_vol rejection, friction analysis, open questions added.*
