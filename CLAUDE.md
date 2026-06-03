@@ -139,6 +139,6 @@ Priority order: (1) user's explicit instructions, (2) superpowers skills, (3) de
 3. [docs/user-manual.html](docs/user-manual.html) — styled HTML manual with 7 charts, methodology, and usage guide
 4. [docs/operations-manual.html](docs/operations-manual.html) — daily/weekly/monthly step-by-step procedures
 5. [docs/monthly-walkthrough.html](docs/monthly-walkthrough.html) — 21-day simulated month with real trades
-5. [docs/superpowers/specs/](docs/superpowers/specs/) — approved design specs for Layers 3–5 (A: inference wrapper, B: backtest, C: fine-tune, D: report)
+5. [docs/superpowers/specs/](docs/superpowers/specs/) — approved design specs (Layers 3–5). Completed/archived spec moved to [docs/superpowers/archive/](docs/superpowers/archive/)
 6. [kth/data/loader.py](kth/data/loader.py) — schema conversion and caching implementation
 7. [kth/data/universe.py](kth/data/universe.py) — 100-ticker universe and `FRICTION` dict
