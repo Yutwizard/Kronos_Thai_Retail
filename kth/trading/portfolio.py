@@ -13,6 +13,7 @@ import pandas as pd
 POSITIONS_DIR = Path("data/positions")
 INITIAL_CAPITAL = 500_000.0
 STOP_LOSS = -0.10
+MODEL_VERSION = "Kronos-small-zero-shot"
 
 
 def _portfolio_path(mode: str) -> Path:
@@ -196,9 +197,9 @@ def _log_trade(ticker: str, action: str, shares: int, price: float,
         w = csv.writer(f)
         if not file_exists:
             w.writerow(["date", "ticker", "action", "shares", "price", "order_type",
-                        "mode", "rationale", "friction_cost"])
+                        "mode", "rationale", "friction_cost", "model_version", "forecast_date"])
         w.writerow([str(date.today()), ticker, action, shares, price, order_type,
-                    mode, rationale, round(friction, 2)])
+                    mode, rationale, round(friction, 2), MODEL_VERSION, str(date.today())])
 
 
 def get_trade_log(mode: str = None) -> list[dict]:

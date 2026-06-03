@@ -283,3 +283,89 @@ def compute_metrics(
         "t_stat": t_stat,
         "p_value": p_value,
     }
+
+
+def compute_information_ratio(
+    strategy_returns: pd.Series,
+    benchmark_returns: pd.Series,
+    periods_per_year: int = 252,
+) -> float:
+    """IR = annualised active return / tracking error vs benchmark."""
+    bench = benchmark_returns.reindex(strategy_returns.index).fillna(0)
+    active = strategy_returns - bench
+    if active.std() == 0:
+        return 0.0
+    return float(active.mean() / active.std() * np.sqrt(periods_per_year))
+
+
+def compute_batting_average(
+    strategy_returns: pd.Series,
+    benchmark_returns: pd.Series,
+) -> float:
+    """% of calendar months where strategy mean daily return beat benchmark."""
+    df = pd.DataFrame({
+        "strat": strategy_returns,
+        "bench": benchmark_returns.reindex(strategy_returns.index).fillna(0),
+    })
+    df.index = pd.to_datetime(df.index)
+    monthly = df.resample("ME").mean()
+    if len(monthly) == 0:
+        return 0.0
+    wins = (monthly["strat"] > monthly["bench"]).sum()
+    return float(wins / len(monthly))
+
+
+def compute_calibration(
+    forecast_cache_dir,
+    raw_data_dir,
+    tickers: list,
+    pred_len: int = 20,
+    lookback_days: int = 60,
+) -> dict:
+    """
+    P5/P95 coverage: fraction of actual prices that fell within the forecast band.
+    Looks back `lookback_days` forecast dates, checks outcome `pred_len` days later.
+    Returns {'coverage': float|None, 'n_samples': int, 'status': str}
+    status: 'ok' | 'overconfident' (>95%) | 'insufficient_data' (<10 samples)
+    """
+    from pathlib import Path as _P
+    from datetime import date as _d, timedelta
+    from kth.data.loader import load_cached
+
+    hits, total = 0, 0
+    today = _d.today()
+
+    for ticker in tickers:
+        safe = ticker.replace("^", "_").replace("=", "_")
+        try:
+            price_df = load_cached(ticker, cache_dir=str(raw_data_dir))
+            price_df.index = pd.to_datetime(price_df.index)
+        except Exception:
+            continue
+
+        for days_ago in range(pred_len + 1, lookback_days + pred_len + 1):
+            fc_path = _P(forecast_cache_dir) / str(today - timedelta(days=days_ago)) / f"{safe}.parquet"
+            actual_date = (today - timedelta(days=days_ago - pred_len))
+            if not fc_path.exists():
+                continue
+            try:
+                fc = pd.read_parquet(fc_path)
+                p5 = float(fc["p5"].iloc[-1])
+                p95 = float(fc["p95"].iloc[-1])
+                rows = price_df[price_df.index.date == actual_date]
+                if rows.empty:
+                    continue
+                total += 1
+                if p5 <= float(rows["close"].iloc[0]) <= p95:
+                    hits += 1
+            except Exception:
+                continue
+
+    if total < 10:
+        return {"coverage": None, "n_samples": total, "status": "insufficient_data"}
+    coverage = hits / total
+    return {
+        "coverage": round(coverage, 3),
+        "n_samples": total,
+        "status": "overconfident" if coverage > 0.95 else "ok",
+    }

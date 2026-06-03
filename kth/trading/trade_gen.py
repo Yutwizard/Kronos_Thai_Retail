@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from datetime import date
+from datetime import date, timedelta
 from typing import Optional
 
 import pandas as pd
@@ -86,6 +86,13 @@ def load_forecasts(report_date: str = None) -> list[dict]:
 
     rows.sort(key=lambda x: x["rank_score"], reverse=True)
     return rows
+
+
+def _next_business_day(d: date) -> date:
+    d = d + timedelta(days=1)
+    while d.weekday() >= 5:  # skip Saturday=5, Sunday=6
+        d = d + timedelta(days=1)
+    return d
 
 
 def _one_way_friction(ticker: str) -> float:
@@ -211,11 +218,20 @@ def generate_trade_ticket(report_date: str = None, positions: dict = None) -> di
     total_friction = round(friction_sells + friction_buys, 2)
     net_cash = gross_sells - gross_buys - total_friction
 
+    t2_warning = None
+    if (exits or reduces) and buys:
+        settle = _next_business_day(_next_business_day(date.today()))
+        t2_warning = (
+            f"Exit/reduce proceeds settle {settle} (T+2). "
+            f"Today's buys draw from existing cash only — not from today's exit proceeds."
+        )
+
     ticket = {
         "date": report_date or str(date.today()),
         "exits": exits,
         "reduces": reduces,
         "buys": buys,
+        "t2_warning": t2_warning,
         "cash_flow": {
             "gross_proceeds": round(gross_sells, 2),
             "friction": total_friction,

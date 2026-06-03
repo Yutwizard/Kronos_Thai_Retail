@@ -19,6 +19,28 @@ app = Flask(__name__, static_folder=str(PROJECT_ROOT / "scripts/static"), static
 TRADING_MODE = os.environ.get("KRONOS_MODE", "paper")  # "paper" or "live"
 PORT = int(os.environ.get("KRONOS_PORT", "5555"))
 
+_calibration_cache: dict = {"date": None, "result": None}
+
+def _get_calibration() -> dict:
+    """Compute P5/P95 calibration once per day; return cached result otherwise."""
+    today = str(date.today())
+    if _calibration_cache["date"] == today:
+        return _calibration_cache["result"]
+    try:
+        from kth.backtest.metrics import compute_calibration
+        from kth.data.universe import UNIVERSE
+        tickers = [t for t, _, _ in UNIVERSE["thai_equity"]]
+        result = compute_calibration(
+            forecast_cache_dir=PROJECT_ROOT / "data/forecast_cache/NeoQuasar_Kronos-small",
+            raw_data_dir=PROJECT_ROOT / "data/raw",
+            tickers=tickers,
+        )
+    except Exception:
+        result = {"coverage": None, "n_samples": 0, "status": "error"}
+    _calibration_cache["date"] = today
+    _calibration_cache["result"] = result
+    return result
+
 
 @app.route("/")
 def index():
@@ -43,7 +65,9 @@ def api_positions():
 @app.route("/api/risk")
 def api_risk():
     from kth.trading.portfolio import compute_metrics
-    return jsonify(compute_metrics(TRADING_MODE))
+    metrics = compute_metrics(TRADING_MODE)
+    metrics["calibration"] = _get_calibration()
+    return jsonify(metrics)
 
 
 @app.route("/api/trades", methods=["GET", "POST"])
