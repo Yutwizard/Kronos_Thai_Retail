@@ -220,15 +220,41 @@ function _flagDelta(prev, curr) {
             : ' <span class="flag-dn" title="Confidence downgraded">↘</span>';
 }
 
+// Column header definitions — shown as tooltips on hover
+const COL = {
+  ticker:  "Stock symbol",
+  close:   "Last known closing price (THB) — from the most recent trading day",
+  expRet:  "Expected Return: model's predicted price change over the next 20 trading days (P50 forecast). ↑ = bullish, ↓ = bearish.",
+  delta:   "Δ Expected Return vs previous forecast date. ▲ = model more bullish since last run, ▼ = less bullish. Does NOT measure confidence. The ↗↘ badge on the flag shows confidence-level change.",
+  band:    "Uncertainty band = (P95 − P5) ÷ Close price. Directly determines flag colour: <10% → 🟢 confident | 10–30% → 🟡 uncertain | >30% → 🔴 very uncertain. Narrow band = model is sure; wide band = model is guessing.",
+  flag:    "Confidence flag based on Band width. 🟢 <10% (confident). 🟡 10–30% (moderate). 🔴 >30% (uncertain, avoid). ↗ = confidence improved vs prev forecast. ↘ = confidence downgraded (e.g. HOLD → REDUCE trigger).",
+  netRet:  "Net Return = Expected Return minus round-trip friction cost (commission + slippage). This is what you actually keep after trading costs.",
+  rank:    "Rank by signal strength (expected return ÷ band width). Higher rank = stronger, more confident signal.",
+};
+
+const LEGEND_MORNING = `
+<div class="col-legend">
+  <strong>Exp Ret</strong> Model's predicted 20-day return &nbsp;|&nbsp;
+  <strong>Δ Prev</strong> Change in exp ret since last forecast (▲more bullish ▼less bullish); ↗↘ = confidence level changed &nbsp;|&nbsp;
+  <strong>Band</strong> Uncertainty: &lt;10%=🟢 confident, 10–30%=🟡 uncertain, &gt;30%=🔴 avoid &nbsp;|&nbsp;
+  <strong>Net Ret</strong> After friction costs
+</div>`;
+
 function updateForecasts(fc) {
   if (!fc || !fc.forecasts) return;
   const hasDelta = fc.forecasts.some(f => f.delta_exp_ret !== undefined);
   const prevLabel = fc.prev ? ' vs ' + fc.prev : '';
   const top10 = fc.forecasts.slice(0, 10);
 
-  let html = '<table><thead><tr><th>Ticker</th><th>Close</th><th>Exp Ret</th>';
-  if (hasDelta) html += '<th title="Change vs previous forecast'+prevLabel+'">Δ Prev</th>';
-  html += '<th>Band</th><th>Flag</th><th>Net Ret</th></tr></thead><tbody>';
+  let html = `<table><thead><tr>
+    <th title="${COL.ticker}">Ticker</th>
+    <th title="${COL.close}">Close</th>
+    <th title="${COL.expRet}">Exp Ret (?)</th>`;
+  if (hasDelta) html += `<th title="${COL.delta}">Δ Prev (?)</th>`;
+  html += `<th title="${COL.band}">Band (?)</th>
+    <th title="${COL.flag}">Flag (?)</th>
+    <th title="${COL.netRet}">Net Ret (?)</th>
+  </tr></thead><tbody>`;
   for (const f of top10) {
     const dir = f.direction === "up" ? "↑" : "↓";
     const retCls = f.exp_ret >= 0 ? "green" : "red";
@@ -242,12 +268,20 @@ function updateForecasts(fc) {
       + '<td class="num ' + (f.net_ret>=0?"green":"red") + '">' + (f.net_ret*100).toFixed(2) + '%</td></tr>';
   }
   html += '</tbody></table>';
-  if (hasDelta && fc.prev) html += '<p class="compare-note">Δ vs forecast from ' + fc.prev + '</p>';
+  html += LEGEND_MORNING;
+  if (hasDelta && fc.prev) html += '<p class="compare-note">Δ compared to forecast from ' + fc.prev + ' — hover column headers (?) for definitions</p>';
   $("morning-body").innerHTML = html;
 
-  let rankHtml = '<table><thead><tr><th>#</th><th>Ticker</th><th>Name</th><th>Close</th><th>Exp Ret</th>';
-  if (hasDelta) rankHtml += '<th title="Change vs previous forecast'+prevLabel+'">Δ</th>';
-  rankHtml += '<th>Band</th><th>Flag</th></tr></thead><tbody>';
+  let rankHtml = `<table><thead><tr>
+    <th title="${COL.rank}">#</th>
+    <th title="${COL.ticker}">Ticker</th>
+    <th>Name</th>
+    <th title="${COL.close}">Close</th>
+    <th title="${COL.expRet}">Exp Ret (?)</th>`;
+  if (hasDelta) rankHtml += `<th title="${COL.delta}">Δ (?)</th>`;
+  rankHtml += `<th title="${COL.band}">Band (?)</th>
+    <th title="${COL.flag}">Flag (?)</th>
+  </tr></thead><tbody>`;
   fc.forecasts.forEach((f, i) => {
     const dir = f.direction === "up" ? "↑" : "↓";
     const retCls = f.exp_ret >= 0 ? "green" : "red";

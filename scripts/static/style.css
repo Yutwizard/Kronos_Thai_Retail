@@ -70,6 +70,8 @@ tr:hover { background: #f8f9ff; }
 .flag-up  { font-size: 0.75em; color: #2e7d32; cursor: help; }
 .flag-dn  { font-size: 0.75em; color: #c62828; cursor: help; }
 .compare-note { font-size: 0.7em; color: var(--muted); margin: 2px 0 0; padding-left: 4px; }
+th[title] { cursor: help; border-bottom: 1px dotted #90a4ae; }
+.col-legend { font-size: 0.7em; color: #555; background: #f5f7fa; border-left: 3px solid #90a4ae; padding: 5px 10px; margin: 4px 0 2px; border-radius: 0 4px 4px 0; line-height: 1.8; }
 .row-exit { border-left: 3px solid var(--red); }
 .row-reduce { border-left: 3px solid var(--orange); }
 .row-buy { border-left: 3px solid var(--green); }
