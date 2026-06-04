@@ -150,12 +150,19 @@ Cell 9 (Update Portfolio State) must run before Cell 10 (Generate Ticket).
 ### Flask Dashboard — Improvements Shipped 2026-06-04 (kept for reference)
 
 All improvements built while paper trading was being set up. These inform the Google Suite implementation:
-- **Run Pipeline button** — one-click daily pipeline (download + forecast + ticket) from browser; recommended to run EVENING after market close so tomorrow's forecast uses today's close prices
-- **Fill-price confirmation modal** — editable shares + price before recording; partial fill / no-fill support
-- **Trade history panel** — inline edit (shares + price), delete with portfolio rebuild
-- **Friction display** — Gross / Friction / Cash Impact columns in modal; per-class rates corrected
+- **Run Pipeline button** — one-click daily pipeline (download + forecast + ticket) from browser; run EVENING after market close so tomorrow's forecast uses today's close prices
+- **Fill-price confirmation modal** — editable Shares Filled + Fill Price before recording; partial fill (enter actual shares) / no-fill (0 = skip) support
+- **Trade history panel** — inline edit (shares + price), delete with portfolio rebuild from CSV
+- **Friction display** — Gross / Friction / Cash Impact columns in modal; `execute_trade()` now uses correct per-class rates (was hardcoded 0.00268)
 - **Initial capital setup** — first-day banner to set starting capital before first trade
-- **Limit price clarification** — "Last Close" + "Limit (max)" columns + "fills at live ✓" tag
+- **Limit price clarification** — "Last Close" + "Limit (max)" + "fills at live ✓" tag; `last_close` field added to buy/exit items in trade ticket
+- **Forecast comparison** — Morning Brief + Full Ranking show Δ Prev column (change in expected return since previous pipeline run), ↗↘ badge when confidence level changes (explains why HOLD→REDUCE occurs)
+- **Data date badge** — `📅 Data: YYYY-MM-DD` badge in Morning Brief and Full Ranking headings shows which close date's prices power the forecasts
+- **Column tooltips + legend** — every `(?)` header in Morning Brief, Full Ranking, and Positions tables has a plain-English definition on hover; one-line legend bar below each table
+- **Positions table enriched** — Exp Ret, Δ Prev, Band, Signal columns added to Current Positions; row border colour reflects current signal (green=hold, orange=reduce, red=exit)
+- **Historical date selector** — Full Ranking panel has a date dropdown populated with all past pipeline run dates; selecting any date re-renders the ranking using that day's forecasts with Δ vs the prior date
+- **Historical backfill** — `forecast()` accepts a sliced DataFrame so any past date can be computed using only data available on that date. Example: June 2, 2026 backfilled from actual June 2 price history (not today's prices)
+- **GULF.BK** — excluded from all forecasts until ~Oct 2026 (only 281 rows, needs ≥400 for Kronos lookback); auto-qualifies when history accumulates
 
 ### 4-Phase QFM Enhancement Plan ✅ COMPLETE (2026-06-03)
 15 enhancements from quant fund manager + software engineer review — all shipped:

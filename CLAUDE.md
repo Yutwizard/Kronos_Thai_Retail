@@ -73,7 +73,10 @@ Layer 2: Feature pipeline       kth/data/loader.py                      ✅ done
 Layer 1: Universe definition    kth/data/universe.py                    ✅ done
 ```
 
-**All 15 QFM enhancements ✅ complete (2026-06-03).** All 4 OOS years (2023-2026) complete. Paper trading live since 2026-06-04. Plan files archived to `docs/superpowers/archive/plans/`.
+**All 15 QFM enhancements ✅ complete (2026-06-03).** All 4 OOS years (2023-2026) complete. Paper trading live since 2026-06-04 (8 trades, 4 positions). Plan files archived to `docs/superpowers/archive/plans/`.
+
+**Flask dashboard features shipped 2026-06-04** (kept as reference; Google Suite is the new target):
+Run Pipeline button, fill-price modal (editable shares+price, partial/no-fill), trade history panel (inline edit+delete), friction display in modal, initial capital setup, limit price clarification, forecast comparison (Δ Prev column), data date badge, column tooltips, positions table enriched with Exp Ret/Band/Signal, Full Ranking historical date selector, historical forecast backfill (slice parquet to any past date). Evening pipeline run recommended (uses today's close → more accurate for tomorrow). GULF.BK excluded until ~Oct 2026 (281 rows, needs ≥400).
 
 **Layer 5 is migrating to Google Suite (2026-06-04):** `google_suite/` directory (to be created) will contain `kronos_daily_pipeline.ipynb` (19-cell Colab), `apps_script/Code.gs`, and `apps_script/Index.html`. Spec: `docs/superpowers/specs/2026-06-04-google-suite-dashboard-design.md`. Plan: `docs/superpowers/plans/2026-06-04-google-suite-implementation-plan.md`.
 

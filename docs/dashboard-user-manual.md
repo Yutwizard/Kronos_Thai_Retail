@@ -249,6 +249,22 @@ Allocation: NEUTRAL 10%
 └─────────────────────────────────────────────────────────────┘
 ```
 
+### Morning Brief — Top 10 and Full Ranking
+
+Both panels now show a **📅 Data: YYYY-MM-DD** badge in the heading showing which closing date's prices power the forecast. Hover any column header `(?)` for a plain-English definition; a legend bar below each table summarises all columns.
+
+| Column | Meaning |
+|---|---|
+| **Exp Ret** | Model's predicted price change over 20 trading days |
+| **Δ Prev** | Change in Exp Ret since the previous pipeline run. ▲=more bullish, ▼=less bullish |
+| **Band** | Uncertainty: (P95−P5)/Close. <10%=🟢, 10–30%=🟡, >30%=🔴. Band and Flag show the same thing |
+| **Flag** | Colour-coded Band. ↗ badge = confidence improved since last run; ↘ = downgraded (explains HOLD→REDUCE) |
+| **Net Ret** | Expected return after round-trip friction costs |
+
+**Full Ranking date selector** — Expand Full Ranking ▼ to see a date dropdown alongside the search box. Select any past pipeline run date to view that day's complete 49-ticker ranking with Δ vs the day before it. Useful for reviewing what signals looked like on a specific date.
+
+**To backfill a missing date** (e.g., a holiday when the pipeline wasn't run): the system can regenerate forecasts for any historical date using the price data available on that date — ask Claude Code to run the backfill. After backfilling, the date appears in the dropdown automatically.
+
 ### Color Coding
 
 | Color | Confidence Band | Meaning | Action |
@@ -286,8 +302,26 @@ Four metrics displayed inline. All show "—" until enough live trading history 
 > **Important:** The bootstrap p-value here is for your **live paper trading only**. The historical backtest p-values (p=0.015 in 2024 etc.) are a separate t-test and are not affected by this metric.
 
 Alerts:
-- "⚠ Forecasts from 2026-06-01 — stale" → cron failed. Run `--generate` manually.
+- "⚠ Forecasts from 2026-06-01 — stale" → cron failed. Run pipeline manually.
 - "🚨 Model review recommended — halve position sizes" → accuracy < 45% or live Sharpe < 0.5 for 2+ weeks.
+
+### Current Positions Table
+
+Shows each held position enriched with the **latest forecast signal** so you can see at a glance whether to hold, reduce, or exit each position.
+
+| Column | Meaning |
+|---|---|
+| **Avg Cost** | Your fill price at trade entry (fixed) |
+| **Mark** | Latest closing price (updates each pipeline run) |
+| **P&L%** | (Mark − Avg Cost) / Avg Cost |
+| **Exp Ret** | Model's current 20-day expected return for this ticker |
+| **Δ Prev** | Change in Exp Ret since previous pipeline run |
+| **Band** | Uncertainty — <10%=🟢, 10–30%=🟡, >30%=🔴 |
+| **Signal** | Flag + ↗↘ badge if confidence changed |
+
+Row border colour: **green** = bullish hold (🟢↑) | **orange** = reduce signal (🟡, model uncertain) | **red** = exit signal (🟢↓).
+
+> **Note on timing:** Exp Ret and Band reflect the **most recent pipeline run**. If you ran the pipeline in the evening, these columns show tonight's forecast (using today's close prices) — which is more relevant for tomorrow's decisions than the morning forecast that drove today's trades.
 
 ---
 
