@@ -1,23 +1,51 @@
-# Morning Paper Trading Guide — Kronos-TH
+# Daily Paper Trading Guide — Kronos-TH
 
-> **Tomorrow: 2026-06-04 (Thursday) — First paper trading session**
-> Portfolio: 500,000 THB cash | 0 positions | BEAR allocation (5% per position)
+> **Recommended workflow: run the pipeline in the EVENING after market closes.**
+> This uses today's close prices and means tomorrow morning you just open the
+> dashboard and trade — no waiting 12 minutes before market opens.
 > Environment: Local GTX 1060, cron NOT configured → manual run required
 
 ---
 
-## Timeline Overview
+## Recommended Daily Routine
 
-| Time (BKK) | Action | Duration |
+### Evening (after SET closes at 17:00 BKK) — ~15 min
+
+| Time | Action | Duration |
 |---|---|---|
-| 06:15 | Download latest price data | ~5 min |
-| 06:20 | Generate forecasts (GPU) | ~12 min |
-| 06:35 | Start dashboard | 10 sec |
-| 06:40 | Read the Risk Bar | 1 min |
-| 06:45 | Read the Trade Ticket | 3 min |
-| 06:50 | Make the trade decision | 2 min |
-| 06:55 | Record paper trade (if any) | 1 min |
-| 07:00 | Log the session | 2 min |
+| 17:30 | Open http://localhost:5555 | 10 sec |
+| 17:30 | Click ▶ Run Pipeline | ~12 min GPU |
+| 17:45 | Review positions table — updated expected returns | 3 min |
+| 17:50 | Check Trade Ticket for tomorrow | 2 min |
+| 17:55 | Log notes for tomorrow | 1 min |
+
+### Morning (before SET opens at 10:00 BKK) — ~5 min
+
+| Time | Action | Duration |
+|---|---|---|
+| 09:30 | Open http://localhost:5555 | 10 sec |
+| 09:30 | Check Trade Ticket (already ready from last night) | 3 min |
+| 09:45 | Record paper trade if executing | 1 min |
+| 09:50 | SET opens at 10:00 — place orders at broker | — |
+
+> **If you missed the evening run:** Click ▶ Run Pipeline at 06:15 AM.
+> Takes ~12 min so you'll have results by 06:30, well before the 10:00 open.
+
+---
+
+## Why Evening Run Is Better
+
+| Run time | Data used | Result |
+|---|---|---|
+| **Evening (after 17:00)** | Today's close prices | Most accurate for tomorrow |
+| Morning (before 10:00) | Yesterday's close prices | Valid but uses older data |
+
+Running in the evening means the forecast always uses the most recent prices.
+The signals in the positions table will reflect what happened today.
+
+---
+
+## Timeline Overview (Morning-only fallback)
 
 SET market opens 10:00 BKK. You have until 09:30 to decide — no rush.
 

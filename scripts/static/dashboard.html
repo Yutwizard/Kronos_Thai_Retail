@@ -249,11 +249,17 @@ function updatePositions(pos, fcMap) {
     html += '</tr>';
   }
   html += '</tbody></table>';
+  // Show which close date powers the forecast
+  const fcDates = Object.values(fcMap||{});
+  const dataNote = fcDates.length > 0 && fcDates[0].close
+    ? `Forecast based on <strong>latest available close prices</strong>. Exp Ret and Band update each time you run the pipeline.`
+    : '';
   html += `<div class="col-legend">
-    <strong>Exp Ret</strong> Model forecast for next 20 days &nbsp;|&nbsp;
-    <strong>Δ Prev</strong> Change vs previous forecast &nbsp;|&nbsp;
+    <strong>Exp Ret</strong> Model's 20-day forecast from latest close &nbsp;|&nbsp;
+    <strong>Δ Prev</strong> Change vs previous pipeline run &nbsp;|&nbsp;
     <strong>Band</strong> Uncertainty: &lt;10%=🟢 10–30%=🟡 &gt;30%=🔴 &nbsp;|&nbsp;
-    Row colour: green border=hold, yellow=reduce signal, red=exit signal
+    Row: green=bullish hold, orange=reduce, red=exit &nbsp;|&nbsp;
+    ${dataNote}
   </div>`;
   body.innerHTML = html;
 }
