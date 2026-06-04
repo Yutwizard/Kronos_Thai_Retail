@@ -120,3 +120,18 @@ footer { padding: 8px 16px; text-align: center; font-size: 0.65em; color: var(--
 /* Limit price clarification */
 .limit-note { font-size: 0.75em; color: #555; background: #fff9c4; border-left: 3px solid #f9a825; padding: 4px 8px; margin: 4px 0 6px; border-radius: 0 4px 4px 0; }
 .limit-tag { font-size: 0.7em; color: #2e7d32; background: #e8f5e9; padding: 1px 5px; border-radius: 3px; margin-left: 4px; vertical-align: middle; cursor: help; }
+
+/* Fill-price modal */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100; display: flex; align-items: center; justify-content: center; }
+.modal-box { background: white; border-radius: 10px; padding: 24px 28px; max-width: 680px; width: 95%; box-shadow: 0 8px 32px rgba(0,0,0,0.18); }
+.modal-box h3 { margin: 0 0 6px; font-size: 1em; color: #1565C0; }
+.modal-note { font-size: 0.78em; color: #555; background: #e3f2fd; padding: 6px 10px; border-radius: 4px; margin: 0 0 12px; }
+.modal-hint { font-size: 0.75em; color: #1565C0; font-style: italic; }
+.modal-table { width: 100%; border-collapse: collapse; font-size: 0.85em; margin-bottom: 14px; }
+.modal-table th { background: #f5f7fa; padding: 5px 8px; text-align: left; font-size: 0.75em; text-transform: uppercase; color: #666; }
+.modal-table td { padding: 6px 8px; border-bottom: 1px solid #eee; vertical-align: middle; }
+.fill-input { width: 90px; padding: 4px 6px; border: 2px solid #1565C0; border-radius: 4px; font-size: 0.9em; text-align: right; }
+.fill-input:focus { outline: none; border-color: #0d47a1; box-shadow: 0 0 0 2px #bbdefb; }
+.fill-hint { font-size: 0.72em; color: #888; margin-left: 4px; }
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px; }
+.fw { font-weight: 700; }

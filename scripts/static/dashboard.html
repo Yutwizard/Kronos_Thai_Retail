@@ -83,6 +83,22 @@
   </footer>
 </div>
 
+<!-- Fill-price confirmation modal -->
+<div id="trade-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <h3>Confirm Paper Trades — Enter Actual Fill Prices</h3>
+    <p class="modal-note">Type the price you actually got (or would get) from your broker. For limit buys, use today's live market price — not the limit ceiling shown in the ticket.</p>
+    <table class="modal-table">
+      <thead><tr><th>Action</th><th>Ticker</th><th>Shares</th><th>Fill Price (THB) <span class="modal-hint">← edit this</span></th><th>Total</th></tr></thead>
+      <tbody id="modal-tbody"></tbody>
+    </table>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn primary" onclick="confirmTrades()">✓ Record at these prices</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const MODE = "paper";
 const API = "";
@@ -247,18 +263,77 @@ function updateTradeTicket(trades, risk) {
   $("ticket-body").innerHTML = html;
 }
 
+let _pendingResp = null;
+let _pendingCount = 0;
+
 async function executeTrades() {
-  if (!confirm("Execute all trades in the ticket as paper trades?")) return;
-  const resp = await fetchJSON("/api/trades");
-  if (!resp || !resp.exits) return;
-  const tradeList = [];
-  for (const e of (resp.exits || [])) tradeList.push({ ticker: e.ticker, action: "exit", shares: e.shares, fill_price: 0, order_type: "market", rationale: e.rationale });
-  for (const r of (resp.reduces || [])) tradeList.push({ ticker: r.ticker, action: "reduce", shares: r.shares, fill_price: 0, order_type: "limit", rationale: r.rationale });
-  for (const b of (resp.buys || [])) tradeList.push({ ticker: b.ticker, action: "buy", shares: b.shares, fill_price: b.limit_price || 0, order_type: "limit", rationale: b.rationale });
-  if (tradeList.length === 0) { alert("No trades to execute."); return; }
-  const r = await fetch("/api/trades", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ trades: tradeList, date: resp.date, mode: MODE }) });
+  _pendingResp = await fetchJSON("/api/trades");
+  if (!_pendingResp) return;
+  const all = [...(_pendingResp.exits||[]), ...(_pendingResp.reduces||[]), ...(_pendingResp.buys||[])];
+  if (all.length === 0) { alert("No trades to execute."); return; }
+  _pendingCount = all.length;
+
+  let rows = "";
+  let i = 0;
+  for (const e of (_pendingResp.exits||[])) {
+    const def = (e.last_close || (e.estimated_thb / e.shares)).toFixed(2);
+    rows += `<tr><td class="red fw">EXIT</td><td class="ticker">${e.ticker}</td><td class="num">${e.shares.toLocaleString()}</td>
+      <td><input class="fill-input" id="fp-${i}" type="number" step="0.01" min="0.01" value="${def}" oninput="updEst(${i},${e.shares})">
+      <span class="fill-hint">market order</span></td>
+      <td class="num" id="fe-${i}">~${e.estimated_thb.toLocaleString()} THB</td></tr>`; i++;
+  }
+  for (const r of (_pendingResp.reduces||[])) {
+    const def = (r.last_close || r.limit_price || 0).toFixed(2);
+    rows += `<tr><td class="orange fw">REDUCE</td><td class="ticker">${r.ticker}</td><td class="num">${r.shares.toLocaleString()}</td>
+      <td><input class="fill-input" id="fp-${i}" type="number" step="0.01" min="0.01" value="${def}" oninput="updEst(${i},${r.shares})"></td>
+      <td class="num" id="fe-${i}">~${r.estimated_thb.toLocaleString()} THB</td></tr>`; i++;
+  }
+  for (const b of (_pendingResp.buys||[])) {
+    const def = (b.last_close || b.limit_price || 0).toFixed(2);
+    const limitHint = b.limit_price ? ` (limit ceiling: ${b.limit_price.toFixed(2)})` : "";
+    rows += `<tr><td class="green fw">BUY</td><td class="ticker">${b.ticker}</td><td class="num">${b.shares.toLocaleString()}</td>
+      <td><input class="fill-input" id="fp-${i}" type="number" step="0.01" min="0.01" value="${def}" oninput="updEst(${i},${b.shares})">
+      <span class="fill-hint">${limitHint}</span></td>
+      <td class="num" id="fe-${i}">~${b.estimated_thb.toLocaleString()} THB</td></tr>`; i++;
+  }
+  $("modal-tbody").innerHTML = rows;
+  $("trade-modal").classList.remove("hidden");
+  document.getElementById("fp-0")?.focus();
+}
+
+function updEst(i, shares) {
+  const price = parseFloat(document.getElementById(`fp-${i}`)?.value) || 0;
+  const el = document.getElementById(`fe-${i}`);
+  if (el) el.textContent = "~" + Math.round(shares * price).toLocaleString() + " THB";
+}
+
+function closeModal() { $("trade-modal").classList.add("hidden"); }
+
+async function confirmTrades() {
+  const trades = [];
+  let idx = 0;
+  const actions = [
+    ...(_pendingResp.exits||[]).map(e=>({...e, action:"exit", order_type:"market"})),
+    ...(_pendingResp.reduces||[]).map(r=>({...r, action:"reduce", order_type:"limit"})),
+    ...(_pendingResp.buys||[]).map(b=>({...b, action:"buy", order_type:"limit"})),
+  ];
+  for (const t of actions) {
+    const fp = parseFloat(document.getElementById(`fp-${idx}`)?.value) || 0;
+    trades.push({ ticker: t.ticker, action: t.action, shares: t.shares, fill_price: fp, order_type: t.order_type, rationale: t.rationale });
+    idx++;
+  }
+  closeModal();
+  const r = await fetch("/api/trades", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ trades, date: _pendingResp.date, mode: MODE })
+  });
   const result = await r.json();
-  alert(result.recorded + " trades recorded.");
+  if (!r.ok) {
+    alert("Validation failed:\n" + (result.details||[result.error||"Unknown error"]).join("\n"));
+    return;
+  }
+  alert(result.recorded + " trade(s) recorded at your fill prices.");
   refresh();
 }
 

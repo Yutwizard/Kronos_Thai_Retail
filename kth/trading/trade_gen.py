@@ -149,6 +149,7 @@ def generate_trade_ticket(report_date: str = None, positions: dict = None) -> di
                 "shares": held_tickers[ticker]["shares"],
                 "order_type": "market",
                 "limit_price": None,
+                "last_close": f["close"],
                 "estimated_thb": round(held_tickers[ticker]["shares"] * f["close"]),
                 "rationale": f"🟢↓ bearish net_ret={f['net_ret']:+.2%}",
             })
