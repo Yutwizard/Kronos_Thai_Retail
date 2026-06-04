@@ -110,9 +110,10 @@
     <h3>Confirm Paper Trades — Enter Actual Fill Prices</h3>
     <p class="modal-note">Type the price you actually got (or would get) from your broker. For limit buys, use today's live market price — not the limit ceiling shown in the ticket.</p>
     <table class="modal-table">
-      <thead><tr><th>Action</th><th>Ticker</th><th>Planned</th><th>Shares Filled <span class="modal-hint">0 = not filled</span></th><th>Fill Price (THB)</th><th>Total</th><th>Status</th></tr></thead>
+      <thead><tr><th>Action</th><th>Ticker</th><th>Planned</th><th>Shares Filled <span class="modal-hint">0=skip</span></th><th>Fill Price (THB)</th><th>Gross</th><th>Friction</th><th>Cash Impact</th><th>Status</th></tr></thead>
       <tbody id="modal-tbody"></tbody>
     </table>
+    <div id="modal-total-bar" class="modal-total-bar hidden"></div>
     <div class="modal-actions">
       <button class="btn secondary" onclick="closeModal()">Cancel</button>
       <button class="btn primary" onclick="confirmTrades()">✓ Record at these prices</button>
@@ -297,72 +298,119 @@ async function executeTrades() {
   let rows = "";
   let i = 0;
 
-  function makeRow(actionLabel, actionCls, ticker, plannedShares, defPrice, hint, ordType) {
-    const defShares = plannedShares;
+  function makeRow(actionLabel, actionCls, ticker, plannedShares, defPrice, hint, ordType, frictionRate) {
     rows += `<tr id="row-${i}">
       <td class="${actionCls} fw">${actionLabel}</td>
       <td class="ticker">${ticker}</td>
       <td class="num muted">${plannedShares.toLocaleString()}</td>
       <td><input class="fill-input shares-input" id="fs-${i}" type="number" step="100" min="0"
-          max="${plannedShares}" value="${defShares}" oninput="updFillStatus(${i},${plannedShares})"></td>
+          max="${plannedShares}" value="${plannedShares}"
+          oninput="updFillStatus(${i},${plannedShares},${frictionRate},'${actionCls}')"></td>
       <td><input class="fill-input" id="fp-${i}" type="number" step="0.01" min="0.01" value="${defPrice}"
-          oninput="updFillStatus(${i},${plannedShares})">
+          oninput="updFillStatus(${i},${plannedShares},${frictionRate},'${actionCls}')">
         ${hint ? `<span class="fill-hint">${hint}</span>` : ""}</td>
-      <td class="num" id="fe-${i}">—</td>
+      <td class="num" id="fe-gross-${i}">—</td>
+      <td class="num friction-cell" id="fe-fric-${i}">—</td>
+      <td class="num fw" id="fe-${i}">—</td>
       <td id="fs-tag-${i}" class="fill-status-tag"></td>
     </tr>`;
     i++;
   }
 
+  // friction_rt from forecast = round-trip; one-way = half of that
   for (const e of (_pendingResp.exits||[])) {
     const def = (e.last_close || (e.estimated_thb/e.shares)).toFixed(2);
-    makeRow("EXIT","red",e.ticker,e.shares,def,"market order","market");
+    const fr = (e.friction_rt||0.00536)/2;
+    makeRow("EXIT","red",e.ticker,e.shares,def,"market order","market",fr);
   }
   for (const r of (_pendingResp.reduces||[])) {
     const def = (r.last_close||r.limit_price||0).toFixed(2);
-    makeRow("REDUCE","orange",r.ticker,r.shares,def,"","limit");
+    const fr = (r.friction_rt||0.00536)/2;
+    makeRow("REDUCE","orange",r.ticker,r.shares,def,"","limit",fr);
   }
   for (const b of (_pendingResp.buys||[])) {
     const def = (b.last_close||b.limit_price||0).toFixed(2);
     const hint = b.limit_price ? `ceiling: ${b.limit_price.toFixed(2)}` : "";
-    makeRow("BUY","green",b.ticker,b.shares,def,hint,"limit");
+    const fr = (b.friction_rt||0.00536)/2;
+    makeRow("BUY","green",b.ticker,b.shares,def,hint,"limit",fr);
   }
 
   $("modal-tbody").innerHTML = rows;
   $("trade-modal").classList.remove("hidden");
-  // Init status tags and totals
+  // Init all rows
   let j = 0;
-  const planned = [
-    ...(_pendingResp.exits||[]).map(e=>e.shares),
-    ...(_pendingResp.reduces||[]).map(r=>r.shares),
-    ...(_pendingResp.buys||[]).map(b=>b.shares),
+  const initRows = [
+    ...(_pendingResp.exits||[]).map(e=>({shares:e.shares, fr:(e.friction_rt||0.00536)/2, cls:"red"})),
+    ...(_pendingResp.reduces||[]).map(r=>({shares:r.shares, fr:(r.friction_rt||0.00536)/2, cls:"orange"})),
+    ...(_pendingResp.buys||[]).map(b=>({shares:b.shares, fr:(b.friction_rt||0.00536)/2, cls:"green"})),
   ];
-  planned.forEach((s,idx) => updFillStatus(idx,s));
+  initRows.forEach((r,idx) => updFillStatus(idx, r.shares, r.fr, r.cls));
   document.getElementById("fs-0")?.focus();
 }
 
-function updFillStatus(i, plannedShares) {
+function updFillStatus(i, plannedShares, frictionRate, actionCls) {
   const filledEl = document.getElementById(`fs-${i}`);
   const priceEl  = document.getElementById(`fp-${i}`);
-  const estEl    = document.getElementById(`fe-${i}`);
-  const tagEl    = document.getElementById(`fs-tag-${i}`);
   if (!filledEl || !priceEl) return;
 
-  const filled = Math.round(parseInt(filledEl.value)||0);
-  const price  = parseFloat(priceEl.value)||0;
+  const filled = parseInt(filledEl.value) || 0;
+  const price  = parseFloat(priceEl.value) || 0;
+  const gross  = filled * price;
+  const fric   = gross * (frictionRate || 0.00268);
+  const impact = actionCls === "red"
+    ? gross - fric    // exit: cash IN (proceeds minus friction)
+    : gross + fric;   // buy: cash OUT (cost plus friction)
+  const sign   = actionCls === "red" ? "+" : "−";
 
-  // Clamp to multiples of 100 nearest to entered value, max plannedShares
-  const clamped = Math.min(Math.floor(filled/100)*100, plannedShares);
-  if (filled !== clamped && document.activeElement === filledEl) {
-    // Don't correct while typing; just show warning
+  const grossEl = document.getElementById(`fe-gross-${i}`);
+  const fricEl  = document.getElementById(`fe-fric-${i}`);
+  const totalEl = document.getElementById(`fe-${i}`);
+  const tagEl   = document.getElementById(`fs-tag-${i}`);
+
+  if (filled > 0) {
+    if (grossEl) grossEl.textContent = Math.round(gross).toLocaleString();
+    if (fricEl)  fricEl.textContent  = Math.round(fric).toLocaleString();
+    if (totalEl) { totalEl.textContent = sign + Math.round(impact).toLocaleString() + " THB";
+                   totalEl.className = "num fw " + (actionCls === "red" ? "green" : "red"); }
+  } else {
+    if (grossEl) grossEl.textContent = "—";
+    if (fricEl)  fricEl.textContent  = "—";
+    if (totalEl) { totalEl.textContent = "—"; totalEl.className = "num fw"; }
   }
 
-  if (estEl) estEl.textContent = filled > 0 ? "~" + Math.round(filled * price).toLocaleString() + " THB" : "—";
-
   if (tagEl) {
-    if (filled === 0)             { tagEl.textContent = "Not filled"; tagEl.className = "fill-status-tag tag-none"; }
-    else if (filled < plannedShares) { tagEl.textContent = `Partial (${filled}/${plannedShares})`; tagEl.className = "fill-status-tag tag-partial"; }
-    else                           { tagEl.textContent = "Full fill"; tagEl.className = "fill-status-tag tag-full"; }
+    if (filled === 0)              { tagEl.textContent = "Skip"; tagEl.className = "fill-status-tag tag-none"; }
+    else if (filled < plannedShares) { tagEl.textContent = `Partial ${filled}/${plannedShares}`; tagEl.className = "fill-status-tag tag-partial"; }
+    else                            { tagEl.textContent = "Full"; tagEl.className = "fill-status-tag tag-full"; }
+  }
+
+  // Update total bar
+  _updModalTotalBar();
+}
+
+function _updModalTotalBar() {
+  const initRows = [
+    ...(_pendingResp?.exits||[]).map(e=>({shares:e.shares, fr:(e.friction_rt||0.00536)/2, cls:"red"})),
+    ...(_pendingResp?.reduces||[]).map(r=>({shares:r.shares, fr:(r.friction_rt||0.00536)/2, cls:"orange"})),
+    ...(_pendingResp?.buys||[]).map(b=>({shares:b.shares, fr:(b.friction_rt||0.00536)/2, cls:"green"})),
+  ];
+  let cashDelta = 0;
+  initRows.forEach((row, i) => {
+    const filled = parseInt(document.getElementById(`fs-${i}`)?.value) || 0;
+    const price  = parseFloat(document.getElementById(`fp-${i}`)?.value) || 0;
+    if (filled <= 0) return;
+    const gross = filled * price;
+    const fric  = gross * (row.fr || 0.00268);
+    cashDelta += row.cls === "red" ? (gross - fric) : -(gross + fric);
+  });
+  const bar = $("modal-total-bar");
+  if (!bar) return;
+  if (cashDelta !== 0) {
+    bar.classList.remove("hidden");
+    const sign = cashDelta >= 0 ? "+" : "";
+    bar.innerHTML = `Net cash change after all fills: <strong class="${cashDelta>=0?'green':'red'}">${sign}${Math.round(cashDelta).toLocaleString()} THB</strong> <span class="modal-hint">(includes all friction costs)</span>`;
+  } else {
+    bar.classList.add("hidden");
   }
 }
 

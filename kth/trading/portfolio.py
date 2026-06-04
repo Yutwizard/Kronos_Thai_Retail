@@ -120,8 +120,7 @@ def execute_trade(ticker: str, action: str, shares: int, fill_price: float,
 
     if action == "buy":
         cost = shares * fill_price
-        # Estimate friction for Thai equity
-        friction_cost = cost * 0.00268
+        friction_cost = cost * _one_way_friction_rate(ticker)
         total_cost = cost + friction_cost
         if total_cost > pf["cash"]:
             return {"error": f"Insufficient cash: need {total_cost:.0f}, have {pf['cash']:.0f}",
@@ -138,7 +137,7 @@ def execute_trade(ticker: str, action: str, shares: int, fill_price: float,
             return {"error": f"Cannot exit {shares} shares of {ticker}: only {pos['shares'] if pos else 0} held",
                     "recorded": 0}
         proceeds = shares * fill_price
-        friction_cost = proceeds * 0.00268
+        friction_cost = proceeds * _one_way_friction_rate(ticker)
         pf["cash"] += proceeds - friction_cost
         remaining = pos["shares"] - shares
         if remaining <= 0:
