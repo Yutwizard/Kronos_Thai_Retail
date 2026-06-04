@@ -93,7 +93,7 @@ def _get_calibration() -> dict:
 
 @app.route("/")
 def index():
-    return send_from_directory("scripts/static", "dashboard.html")
+    return send_from_directory(str(PROJECT_ROOT / "scripts/static"), "dashboard.html")
 
 
 # ---- REST API ----
