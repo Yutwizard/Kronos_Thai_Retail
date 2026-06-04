@@ -50,6 +50,16 @@
     <span id="sig-warning" class="hidden">🚨 Model review recommended — halve position sizes</span>
   </div>
 
+  <!-- Initial capital setup — shown only when portfolio has no trades -->
+  <div id="setup-panel" class="setup-panel hidden">
+    <span class="setup-icon">🏦</span>
+    <strong>First-day setup:</strong> Set your starting capital before recording any trades.
+    <input id="setup-capital" type="number" class="setup-input" value="500000" min="1" max="100000000" step="1000">
+    <span class="setup-unit">THB</span>
+    <button class="btn-setup" onclick="initPortfolio()">Start Paper Trading</button>
+    <span class="setup-note">This cannot be changed after your first trade.</span>
+  </div>
+
   <div id="main-content">
     <section id="trade-ticket" class="panel hero">
       <h2>Trade Ticket — <span id="ticket-date"></span></h2>
@@ -75,6 +85,17 @@
       <h2 onclick="toggleRanking()">Full Ranking (49 tickers) <span id="rank-toggle">▼</span></h2>
       <div id="ranking-search"><input type="text" placeholder="Search ticker..." oninput="filterRanking(this.value)"></div>
       <div id="ranking-body"></div>
+    </section>
+
+    <section id="history-panel" class="panel collapsible">
+      <h2 onclick="toggleHistory()">📋 Trade History <span id="hist-count"></span> <span id="hist-toggle">▼</span></h2>
+      <div id="history-body" style="display:none">
+        <p class="hist-note">💾 Data saved in <code>data/positions/</code> — survives computer restarts. Edit fill price or delete a trade if you made an error; the portfolio recalculates automatically.</p>
+        <table class="hist-table">
+          <thead><tr><th>#</th><th>Date</th><th>Ticker</th><th>Action</th><th>Shares</th><th>Fill Price</th><th>Friction</th><th>Edit</th><th>Delete</th></tr></thead>
+          <tbody id="hist-tbody"></tbody>
+        </table>
+      </div>
     </section>
   </div>
 
@@ -345,8 +366,95 @@ async function exportCSV() {
 function toggleRanking() { showRanking = !showRanking; $("ranking-body").style.display = showRanking ? "block" : "none"; $("rank-toggle").textContent = showRanking ? "▲" : "▼"; }
 function filterRanking(q) { document.querySelectorAll(".rank-row").forEach(r => { r.style.display = r.dataset.ticker.includes(q.toLowerCase()) ? "" : "none"; }); }
 
-refresh();
+refresh().then(checkSetupNeeded);
 setInterval(refresh, 60000);
+
+// ── Initial capital setup ────────────────────────────────────
+async function checkSetupNeeded() {
+  const pos = await fetchJSON("/api/positions");
+  const hist = await fetchJSON("/api/trades/history");
+  const noTrades = !hist || hist.trades.length === 0;
+  if (noTrades) $("setup-panel").classList.remove("hidden");
+  else $("setup-panel").classList.add("hidden");
+}
+
+async function initPortfolio() {
+  const capital = parseFloat($("setup-capital").value);
+  if (!capital || capital <= 0) { alert("Enter a valid capital amount."); return; }
+  if (!confirm(`Start paper trading with ${capital.toLocaleString()} THB? This cannot be changed after your first trade.`)) return;
+  const r = await fetch("/api/portfolio/init", {
+    method: "POST", headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({capital})
+  });
+  const res = await r.json();
+  if (!r.ok) { alert("Error: " + res.error); return; }
+  alert(`Portfolio initialized with ${capital.toLocaleString()} THB. Ready to trade!`);
+  $("setup-panel").classList.add("hidden");
+  refresh();
+}
+
+// ── Trade history panel ──────────────────────────────────────
+let _histOpen = false;
+
+function toggleHistory() {
+  _histOpen = !_histOpen;
+  $("history-body").style.display = _histOpen ? "block" : "none";
+  $("hist-toggle").textContent = _histOpen ? "▲" : "▼";
+  if (_histOpen) loadHistory();
+}
+
+async function loadHistory() {
+  const data = await fetchJSON("/api/trades/history");
+  if (!data) return;
+  const trades = data.trades || [];
+  $("hist-count").textContent = trades.length ? `(${trades.length})` : "(none)";
+  if (trades.length === 0) {
+    $("hist-tbody").innerHTML = '<tr><td colspan="9" class="muted" style="text-align:center;padding:12px">No trades recorded yet.</td></tr>';
+    return;
+  }
+  let rows = "";
+  for (const t of [...trades].reverse()) {
+    const actionCls = t.action==="buy" ? "green" : t.action==="exit"||t.action==="sell" ? "red" : "orange";
+    rows += `<tr>
+      <td class="muted">${t.index + 1}</td>
+      <td>${t.date}</td>
+      <td class="ticker">${t.ticker}</td>
+      <td class="${actionCls} fw">${t.action.toUpperCase()}</td>
+      <td class="num">${parseInt(t.shares).toLocaleString()}</td>
+      <td class="num" id="hp-${t.index}">${parseFloat(t.price).toFixed(2)}</td>
+      <td class="num muted">${parseFloat(t.friction_cost||0).toFixed(2)}</td>
+      <td><button class="btn-hist-edit" onclick="editTradePrompt(${t.index}, ${t.price})">✏️</button></td>
+      <td><button class="btn-hist-del" onclick="deleteTrade(${t.index}, '${t.ticker}', '${t.action}')">🗑️</button></td>
+    </tr>`;
+  }
+  $("hist-tbody").innerHTML = rows;
+}
+
+async function editTradePrompt(index, currentPrice) {
+  const newPrice = prompt(`Edit fill price for trade #${index + 1}\nCurrent: ${parseFloat(currentPrice).toFixed(2)} THB\n\nEnter new fill price:`);
+  if (!newPrice) return;
+  const price = parseFloat(newPrice);
+  if (!price || price <= 0) { alert("Invalid price."); return; }
+  const r = await fetch(`/api/trades/history/${index}`, {
+    method: "PATCH", headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({price})
+  });
+  const res = await r.json();
+  if (!r.ok) { alert("Error: " + res.error); return; }
+  alert(`Trade #${index + 1} updated: ${res.old_price} → ${res.new_price} THB. Portfolio recalculated.`);
+  loadHistory();
+  refresh();
+}
+
+async function deleteTrade(index, ticker, action) {
+  if (!confirm(`Delete trade #${index + 1}: ${action.toUpperCase()} ${ticker}?\nPortfolio will recalculate from remaining trades.`)) return;
+  const r = await fetch(`/api/trades/history/${index}`, {method: "DELETE"});
+  const res = await r.json();
+  if (!r.ok) { alert("Error: " + res.error); return; }
+  alert(`Trade deleted. ${res.remaining_trades} trades remain. Portfolio recalculated.`);
+  loadHistory();
+  refresh();
+}
 
 // ── Pipeline runner ──────────────────────────────────────────
 let _pipeInterval = null;

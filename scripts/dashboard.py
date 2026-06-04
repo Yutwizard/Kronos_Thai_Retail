@@ -270,6 +270,52 @@ def api_pipeline_status():
     })
 
 
+@app.route("/api/portfolio/init", methods=["POST"])
+def api_portfolio_init():
+    data = request.get_json(force=True) or {}
+    try:
+        capital = float(data.get("capital", 500000))
+    except (TypeError, ValueError):
+        return jsonify({"error": "capital must be a number"}), 400
+    if not (1 <= capital <= 100_000_000):
+        return jsonify({"error": "Capital must be between 1 and 100,000,000 THB"}), 400
+    from kth.trading.portfolio import reset_portfolio
+    pf = reset_portfolio(TRADING_MODE, capital)
+    return jsonify({"status": "ok", "initial_capital": capital, "cash": pf["cash"]})
+
+
+@app.route("/api/trades/history")
+def api_trades_history():
+    from kth.trading.portfolio import get_trade_log
+    trades = get_trade_log(TRADING_MODE)
+    return jsonify({"trades": [{"index": i, **t} for i, t in enumerate(trades)]})
+
+
+@app.route("/api/trades/history/<int:index>", methods=["DELETE"])
+def api_delete_trade(index):
+    from kth.trading.portfolio import delete_trade
+    result = delete_trade(index, TRADING_MODE)
+    if "error" in result:
+        return jsonify(result), 400
+    return jsonify(result)
+
+
+@app.route("/api/trades/history/<int:index>", methods=["PATCH"])
+def api_edit_trade(index):
+    data = request.get_json(force=True) or {}
+    try:
+        new_price = float(data.get("price", 0))
+    except (TypeError, ValueError):
+        return jsonify({"error": "price must be a number"}), 400
+    if new_price <= 0:
+        return jsonify({"error": "price must be positive"}), 400
+    from kth.trading.portfolio import edit_trade
+    result = edit_trade(index, new_price, TRADING_MODE)
+    if "error" in result:
+        return jsonify(result), 400
+    return jsonify(result)
+
+
 @app.route("/api/phase2_gate")
 def api_phase2_gate():
     from kth.trading.portfolio import check_phase2_gate

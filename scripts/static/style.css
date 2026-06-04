@@ -118,6 +118,25 @@ footer { padding: 8px 16px; text-align: center; font-size: 0.65em; color: var(--
 .pipe-status-text { color: #1565C0; font-style: italic; margin-left: auto; font-size: 0.85em; }
 
 /* Limit price clarification */
+/* Initial capital setup banner */
+.setup-panel { display:flex; align-items:center; gap:10px; background:#e8f5e9; border:1px solid #a5d6a7; border-radius:6px; padding:10px 16px; margin:6px 0; font-size:0.85em; flex-wrap:wrap; }
+.setup-icon { font-size:1.3em; }
+.setup-input { width:110px; padding:4px 8px; border:2px solid #43a047; border-radius:4px; font-size:0.95em; text-align:right; }
+.setup-unit { color:#555; }
+.btn-setup { background:#2e7d32; color:white; border:none; padding:5px 14px; border-radius:4px; cursor:pointer; font-weight:600; font-size:0.85em; }
+.btn-setup:hover { background:#1b5e20; }
+.setup-note { font-size:0.75em; color:#555; font-style:italic; }
+
+/* Trade history table */
+.hist-note { font-size:0.75em; color:#555; background:#f5f7fa; padding:6px 10px; border-radius:4px; margin:4px 0 8px; }
+.hist-table { width:100%; border-collapse:collapse; font-size:0.82em; }
+.hist-table th { background:#f5f7fa; padding:5px 8px; text-align:center; font-size:0.72em; text-transform:uppercase; color:#666; }
+.hist-table td { padding:5px 8px; border-bottom:1px solid #eee; text-align:center; vertical-align:middle; }
+.btn-hist-edit { background:none; border:1px solid #90a4ae; border-radius:3px; cursor:pointer; padding:1px 5px; font-size:0.85em; }
+.btn-hist-edit:hover { background:#e3f2fd; }
+.btn-hist-del { background:none; border:1px solid #ef9a9a; border-radius:3px; cursor:pointer; padding:1px 5px; font-size:0.85em; }
+.btn-hist-del:hover { background:#ffebee; }
+
 .limit-note { font-size: 0.75em; color: #555; background: #fff9c4; border-left: 3px solid #f9a825; padding: 4px 8px; margin: 4px 0 6px; border-radius: 0 4px 4px 0; }
 .limit-tag { font-size: 0.7em; color: #2e7d32; background: #e8f5e9; padding: 1px 5px; border-radius: 3px; margin-left: 4px; vertical-align: middle; cursor: help; }
 

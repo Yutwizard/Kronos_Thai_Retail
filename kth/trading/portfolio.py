@@ -345,6 +345,123 @@ def _compute_market_state() -> str:
         return "Normal"
 
 
+def reset_portfolio(mode: str = "paper", initial_capital: float = None) -> dict:
+    """Create or reset portfolio with specified initial capital. Clears all positions and equity curve."""
+    if initial_capital is None:
+        initial_capital = INITIAL_CAPITAL
+    pf = {
+        "mode": mode,
+        "initial_capital": float(initial_capital),
+        "cash": float(initial_capital),
+        "positions": {},
+        "equity_curve": [{"date": str(date.today()), "value": float(initial_capital)}],
+        "frozen": False,
+        "frozen_at": None,
+    }
+    _ensure_dirs()
+    _save_portfolio(mode, pf)
+    return pf
+
+
+def _one_way_friction_rate(ticker: str) -> float:
+    from kth.data.universe import FRICTION, get_ticker_class
+    cls = get_ticker_class(ticker) or "thai_equity"
+    fric = FRICTION.get(cls, {"commission_oneway": 0.002, "slippage_oneway": 0.001})
+    return fric["commission_oneway"] + fric["slippage_oneway"]
+
+
+def rebuild_from_trades(mode: str = "paper") -> dict:
+    """
+    Rebuild portfolio cash + positions by replaying trade_log.csv.
+    Appends one new equity_curve point with the recalculated total value.
+    The historical equity curve is preserved (approximation after edits).
+    """
+    pf = init_portfolio(mode)
+    trades = [t for t in get_trade_log() if t.get("mode") == mode]
+
+    cash = float(pf.get("initial_capital", INITIAL_CAPITAL))
+    positions: dict = {}
+
+    for t in trades:
+        ticker, shares, price, action = t["ticker"], int(t["shares"]), float(t["price"]), t["action"]
+        if action == "buy":
+            cost = shares * price
+            friction = cost * _one_way_friction_rate(ticker)
+            cash -= cost + friction
+            existing = positions.get(ticker, {"shares": 0, "avg_cost": 0})
+            new_shares = existing["shares"] + shares
+            new_avg = ((existing["shares"] * existing["avg_cost"]) + cost) / new_shares if new_shares > 0 else price
+            positions[ticker] = {"shares": new_shares, "avg_cost": round(new_avg, 4)}
+        elif action in ("exit", "sell", "reduce"):
+            proceeds = shares * price
+            friction = proceeds * _one_way_friction_rate(ticker)
+            cash += proceeds - friction
+            pos = positions.get(ticker, {"shares": 0, "avg_cost": 0})
+            remaining = pos["shares"] - shares
+            if remaining <= 0:
+                positions.pop(ticker, None)
+            else:
+                positions[ticker] = {"shares": remaining, "avg_cost": pos["avg_cost"]}
+
+    pf["cash"] = round(cash, 2)
+    pf["positions"] = positions
+    total_pos = sum(
+        pos["shares"] * (_get_current_price(t) or pos["avg_cost"])
+        for t, pos in positions.items()
+    )
+    total_value = round(cash + total_pos, 2)
+    pf["equity_curve"].append({"date": str(date.today()), "value": total_value})
+    _save_portfolio(mode, pf)
+    return pf
+
+
+def delete_trade(index: int, mode: str = "paper") -> dict:
+    """Delete trade at CSV row index (0-based) and rebuild portfolio from remaining trades."""
+    path = _trade_log_path()
+    if not path.exists():
+        return {"error": "No trade log found"}
+    with open(path) as f:
+        reader = csv.DictReader(f)
+        fieldnames = reader.fieldnames
+        rows = list(reader)
+    if index < 0 or index >= len(rows):
+        return {"error": f"Invalid index {index} — log has {len(rows)} trades"}
+    deleted = rows.pop(index)
+    tmp = path.with_suffix(".tmp")
+    with open(tmp, "w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=fieldnames)
+        w.writeheader()
+        w.writerows(rows)
+    os.replace(tmp, path)
+    rebuild_from_trades(mode)
+    return {"deleted": deleted, "remaining_trades": len(rows)}
+
+
+def edit_trade(index: int, new_price: float, mode: str = "paper") -> dict:
+    """Edit fill price of trade at CSV row index and rebuild portfolio."""
+    path = _trade_log_path()
+    if not path.exists():
+        return {"error": "No trade log found"}
+    with open(path) as f:
+        reader = csv.DictReader(f)
+        fieldnames = reader.fieldnames
+        rows = list(reader)
+    if index < 0 or index >= len(rows):
+        return {"error": f"Invalid index {index}"}
+    old_price = rows[index]["price"]
+    rows[index]["price"] = str(round(new_price, 4))
+    shares = int(rows[index]["shares"])
+    rows[index]["friction_cost"] = str(round(shares * new_price * _one_way_friction_rate(rows[index]["ticker"]), 2))
+    tmp = path.with_suffix(".tmp")
+    with open(tmp, "w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=fieldnames)
+        w.writeheader()
+        w.writerows(rows)
+    os.replace(tmp, path)
+    rebuild_from_trades(mode)
+    return {"updated": True, "old_price": float(old_price), "new_price": new_price}
+
+
 def export_broker_csv(mode: str = "paper", output_path: str = None) -> str:
     """Export trade log as broker-ready CSV."""
     trades = get_trade_log(mode)
