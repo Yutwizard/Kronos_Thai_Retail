@@ -110,7 +110,7 @@
     <h3>Confirm Paper Trades — Enter Actual Fill Prices</h3>
     <p class="modal-note">Type the price you actually got (or would get) from your broker. For limit buys, use today's live market price — not the limit ceiling shown in the ticket.</p>
     <table class="modal-table">
-      <thead><tr><th>Action</th><th>Ticker</th><th>Shares</th><th>Fill Price (THB) <span class="modal-hint">← edit this</span></th><th>Total</th></tr></thead>
+      <thead><tr><th>Action</th><th>Ticker</th><th>Planned</th><th>Shares Filled <span class="modal-hint">0 = not filled</span></th><th>Fill Price (THB)</th><th>Total</th><th>Status</th></tr></thead>
       <tbody id="modal-tbody"></tbody>
     </table>
     <div class="modal-actions">
@@ -291,70 +291,123 @@ async function executeTrades() {
   _pendingResp = await fetchJSON("/api/trades");
   if (!_pendingResp) return;
   const all = [...(_pendingResp.exits||[]), ...(_pendingResp.reduces||[]), ...(_pendingResp.buys||[])];
-  if (all.length === 0) { alert("No trades to execute."); return; }
+  if (all.length === 0) { alert("No trade signals today."); return; }
   _pendingCount = all.length;
 
   let rows = "";
   let i = 0;
+
+  function makeRow(actionLabel, actionCls, ticker, plannedShares, defPrice, hint, ordType) {
+    const defShares = plannedShares;
+    rows += `<tr id="row-${i}">
+      <td class="${actionCls} fw">${actionLabel}</td>
+      <td class="ticker">${ticker}</td>
+      <td class="num muted">${plannedShares.toLocaleString()}</td>
+      <td><input class="fill-input shares-input" id="fs-${i}" type="number" step="100" min="0"
+          max="${plannedShares}" value="${defShares}" oninput="updFillStatus(${i},${plannedShares})"></td>
+      <td><input class="fill-input" id="fp-${i}" type="number" step="0.01" min="0.01" value="${defPrice}"
+          oninput="updFillStatus(${i},${plannedShares})">
+        ${hint ? `<span class="fill-hint">${hint}</span>` : ""}</td>
+      <td class="num" id="fe-${i}">—</td>
+      <td id="fs-tag-${i}" class="fill-status-tag"></td>
+    </tr>`;
+    i++;
+  }
+
   for (const e of (_pendingResp.exits||[])) {
-    const def = (e.last_close || (e.estimated_thb / e.shares)).toFixed(2);
-    rows += `<tr><td class="red fw">EXIT</td><td class="ticker">${e.ticker}</td><td class="num">${e.shares.toLocaleString()}</td>
-      <td><input class="fill-input" id="fp-${i}" type="number" step="0.01" min="0.01" value="${def}" oninput="updEst(${i},${e.shares})">
-      <span class="fill-hint">market order</span></td>
-      <td class="num" id="fe-${i}">~${e.estimated_thb.toLocaleString()} THB</td></tr>`; i++;
+    const def = (e.last_close || (e.estimated_thb/e.shares)).toFixed(2);
+    makeRow("EXIT","red",e.ticker,e.shares,def,"market order","market");
   }
   for (const r of (_pendingResp.reduces||[])) {
-    const def = (r.last_close || r.limit_price || 0).toFixed(2);
-    rows += `<tr><td class="orange fw">REDUCE</td><td class="ticker">${r.ticker}</td><td class="num">${r.shares.toLocaleString()}</td>
-      <td><input class="fill-input" id="fp-${i}" type="number" step="0.01" min="0.01" value="${def}" oninput="updEst(${i},${r.shares})"></td>
-      <td class="num" id="fe-${i}">~${r.estimated_thb.toLocaleString()} THB</td></tr>`; i++;
+    const def = (r.last_close||r.limit_price||0).toFixed(2);
+    makeRow("REDUCE","orange",r.ticker,r.shares,def,"","limit");
   }
   for (const b of (_pendingResp.buys||[])) {
-    const def = (b.last_close || b.limit_price || 0).toFixed(2);
-    const limitHint = b.limit_price ? ` (limit ceiling: ${b.limit_price.toFixed(2)})` : "";
-    rows += `<tr><td class="green fw">BUY</td><td class="ticker">${b.ticker}</td><td class="num">${b.shares.toLocaleString()}</td>
-      <td><input class="fill-input" id="fp-${i}" type="number" step="0.01" min="0.01" value="${def}" oninput="updEst(${i},${b.shares})">
-      <span class="fill-hint">${limitHint}</span></td>
-      <td class="num" id="fe-${i}">~${b.estimated_thb.toLocaleString()} THB</td></tr>`; i++;
+    const def = (b.last_close||b.limit_price||0).toFixed(2);
+    const hint = b.limit_price ? `ceiling: ${b.limit_price.toFixed(2)}` : "";
+    makeRow("BUY","green",b.ticker,b.shares,def,hint,"limit");
   }
+
   $("modal-tbody").innerHTML = rows;
   $("trade-modal").classList.remove("hidden");
-  document.getElementById("fp-0")?.focus();
+  // Init status tags and totals
+  let j = 0;
+  const planned = [
+    ...(_pendingResp.exits||[]).map(e=>e.shares),
+    ...(_pendingResp.reduces||[]).map(r=>r.shares),
+    ...(_pendingResp.buys||[]).map(b=>b.shares),
+  ];
+  planned.forEach((s,idx) => updFillStatus(idx,s));
+  document.getElementById("fs-0")?.focus();
 }
 
-function updEst(i, shares) {
-  const price = parseFloat(document.getElementById(`fp-${i}`)?.value) || 0;
-  const el = document.getElementById(`fe-${i}`);
-  if (el) el.textContent = "~" + Math.round(shares * price).toLocaleString() + " THB";
+function updFillStatus(i, plannedShares) {
+  const filledEl = document.getElementById(`fs-${i}`);
+  const priceEl  = document.getElementById(`fp-${i}`);
+  const estEl    = document.getElementById(`fe-${i}`);
+  const tagEl    = document.getElementById(`fs-tag-${i}`);
+  if (!filledEl || !priceEl) return;
+
+  const filled = Math.round(parseInt(filledEl.value)||0);
+  const price  = parseFloat(priceEl.value)||0;
+
+  // Clamp to multiples of 100 nearest to entered value, max plannedShares
+  const clamped = Math.min(Math.floor(filled/100)*100, plannedShares);
+  if (filled !== clamped && document.activeElement === filledEl) {
+    // Don't correct while typing; just show warning
+  }
+
+  if (estEl) estEl.textContent = filled > 0 ? "~" + Math.round(filled * price).toLocaleString() + " THB" : "—";
+
+  if (tagEl) {
+    if (filled === 0)             { tagEl.textContent = "Not filled"; tagEl.className = "fill-status-tag tag-none"; }
+    else if (filled < plannedShares) { tagEl.textContent = `Partial (${filled}/${plannedShares})`; tagEl.className = "fill-status-tag tag-partial"; }
+    else                           { tagEl.textContent = "Full fill"; tagEl.className = "fill-status-tag tag-full"; }
+  }
 }
 
 function closeModal() { $("trade-modal").classList.add("hidden"); }
 
 async function confirmTrades() {
-  const trades = [];
-  let idx = 0;
   const actions = [
-    ...(_pendingResp.exits||[]).map(e=>({...e, action:"exit", order_type:"market"})),
+    ...(_pendingResp.exits||[]).map(e=>({...e, action:"exit",   order_type:"market"})),
     ...(_pendingResp.reduces||[]).map(r=>({...r, action:"reduce", order_type:"limit"})),
-    ...(_pendingResp.buys||[]).map(b=>({...b, action:"buy", order_type:"limit"})),
+    ...(_pendingResp.buys||[]).map(b=>({...b,   action:"buy",    order_type:"limit"})),
   ];
-  for (const t of actions) {
-    const fp = parseFloat(document.getElementById(`fp-${idx}`)?.value) || 0;
-    trades.push({ ticker: t.ticker, action: t.action, shares: t.shares, fill_price: fp, order_type: t.order_type, rationale: t.rationale });
-    idx++;
+  const trades = [];
+  let skipped = 0;
+
+  for (let idx = 0; idx < actions.length; idx++) {
+    const t = actions[idx];
+    const filled = parseInt(document.getElementById(`fs-${idx}`)?.value) || 0;
+    const fp     = parseFloat(document.getElementById(`fp-${idx}`)?.value) || 0;
+    if (filled <= 0) { skipped++; continue; }          // Not filled — skip
+    if (filled % 100 !== 0) {
+      alert(`${t.ticker}: shares must be a multiple of 100 (SET board lot). Got ${filled}.`); return;
+    }
+    trades.push({ ticker: t.ticker, action: t.action, shares: filled,
+                  fill_price: fp, order_type: t.order_type, rationale: t.rationale
+                    + (filled < t.shares ? ` [partial: ${filled}/${t.shares}]` : "") });
   }
+
+  if (trades.length === 0) {
+    closeModal();
+    alert("No fills to record (all marked as not filled).");
+    return;
+  }
+
   closeModal();
   const r = await fetch("/api/trades", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ trades, date: _pendingResp.date, mode: MODE })
+    method: "POST", headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({trades, date: _pendingResp.date, mode: MODE})
   });
   const result = await r.json();
   if (!r.ok) {
     alert("Validation failed:\n" + (result.details||[result.error||"Unknown error"]).join("\n"));
     return;
   }
-  alert(result.recorded + " trade(s) recorded at your fill prices.");
+  const skipMsg = skipped > 0 ? ` (${skipped} skipped — not filled)` : "";
+  alert(`${result.recorded} trade(s) recorded at your fill prices.${skipMsg}`);
   refresh();
 }
 
