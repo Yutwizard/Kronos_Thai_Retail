@@ -23,6 +23,7 @@ _pipeline_proc: "subprocess.Popen | None" = None
 
 _calibration_cache: dict = {"date": None, "result": None}
 _forecast_cache: dict = {"date": None, "data": {}}
+_compare_cache: dict = {"date": None, "data": {}}
 
 
 def _get_cached_closes() -> dict[str, float]:
@@ -103,6 +104,31 @@ def api_forecasts():
     from kth.trading.trade_gen import get_all_ranked
     forecasts = get_all_ranked()
     return jsonify({"date": str(date.today()), "count": len(forecasts), "forecasts": forecasts})
+
+
+@app.route("/api/forecasts/compare")
+def api_forecasts_compare():
+    """Return today's forecasts enriched with delta vs the previous available forecast date."""
+    from kth.trading.trade_gen import load_forecasts
+    from pathlib import Path as _P
+    cache_root = _P("data/forecast_cache/NeoQuasar_Kronos-small")
+    dates = sorted([d.name for d in cache_root.iterdir() if d.is_dir()], reverse=True) if cache_root.exists() else []
+    today_date = dates[0] if dates else str(date.today())
+    prev_date  = dates[1] if len(dates) > 1 else None
+
+    today_fc = {f["ticker"]: f for f in load_forecasts(today_date)}
+    prev_fc  = {f["ticker"]: f for f in load_forecasts(prev_date)} if prev_date else {}
+
+    result = []
+    for tkr, f in today_fc.items():
+        p = prev_fc.get(tkr, {})
+        delta_exp  = round(f["exp_ret"] - p.get("exp_ret", f["exp_ret"]), 4) if p else None
+        flag_change = (p.get("confidence") != f["confidence"]) if p else False
+        result.append({**f, "delta_exp_ret": delta_exp,
+                        "prev_confidence": p.get("confidence"), "flag_changed": flag_change})
+    result.sort(key=lambda x: x["rank_score"], reverse=True)
+    return jsonify({"today": today_date, "prev": prev_date,
+                    "count": len(result), "forecasts": result})
 
 
 @app.route("/api/positions")

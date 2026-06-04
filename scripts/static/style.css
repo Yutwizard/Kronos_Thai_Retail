@@ -67,6 +67,9 @@ tr:hover { background: #f8f9ff; }
 .num { text-align: right; font-variant-numeric: tabular-nums; }
 .muted { color: var(--muted); font-size: 0.75em; }
 .green { color: var(--green); } .red { color: var(--red); } .orange { color: var(--orange); }
+.flag-up  { font-size: 0.75em; color: #2e7d32; cursor: help; }
+.flag-dn  { font-size: 0.75em; color: #c62828; cursor: help; }
+.compare-note { font-size: 0.7em; color: var(--muted); margin: 2px 0 0; padding-left: 4px; }
 .row-exit { border-left: 3px solid var(--red); }
 .row-reduce { border-left: 3px solid var(--orange); }
 .row-buy { border-left: 3px solid var(--green); }
