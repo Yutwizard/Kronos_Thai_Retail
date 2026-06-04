@@ -18,9 +18,21 @@
     <div class="h-right">
       <span id="header-date"></span>
       <span id="header-refresh"></span>
+      <button id="btn-pipeline" class="btn-pipeline" onclick="runPipeline()">▶ Run Pipeline</button>
       <span id="banner-area"></span>
     </div>
   </header>
+
+  <div id="pipeline-panel" class="pipeline-panel hidden">
+    <div class="pipe-steps">
+      <div class="pipe-step" id="pipe-step-download"><span class="pipe-icon">⏸</span> Download</div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step" id="pipe-step-forecast"><span class="pipe-icon">⏸</span> Forecast <span class="pipe-eta">(~12 min)</span></div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step" id="pipe-step-tradegen"><span class="pipe-icon">⏸</span> Trade Ticket</div>
+    </div>
+    <span id="pipe-status-text" class="pipe-status-text">Starting…</span>
+  </div>
 
   <div id="risk-bar" class="risk-bar">
     <div class="risk-tile"><div class="t-label">Market State</div><div class="t-val" id="val-market">—</div></div>
@@ -255,6 +267,84 @@ function filterRanking(q) { document.querySelectorAll(".rank-row").forEach(r => 
 
 refresh();
 setInterval(refresh, 60000);
+
+// ── Pipeline runner ──────────────────────────────────────────
+let _pipeInterval = null;
+
+async function runPipeline() {
+  const btn = $("btn-pipeline");
+  btn.disabled = true;
+  btn.textContent = "⏳ Running…";
+  $("pipeline-panel").classList.remove("hidden");
+  setPipeStep("pipe-step-download", "pending");
+  setPipeStep("pipe-step-forecast", "pending");
+  setPipeStep("pipe-step-tradegen", "pending");
+  $("pipe-status-text").textContent = "Starting pipeline…";
+
+  const resp = await fetch("/api/pipeline/run", { method: "POST" });
+  if (!resp.ok && resp.status !== 409) {
+    btn.disabled = false; btn.textContent = "▶ Run Pipeline";
+    $("pipe-status-text").textContent = "Failed to start.";
+    return;
+  }
+
+  if (_pipeInterval) clearInterval(_pipeInterval);
+  _pipeInterval = setInterval(pollPipeline, 4000);
+  pollPipeline();
+}
+
+async function pollPipeline() {
+  const s = await fetchJSON("/api/pipeline/status");
+  if (!s) return;
+
+  setPipeStep("pipe-step-download", s.steps.download);
+  setPipeStep("pipe-step-forecast", s.steps.forecast);
+  setPipeStep("pipe-step-tradegen", s.steps.trade_gen);
+
+  const msgs = { idle:"Ready", running:"Running…", complete:"✅ Done — refreshing", failed:"❌ Failed — check data/logs/" };
+  $("pipe-status-text").textContent = msgs[s.stage] || s.stage;
+
+  if (!s.running) {
+    clearInterval(_pipeInterval); _pipeInterval = null;
+    const btn = $("btn-pipeline");
+    btn.disabled = false;
+    if (s.stage === "complete") {
+      btn.textContent = "✅ Done";
+      setTimeout(() => { btn.textContent = "▶ Run Pipeline"; }, 6000);
+      setTimeout(refresh, 1500);
+    } else if (s.stage === "failed") {
+      btn.textContent = "❌ Failed";
+      btn.classList.add("pipe-failed");
+      setTimeout(() => { btn.textContent = "▶ Run Pipeline"; btn.classList.remove("pipe-failed"); }, 10000);
+    } else {
+      btn.textContent = "▶ Run Pipeline";
+    }
+  }
+}
+
+function setPipeStep(id, status) {
+  const el = $(id);
+  if (!el) return;
+  el.className = "pipe-step";
+  const icon = el.querySelector(".pipe-icon");
+  if (status === "ok")      { icon.textContent = "✅"; el.classList.add("pipe-done"); }
+  else if (status === "running") { icon.textContent = "⏳"; el.classList.add("pipe-active"); }
+  else if (status === "failed")  { icon.textContent = "❌"; el.classList.add("pipe-err"); }
+  else                           { icon.textContent = "⏸"; }
+}
+
+// On load: check if pipeline is already running and resume polling
+(async () => {
+  const s = await fetchJSON("/api/pipeline/status");
+  if (s && s.running) {
+    $("pipeline-panel").classList.remove("hidden");
+    const btn = $("btn-pipeline");
+    btn.disabled = true; btn.textContent = "⏳ Running…";
+    if (_pipeInterval) clearInterval(_pipeInterval);
+    _pipeInterval = setInterval(pollPipeline, 4000);
+    pollPipeline();
+  }
+})();
 </script>
 </body>
 </html>

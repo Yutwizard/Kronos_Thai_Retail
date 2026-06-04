@@ -19,6 +19,8 @@ app = Flask(__name__, static_folder=str(PROJECT_ROOT / "scripts/static"), static
 TRADING_MODE = os.environ.get("KRONOS_MODE", "paper")  # "paper" or "live"
 PORT = int(os.environ.get("KRONOS_PORT", "5555"))
 
+_pipeline_proc: "subprocess.Popen | None" = None
+
 _calibration_cache: dict = {"date": None, "result": None}
 _forecast_cache: dict = {"date": None, "data": {}}
 
@@ -199,6 +201,72 @@ def api_health():
         "stale": stale,
         "pipeline_log": str(log_path) if log_path.exists() else None,
         "sanity_failures": sanity_failures,
+    })
+
+
+@app.route("/api/pipeline/run", methods=["POST"])
+def api_pipeline_run():
+    """Spawn the morning pipeline (download + forecast + trade ticket) in background."""
+    global _pipeline_proc
+    if _pipeline_proc and _pipeline_proc.poll() is None:
+        return jsonify({"status": "running", "message": "Pipeline already running", "pid": _pipeline_proc.pid}), 409
+    log_path = PROJECT_ROOT / f"data/logs/cron_{date.today()}.log"
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    log_f = open(log_path, "w")
+    _pipeline_proc = subprocess.Popen(
+        [sys.executable, str(PROJECT_ROOT / "scripts/dashboard.py"), "--generate"],
+        cwd=str(PROJECT_ROOT),
+        stdout=log_f,
+        stderr=log_f,
+    )
+    return jsonify({"status": "started", "pid": _pipeline_proc.pid})
+
+
+@app.route("/api/pipeline/status")
+def api_pipeline_status():
+    """Return current pipeline run state and per-step progress from the log."""
+    global _pipeline_proc
+    running = bool(_pipeline_proc and _pipeline_proc.poll() is None)
+    return_code = _pipeline_proc.poll() if _pipeline_proc else None
+    log_path = PROJECT_ROOT / f"data/logs/cron_{date.today()}.log"
+    steps = {"download": "pending", "forecast": "pending", "trade_gen": "pending"}
+    stage = "running" if running else "idle"
+
+    if log_path.exists():
+        content = log_path.read_text()
+        if "PIPELINE_OK" in content:
+            steps = {"download": "ok", "forecast": "ok", "trade_gen": "ok"}
+            stage = "complete"
+        elif "STEP2_FAILED" in content:
+            steps["download"] = "ok"
+            steps["forecast"] = "failed"
+            stage = "failed"
+        elif "STEP1_FAILED" in content:
+            steps["download"] = "failed"
+            stage = "failed"
+        elif "STEP3" in content:
+            steps["download"] = "ok"
+            steps["forecast"] = "ok"
+            steps["trade_gen"] = "running"
+        elif "STEP2_OK" in content:
+            steps["download"] = "ok"
+            steps["forecast"] = "ok"
+            steps["trade_gen"] = "pending"
+        elif "STEP2" in content:
+            steps["download"] = "ok"
+            steps["forecast"] = "running"
+        elif "STEP1_OK" in content:
+            steps["download"] = "ok"
+            steps["forecast"] = "pending"
+        elif "STEP1" in content:
+            steps["download"] = "running"
+
+    return jsonify({
+        "running": running,
+        "stage": stage,
+        "steps": steps,
+        "return_code": return_code,
+        "pid": _pipeline_proc.pid if _pipeline_proc else None,
     })
 
 

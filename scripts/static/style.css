@@ -86,3 +86,33 @@ tr:hover { background: #f8f9ff; }
 /* Footer */
 footer { padding: 8px 16px; text-align: center; font-size: 0.65em; color: var(--muted); border-top: 1px solid var(--border); }
 .hidden { display: none !important; }
+
+/* Pipeline button */
+.btn-pipeline {
+  background: #1565C0; color: white; border: none;
+  padding: 5px 13px; border-radius: 4px; cursor: pointer;
+  font-size: 0.8em; font-weight: 600; letter-spacing: 0.2px;
+  transition: background 0.15s;
+}
+.btn-pipeline:hover:not(:disabled) { background: #0d47a1; }
+.btn-pipeline:disabled { background: #78909c; cursor: not-allowed; }
+.btn-pipeline.pipe-failed { background: #c62828; }
+
+/* Pipeline progress panel */
+.pipeline-panel {
+  display: flex; align-items: center; gap: 16px;
+  background: #e3f2fd; border-radius: 6px;
+  padding: 8px 14px; margin: 6px 0; font-size: 0.82em;
+}
+.pipe-steps { display: flex; align-items: center; gap: 6px; }
+.pipe-step {
+  padding: 3px 10px; border-radius: 4px; background: white;
+  border: 1px solid #bbdefb; white-space: nowrap;
+}
+.pipe-step.pipe-done   { background: #e8f5e9; border-color: #a5d6a7; }
+.pipe-step.pipe-active { background: #fff9c4; border-color: #f9a825; font-weight: 600; }
+.pipe-step.pipe-err    { background: #ffebee; border-color: #ef9a9a; }
+.pipe-icon { margin-right: 4px; }
+.pipe-eta  { color: #78909c; font-size: 0.85em; }
+.pipe-arrow { color: #90caf9; font-weight: 700; }
+.pipe-status-text { color: #1565C0; font-style: italic; margin-left: auto; font-size: 0.85em; }
