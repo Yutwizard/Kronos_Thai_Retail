@@ -106,13 +106,71 @@ def api_forecasts():
     return jsonify({"date": str(date.today()), "count": len(forecasts), "forecasts": forecasts})
 
 
+def _cache_dates() -> list[str]:
+    from pathlib import Path as _P
+    cache_root = _P("data/forecast_cache/NeoQuasar_Kronos-small")
+    if not cache_root.exists():
+        return []
+    return sorted(
+        [d.name for d in cache_root.iterdir()
+         if d.is_dir() and len(list(d.glob("*.parquet"))) > 0],
+        reverse=True
+    )
+
+
+@app.route("/api/forecasts/dates")
+def api_forecasts_dates():
+    """Return all available forecast run dates (newest first)."""
+    dates = _cache_dates()
+    return jsonify({"dates": dates, "latest": dates[0] if dates else None})
+
+
+@app.route("/api/forecasts/history/<run_date>")
+def api_forecasts_history(run_date):
+    """Return forecasts for a specific past run date, enriched with delta vs the date before it."""
+    from kth.trading.trade_gen import load_forecasts
+    dates = _cache_dates()
+    if run_date not in dates:
+        return jsonify({"error": f"No forecast cache for {run_date}"}), 404
+
+    idx = dates.index(run_date)
+    prev_date = dates[idx + 1] if idx + 1 < len(dates) else None
+
+    target_fc = {f["ticker"]: f for f in load_forecasts(run_date)}
+    prev_fc   = {f["ticker"]: f for f in load_forecasts(prev_date)} if prev_date else {}
+
+    # data_date: latest close date used
+    data_date = None
+    try:
+        from kth.data.loader import load_cached
+        sample = next(iter(target_fc.keys()), None)
+        if sample:
+            df = load_cached(sample)
+            # Use the parquet mtime as proxy — look for the close before run_date
+            import pandas as pd
+            ts = pd.to_datetime(run_date)
+            hist = df[df["timestamps"] <= ts]
+            data_date = str(hist["timestamps"].iloc[-1].date()) if not hist.empty else None
+    except Exception:
+        pass
+
+    result = []
+    for tkr, f in target_fc.items():
+        p = prev_fc.get(tkr, {})
+        delta_exp  = round(f["exp_ret"] - p.get("exp_ret", f["exp_ret"]), 4) if p else None
+        flag_change = (p.get("confidence") != f["confidence"]) if p else False
+        result.append({**f, "delta_exp_ret": delta_exp,
+                        "prev_confidence": p.get("confidence"), "flag_changed": flag_change})
+    result.sort(key=lambda x: x["rank_score"], reverse=True)
+    return jsonify({"today": run_date, "prev": prev_date, "data_date": data_date,
+                    "count": len(result), "forecasts": result})
+
+
 @app.route("/api/forecasts/compare")
 def api_forecasts_compare():
     """Return today's forecasts enriched with delta vs the previous available forecast date."""
     from kth.trading.trade_gen import load_forecasts
-    from pathlib import Path as _P
-    cache_root = _P("data/forecast_cache/NeoQuasar_Kronos-small")
-    dates = sorted([d.name for d in cache_root.iterdir() if d.is_dir()], reverse=True) if cache_root.exists() else []
+    dates = _cache_dates()
     today_date = dates[0] if dates else str(date.today())
     prev_date  = dates[1] if len(dates) > 1 else None
 

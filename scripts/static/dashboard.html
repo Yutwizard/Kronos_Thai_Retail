@@ -83,7 +83,12 @@
 
     <section id="ranking-panel" class="panel collapsible">
       <h2 onclick="toggleRanking()">Full Ranking (49 tickers) <span id="rank-toggle">▼</span> <span id="ranking-data-badge" class="data-date-badge"></span></h2>
-      <div id="ranking-search"><input type="text" placeholder="Search ticker..." oninput="filterRanking(this.value)"></div>
+      <div id="ranking-controls">
+        <input type="text" id="ranking-search-input" placeholder="Search ticker..." oninput="filterRanking(this.value)">
+        <select id="ranking-date-select" class="date-select" onchange="loadRankingForDate(this.value)" title="View rankings from a past pipeline run date">
+          <option value="">📅 Select date...</option>
+        </select>
+      </div>
       <div id="ranking-body"></div>
     </section>
 
@@ -602,8 +607,71 @@ async function exportCSV() {
   alert(r && r.status === "ok" ? "CSV exported: " + r.path : "No trades to export.");
 }
 
-function toggleRanking() { showRanking = !showRanking; $("ranking-body").style.display = showRanking ? "block" : "none"; $("rank-toggle").textContent = showRanking ? "▲" : "▼"; }
-function filterRanking(q) { document.querySelectorAll(".rank-row").forEach(r => { r.style.display = r.dataset.ticker.includes(q.toLowerCase()) ? "" : "none"; }); }
+function toggleRanking() {
+  showRanking = !showRanking;
+  $("ranking-body").style.display = showRanking ? "block" : "none";
+  $("ranking-controls").style.display = showRanking ? "flex" : "none";
+  $("rank-toggle").textContent = showRanking ? "▲" : "▼";
+  if (showRanking) populateDateSelector();
+}
+function filterRanking(q) {
+  document.querySelectorAll(".rank-row").forEach(r => {
+    r.style.display = r.dataset.ticker.includes(q.toLowerCase()) ? "" : "none";
+  });
+}
+
+async function populateDateSelector() {
+  const sel = $("ranking-date-select");
+  if (!sel || sel.options.length > 1) return; // already populated
+  const data = await fetchJSON("/api/forecasts/dates");
+  if (!data) return;
+  data.dates.forEach((d, i) => {
+    const opt = document.createElement("option");
+    opt.value = d;
+    opt.textContent = (i === 0 ? "📅 " + d + " (latest)" : "📅 " + d);
+    sel.appendChild(opt);
+  });
+}
+
+async function loadRankingForDate(selectedDate) {
+  if (!selectedDate) return;
+  $("ranking-data-badge").textContent = "⏳ Loading…";
+  const fc = await fetchJSON(`/api/forecasts/history/${selectedDate}`);
+  if (!fc) { $("ranking-data-badge").textContent = "❌ Failed"; return; }
+
+  // Render ranking table for the selected date
+  const hasDelta = fc.forecasts.some(f => f.delta_exp_ret !== undefined);
+  let rankHtml = `<table><thead><tr>
+    <th title="${COL.rank}">#</th>
+    <th title="${COL.ticker}">Ticker</th>
+    <th>Name</th>
+    <th title="${COL.close}">Close</th>
+    <th title="${COL.expRet}">Exp Ret (?)</th>`;
+  if (hasDelta) rankHtml += `<th title="${COL.delta}">Δ (?)</th>`;
+  rankHtml += `<th title="${COL.band}">Band (?)</th>
+    <th title="${COL.flag}">Flag (?)</th>
+  </tr></thead><tbody>`;
+  fc.forecasts.forEach((f, i) => {
+    const dir = f.direction === "up" ? "↑" : "↓";
+    const retCls = f.exp_ret >= 0 ? "green" : "red";
+    const flagChange = _flagDelta(f.prev_confidence, f.confidence);
+    rankHtml += '<tr class="rank-row" data-ticker="' + f.ticker.toLowerCase() + '">'
+      + '<td>' + (i+1) + '</td><td class="ticker">' + f.ticker + '</td>'
+      + '<td class="muted">' + (f.name||"") + '</td>'
+      + '<td class="num">' + (f.close?.toFixed(2)||"—") + '</td>'
+      + '<td class="num ' + retCls + '">' + dir + ' ' + (f.exp_ret*100).toFixed(2) + '%</td>';
+    if (hasDelta) rankHtml += '<td class="num" style="font-size:0.78em">' + _deltaStr(f.delta_exp_ret) + '</td>';
+    rankHtml += '<td class="num">' + (f.band_width*100).toFixed(1) + '%</td>'
+      + '<td>' + _flagEmoji(f.confidence) + flagChange + '</td></tr>';
+  });
+  rankHtml += '</tbody></table>';
+  if (fc.prev) rankHtml += '<p class="compare-note">Δ vs forecast from ' + fc.prev + '</p>';
+  $("ranking-body").innerHTML = rankHtml;
+
+  // Update badge with data date
+  const badge = fc.data_date ? `📅 Data: ${fc.data_date}` : `📅 Run: ${selectedDate}`;
+  $("ranking-data-badge").textContent = badge;
+}
 
 refresh().then(checkSetupNeeded);
 setInterval(refresh, 60000);
