@@ -146,8 +146,10 @@ async function refresh() {
 
   updateRiskBar(risk);
   updateHealth(health);
-  updatePositions(positions);
   const compare = await fetchJSON("/api/forecasts/compare");
+  const fcMap = {};
+  (compare || forecasts)?.forecasts?.forEach(f => { fcMap[f.ticker] = f; });
+  updatePositions(positions, fcMap);
   updateForecasts(compare || forecasts);
   updateTradeTicket(trades, risk);
   updateMode();
@@ -191,18 +193,68 @@ function updateHealth(health) {
   }
 }
 
-function updatePositions(pos) {
+function updatePositions(pos, fcMap) {
   if (!pos) return;
   const body = $("positions-body");
   if (!pos.positions || pos.positions.length === 0) {
     body.innerHTML = '<p class="empty">No positions yet. Paper trade to start tracking.</p>'; return;
   }
-  let html = '<table><thead><tr><th>Ticker</th><th>Shares</th><th>Avg Cost</th><th>Mark</th><th>P&amp;L%</th><th>Weight</th></tr></thead><tbody>';
+  const hasFc = fcMap && Object.keys(fcMap).length > 0;
+  let html = `<table><thead><tr>
+    <th title="${COL.ticker}">Ticker</th>
+    <th>Shares</th>
+    <th title="Average purchase price (THB) — your cost basis">Avg Cost</th>
+    <th title="Current market price (last close, THB)">Mark</th>
+    <th title="Unrealised P&amp;L = (Mark − Avg Cost) / Avg Cost">P&amp;L%</th>
+    <th title="Position value as % of total portfolio">Weight</th>`;
+  if (hasFc) {
+    html += `<th title="${COL.expRet}">Exp Ret (?)</th>`;
+    html += `<th title="${COL.delta}">Δ Prev (?)</th>`;
+    html += `<th title="${COL.band}">Band (?)</th>`;
+    html += `<th title="${COL.flag}">Signal (?)</th>`;
+  }
+  html += '</tr></thead><tbody>';
+
   for (const p of pos.positions) {
     const pnlCls = p.pnl_pct >= 0 ? "green" : "red";
-    html += '<tr><td class="ticker">' + p.ticker + '</td><td class="num">' + (p.shares||0).toLocaleString() + '</td><td class="num">' + (p.avg_cost||0).toFixed(2) + '</td><td class="num">' + (p.mark||0).toFixed(2) + '</td><td class="num ' + pnlCls + '">' + (p.pnl_pct*100).toFixed(1) + '%</td><td class="num">' + (p.weight*100).toFixed(0) + '%</td></tr>';
+    const f = hasFc ? fcMap[p.ticker] : null;
+
+    // Row border colour based on signal
+    let rowCls = "";
+    if (f) {
+      if (f.direction === "down" && f.confidence === "green") rowCls = "row-exit";
+      else if (f.confidence === "yellow") rowCls = "row-reduce";
+      else if (f.direction === "up") rowCls = "row-hold";
+    }
+
+    html += `<tr class="${rowCls}">
+      <td class="ticker">${p.ticker}</td>
+      <td class="num">${(p.shares||0).toLocaleString()}</td>
+      <td class="num">${(p.avg_cost||0).toFixed(2)}</td>
+      <td class="num">${(p.mark||0).toFixed(2)}</td>
+      <td class="num ${pnlCls}">${(p.pnl_pct*100).toFixed(1)}%</td>
+      <td class="num">${(p.weight*100).toFixed(0)}%</td>`;
+
+    if (hasFc && f) {
+      const dir = f.direction === "up" ? "↑" : "↓";
+      const retCls = f.exp_ret >= 0 ? "green" : "red";
+      const flagChange = _flagDelta(f.prev_confidence, f.confidence);
+      html += `<td class="num ${retCls}">${dir} ${(f.exp_ret*100).toFixed(2)}%</td>`;
+      html += `<td class="num">${_deltaStr(f.delta_exp_ret)}</td>`;
+      html += `<td class="num">${(f.band_width*100).toFixed(1)}%</td>`;
+      html += `<td>${_flagEmoji(f.confidence)}${flagChange}</td>`;
+    } else if (hasFc) {
+      html += '<td class="muted">—</td><td class="muted">—</td><td class="muted">—</td><td class="muted">—</td>';
+    }
+    html += '</tr>';
   }
   html += '</tbody></table>';
+  html += `<div class="col-legend">
+    <strong>Exp Ret</strong> Model forecast for next 20 days &nbsp;|&nbsp;
+    <strong>Δ Prev</strong> Change vs previous forecast &nbsp;|&nbsp;
+    <strong>Band</strong> Uncertainty: &lt;10%=🟢 10–30%=🟡 &gt;30%=🔴 &nbsp;|&nbsp;
+    Row colour: green border=hold, yellow=reduce signal, red=exit signal
+  </div>`;
   body.innerHTML = html;
 }
 
