@@ -226,9 +226,14 @@ function updateTradeTicket(trades, risk) {
     html += '</tbody></table>';
   }
   if (trades.buys && trades.buys.length > 0) {
-    html += '<h3 class="section-label buy-label">▲ BUY (within 2 days)</h3><table><thead><tr><th>Ticker</th><th>Shares</th><th>Limit</th><th>Est. THB</th><th>Rationale</th></tr></thead><tbody>';
+    html += '<h3 class="section-label buy-label">▲ BUY (within 2 days)</h3>';
+    html += '<p class="limit-note">ℹ️ <b>Limit = maximum you will pay.</b> If today\'s live price &lt; limit → order fills at live price (cheaper). If live price &gt; limit → skip this trade.</p>';
+    html += '<table><thead><tr><th>Ticker</th><th>Shares</th><th>Last Close</th><th>Limit (max)</th><th>Est. THB</th><th>Rationale</th></tr></thead><tbody>';
     for (const b of trades.buys) {
-      html += '<tr class="row-buy"><td class="ticker">' + b.ticker + '</td><td class="num">' + (b.shares||0).toLocaleString() + '</td><td class="num">' + (b.limit_price?.toFixed(2)||"—") + '</td><td class="num">~' + (b.estimated_thb||0).toLocaleString() + '</td><td class="muted">' + (b.rationale||"") + '</td></tr>';
+      const lc = b.last_close?.toFixed(2) || "—";
+      const lp = b.limit_price?.toFixed(2) || "—";
+      const tag = (b.limit_price > b.last_close) ? ' <span class="limit-tag" title="Fills at today\'s live price if below this limit">fills at live ✓</span>' : '';
+      html += '<tr class="row-buy"><td class="ticker">' + b.ticker + '</td><td class="num">' + (b.shares||0).toLocaleString() + '</td><td class="num muted">' + lc + '</td><td class="num">' + lp + tag + '</td><td class="num">~' + (b.estimated_thb||0).toLocaleString() + '</td><td class="muted">' + (b.rationale||"") + '</td></tr>';
     }
     html += '</tbody></table>';
   }

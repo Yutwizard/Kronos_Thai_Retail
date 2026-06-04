@@ -204,6 +204,7 @@ def generate_trade_ticket(report_date: str = None, positions: dict = None) -> di
             "shares": lots,
             "order_type": "limit",
             "limit_price": limit,
+            "last_close": f["close"],
             "estimated_thb": round(lots * f["close"]),
             "rationale": f"🟢↑ rank#{rank_idx} net_ret={f['net_ret']:+.2%}",
         })

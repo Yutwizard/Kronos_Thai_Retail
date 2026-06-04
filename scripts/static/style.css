@@ -116,3 +116,7 @@ footer { padding: 8px 16px; text-align: center; font-size: 0.65em; color: var(--
 .pipe-eta  { color: #78909c; font-size: 0.85em; }
 .pipe-arrow { color: #90caf9; font-weight: 700; }
 .pipe-status-text { color: #1565C0; font-style: italic; margin-left: auto; font-size: 0.85em; }
+
+/* Limit price clarification */
+.limit-note { font-size: 0.75em; color: #555; background: #fff9c4; border-left: 3px solid #f9a825; padding: 4px 8px; margin: 4px 0 6px; border-radius: 0 4px 4px 0; }
+.limit-tag { font-size: 0.7em; color: #2e7d32; background: #e8f5e9; padding: 1px 5px; border-radius: 3px; margin-left: 4px; vertical-align: middle; cursor: help; }
