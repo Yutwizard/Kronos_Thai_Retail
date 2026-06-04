@@ -1,5 +1,10 @@
 #!/bin/bash
-# Kronos-TH morning pipeline — retry wrapper for cron
+# Kronos-TH daily pipeline — retry wrapper for cron
+# Recommended: run in the EVENING after SET closes (17:30 BKK) so tomorrow's
+# forecast uses today's close prices. Alternative: run at 06:30 BKK (morning).
+# Crontab examples:
+#   30 17 * * 1-5  → evening (recommended)
+#   30  6 * * 1-5  → morning (alternative)
 set -e
 
 PROJ_DIR="$(cd "$(dirname "$0")/.." && pwd)"

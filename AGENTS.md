@@ -150,7 +150,7 @@ Cell 9 (Update Portfolio State) must run before Cell 10 (Generate Ticket).
 ### Flask Dashboard — Improvements Shipped 2026-06-04 (kept for reference)
 
 All improvements built while paper trading was being set up. These inform the Google Suite implementation:
-- **Run Pipeline button** — one-click morning routine (download + forecast + ticket) from browser
+- **Run Pipeline button** — one-click daily pipeline (download + forecast + ticket) from browser; recommended to run EVENING after market close so tomorrow's forecast uses today's close prices
 - **Fill-price confirmation modal** — editable shares + price before recording; partial fill / no-fill support
 - **Trade history panel** — inline edit (shares + price), delete with portfolio rebuild
 - **Friction display** — Gross / Friction / Cash Impact columns in modal; per-class rates corrected

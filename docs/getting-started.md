@@ -140,7 +140,7 @@ You should see: `Cash: 500000.0 THB — setup OK!`
 
 ### Step 2.7: Set Up LINE Notify Alerts (Optional but Recommended)
 
-If the morning cron pipeline fails, the dashboard shows stale data — you won't know until you open it. LINE Notify sends a push notification to your phone instead.
+If the daily pipeline fails, the dashboard shows stale data — you won't know until you open it. LINE Notify sends a push notification to your phone instead.
 
 **One-time setup (2 minutes):**
 
@@ -309,11 +309,11 @@ The backtest says the strategy makes +31.44% per year, but:
 
 ### Monday — First Day
 
-1. **Morning:** Run `python scripts/dashboard.py --generate` (12 min). Then `python scripts/dashboard.py --serve`. Open http://localhost:5555.
-2. **Look at:** The Risk Bar at the top. What does "Market State" say? It should say "Normal."
+1. **Evening (previous day or end of day):** Click **▶ Run Pipeline** in the dashboard (~12 min). This generates tomorrow's forecast using today's close prices.
+2. **Morning:** Open http://localhost:5555 — Trade Ticket is ready. Check the Risk Bar (Market State = Normal?).
 3. **Look at:** The Trade Ticket. Are there any buy or exit signals? If yes — great. If no — also great. "No signals today" is normal.
-4. **Click:** "Record Paper Trade" if you want to simulate the trades. (Or don't — it's paper, no pressure.)
-5. **Evening:** Check back. Did the P&L change? (It updates from market close prices.)
+4. **Click:** "Record Paper Trade" if you want to simulate the trades. Enter the actual fill price from your broker.
+5. **End of day:** Run pipeline again to update forecasts with today's close data.
 
 ### Tuesday — Getting Comfortable
 

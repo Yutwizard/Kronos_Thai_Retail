@@ -135,27 +135,37 @@ If `# red-flagged > 30` or `median band width > 30%`, the market is in a high-un
 
 ---
 
-## 2. Daily Evening Check (2 minutes)
+## 2. Daily Evening Run (15 minutes) ← MAIN PIPELINE
 
 ### Objective
-Verify that today's forecast cache was saved and is ready for tomorrow.
+Run the daily pipeline **after SET closes (17:00 BKK)** to generate tomorrow's forecast
+using today's close prices. This is the recommended time — not the morning.
+
+**Why evening?** The forecast uses the most recent close. Running after market close means:
+- Tomorrow's Exp Ret is based on today's actual closing prices (most accurate)
+- Tomorrow morning you just open the dashboard and trade — no 12-min GPU wait
+- The positions table shows signals based on today's close (updated view)
 
 ### Steps
 
+1. Open http://localhost:5555
+2. Click **▶ Run Pipeline** in the top-right header
+3. Wait ~12 min for all 3 steps to show ✅
+4. Review positions table — Exp Ret and Band now use today's close prices
+5. Check Trade Ticket for tomorrow's recommended trades
+
+**Or from terminal:**
 ```bash
-ls -la data/forecast_cache/NeoQuasar_Kronos-small/$(date +%Y-%m-%d)/ | head -5
+python scripts/dashboard.py --generate
 ```
 
-Expected output (example):
-```
-total 1234
-drwxrwxr-x 100 Dec 31 23:59 .
-drwxrwxr-x 100 Dec 31 23:59 ..
--rw-rw-r-- 1 user user 1234 PTT.BK.parquet
--rw-rw-r-- 1 user user 1234 KBANK.BK.parquet
+**Verify forecasts are ready:**
+```bash
+ls data/forecast_cache/NeoQuasar_Kronos-small/$(date +%Y-%m-%d)/ | wc -l
+# Expected: 49
 ```
 
-If this directory is empty, tomorrow's morning run will regenerate forecasts (12 min delay). If the directory is missing, the morning run will create it — no problem, just 12 minutes of GPU time.
+If the directory is empty or missing, run the pipeline manually (evening or morning — either works).
 
 ---
 
