@@ -50,10 +50,14 @@ There is no test framework, lint config, CI, or build step. `verify_data_layer.p
 Five-layer pipeline (bottom-up build order):
 
 ```
-Layer 5: Dashboard / Report     scripts/dashboard.py                    ✅ built (Flask, paper trading)
+Layer 5: Dashboard / Report     google_suite/                           🔨 in progress (Google Suite — supersedes Flask)
+                                  kronos_daily_pipeline.ipynb           planned — Colab notebook (19 cells)
+                                  apps_script/Code.gs                   planned — Apps Script backend
+                                  apps_script/Index.html                planned — 5-tab web app SPA
+                                scripts/dashboard.py                    ✅ built (Flask — superseded, keep for reference)
                                 kth/trading/portfolio.py                ✅ built
                                 kth/trading/trade_gen.py                ✅ built
-                                scripts/cron_pipeline.sh                ✅ built
+                                scripts/cron_pipeline.sh                ✅ built (superseded by Colab notebook)
                                 notebooks/05_decision_report.ipynb      ✅ built (Colab version)
 Layer 4: Backtest               kth/backtest/walkforward.py             ✅ built
                                 kth/backtest/strategy.py                ✅ built
@@ -69,7 +73,9 @@ Layer 2: Feature pipeline       kth/data/loader.py                      ✅ done
 Layer 1: Universe definition    kth/data/universe.py                    ✅ done
 ```
 
-**All 15 QFM enhancements ✅ complete (2026-06-03).** Pending: 2023 n=50 backtest (~12 hrs GPU). Plan files archived to `docs/superpowers/archive/plans/`.
+**All 15 QFM enhancements ✅ complete (2026-06-03).** All 4 OOS years (2023-2026) complete. Paper trading live since 2026-06-04. Plan files archived to `docs/superpowers/archive/plans/`.
+
+**Layer 5 is migrating to Google Suite (2026-06-04):** `google_suite/` directory (to be created) will contain `kronos_daily_pipeline.ipynb` (19-cell Colab), `apps_script/Code.gs`, and `apps_script/Index.html`. Spec: `docs/superpowers/specs/2026-06-04-google-suite-dashboard-design.md`. Plan: `docs/superpowers/plans/2026-06-04-google-suite-implementation-plan.md`.
 
 **Library code** lives in `kth/` (tested, reused across notebooks). **Research narrative** lives in `notebooks/` (exploratory, with plots).
 
@@ -95,7 +101,7 @@ columns: timestamps, open, high, low, close, volume, amount
 - Hardcoded 100 tickers across 9 asset classes in [kth/data/universe.py](kth/data/universe.py) — not a CSV. Adding a ticker is an intentional code change for version control.
 - `FRICTION` costs are per-class, not per-ticker. `fx_macro` class has zero friction (features only, not investable).
 - Key helpers: `get_all_tickers()`, `get_ticker_class(ticker)`, `get_display_name(ticker)`.
-- **Phase 2 addition (planned):** `SECTOR` dict + `get_sector()` — all 50 thai_equity tickers mapped to 10 SET sectors for the sector concentration guard (max 2 positions per sector).
+- **Phase 2 addition (shipped ✅):** `SECTOR` dict + `get_sector()` — all 50 thai_equity tickers mapped to 10 SET sectors for the sector concentration guard (max 2 positions per sector).
 
 ### yfinance download behavior
 - `download_universe()` pauses 0.5s between tickers and retries with exponential backoff (2s / 4s / 8s, 3 attempts).
@@ -147,6 +153,9 @@ Priority order: (1) user's explicit instructions, (2) superpowers skills, (3) de
 3. [docs/user-manual.html](docs/user-manual.html) — styled HTML manual with 7 charts, methodology, and usage guide
 4. [docs/operations-manual.html](docs/operations-manual.html) — daily/weekly/monthly step-by-step procedures
 5. [docs/monthly-walkthrough.html](docs/monthly-walkthrough.html) — 21-day simulated month with real trades
-5. [docs/superpowers/specs/](docs/superpowers/specs/) — approved design specs (Layers 3–5). Completed/archived spec moved to [docs/superpowers/archive/](docs/superpowers/archive/)
-6. [kth/data/loader.py](kth/data/loader.py) — schema conversion and caching implementation
-7. [kth/data/universe.py](kth/data/universe.py) — 100-ticker universe and `FRICTION` dict
+6. [docs/superpowers/specs/](docs/superpowers/specs/) — approved design specs (Layers 3–5). Completed/archived specs moved to [docs/superpowers/archive/](docs/superpowers/archive/)
+7. **Google Suite migration (Layer 5):**
+   - Spec: [docs/superpowers/specs/2026-06-04-google-suite-dashboard-design.md](docs/superpowers/specs/2026-06-04-google-suite-dashboard-design.md)
+   - Plan: [docs/superpowers/plans/2026-06-04-google-suite-implementation-plan.md](docs/superpowers/plans/2026-06-04-google-suite-implementation-plan.md)
+8. [kth/data/loader.py](kth/data/loader.py) — schema conversion and caching implementation
+9. [kth/data/universe.py](kth/data/universe.py) — 100-ticker universe and `FRICTION` dict

@@ -1,6 +1,7 @@
 # AGENTS.md — Kronos-TH
 
-> All 5 layers + 15-item QFM enhancement plan ✅ complete. 2023 n=50 backtest ✅ complete. All 4 OOS years now done.
+> All 5 layers + 15-item QFM enhancements ✅ complete. All 4 OOS years done. Paper trading started 2026-06-04.
+> **Layer 5 is migrating:** Flask dashboard → Google Suite (Colab + Sheets + Apps Script). See spec/plan below.
 > When in doubt, read `PROJECT_STRUCTURE.md` — it is the authoritative design doc.
 
 ## Superpower workflow
@@ -23,7 +24,7 @@ Priority order:
 ## Project type
 - **Not a deployable app.** No CI, no build step, no test framework, no lint config.
 - **Colab-first:** The real workflow is Jupyter notebooks on Google Colab (T4 GPU). Local Python scripts are for offline verification only.
-- **Current state:** All 5 layers ✅ built. Layer 5 is a local Flask dashboard (`scripts/dashboard.py`) for paper/live paper trading with a daily cron pipeline. 15-item QFM enhancement plan ✅ complete (2026-06-03). All 4 OOS years (2023-2026) completed with n=50.
+- **Current state:** All 5 layers ✅ built. **Layer 5 is migrating** from Flask (`scripts/dashboard.py`) to Google Suite (Colab + Sheets + Apps Script). The Flask dashboard is complete and functional but will be superseded. 15-item QFM enhancement plan ✅ complete. All 4 OOS years (2023-2026) done. Paper trading live since 2026-06-04 (8 trades).
 
 ## Verify the data layer (offline)
 ```bash
@@ -122,6 +123,40 @@ Key insight: 21-month fold windows needed (not 6mo) so val/test have ≥420 rows
 - Crypto + US equity FT backtests confirm: zero-shot wins in both markets
 - All FT backtests executed per approved specs
 
+### Google Suite Migration — Layer 5 (2026-06-04) 🔨 IN PROGRESS
+
+Replacing the local Flask dashboard with a zero-cost Google-hosted alternative:
+- **Google Colab** — daily compute engine (19-cell notebook, "Run All" each morning)
+- **Google Sheets** — persistent data store + fill-confirmation input surface (14 tabs: 9 live + 5 staging)
+- **Google Apps Script web app** — 5-tab dashboard SPA (accessible from any device via URL)
+
+**Key architectural decision — JSON-bridge pattern:**
+```
+Sheets → read fills → Drive JSON → existing kth functions → Drive JSON → Sheets
+```
+`os.chdir(KTH_REPO)` in Cell 1 makes all `Path("data/...")` calls resolve against Drive.
+Cell 9 (Update Portfolio State) must run before Cell 10 (Generate Ticket).
+
+**New directory:** `google_suite/` (to be created)
+- `kronos_daily_pipeline.ipynb` — 19-cell Colab notebook
+- `apps_script/Code.gs` — Apps Script backend
+- `apps_script/Index.html` — web app SPA (5 tabs: Dashboard, Trade Ticket, Portfolio, History, Risk)
+
+**Migration note:** Existing `data/positions/paper_portfolio.json` and `trade_log.csv` require `google_suite/migrate_to_sheets.py` to port to Sheets. Flask dashboard kept for reference.
+
+**Spec:** `docs/superpowers/specs/2026-06-04-google-suite-dashboard-design.md`
+**Plan:** `docs/superpowers/plans/2026-06-04-google-suite-implementation-plan.md` (1,852 lines, all code written)
+
+### Flask Dashboard — Improvements Shipped 2026-06-04 (kept for reference)
+
+All improvements built while paper trading was being set up. These inform the Google Suite implementation:
+- **Run Pipeline button** — one-click morning routine (download + forecast + ticket) from browser
+- **Fill-price confirmation modal** — editable shares + price before recording; partial fill / no-fill support
+- **Trade history panel** — inline edit (shares + price), delete with portfolio rebuild
+- **Friction display** — Gross / Friction / Cash Impact columns in modal; per-class rates corrected
+- **Initial capital setup** — first-day banner to set starting capital before first trade
+- **Limit price clarification** — "Last Close" + "Limit (max)" columns + "fills at live ✓" tag
+
 ### 4-Phase QFM Enhancement Plan ✅ COMPLETE (2026-06-03)
 15 enhancements from quant fund manager + software engineer review — all shipped:
 
@@ -167,16 +202,17 @@ Plan files archived to `docs/superpowers/archive/plans/`.
 2. `CONTEXT.md` — domain language glossary (14 terms, example dialogue)
 3. `README.md` — project overview, caveats, quick start
 4. `docs/getting-started.md` — **start here if new** — installation, paper trading, first-week walkthrough
-5. `docs/dashboard-user-manual.md` — step-by-step dashboard operating guide
-6. `docs/operations-manual.md` — decision rules reference (original notebook workflow)
+5. `docs/dashboard-user-manual.md` — step-by-step Flask dashboard guide (superseded by Google Suite, kept for reference)
+6. `docs/operations-manual.md` — decision rules reference
 7. `docs/user-manual.md` — full methodology, backtest results, and usage instructions
-8. `docs/monthly-walkthrough.html` — 21-day simulated month with real trades and portfolio outcomes
-9. `docs/superpowers/specs/` — approved design specs for all layers (6 active, 5 archived)
-10. `docs/superpowers/plans/` — implementation plans (4 active, 14 archived). Key: expanded backtest, OOS yearly, n50 completion, post-2023 actions
-11. `docs/superpowers/archive/` — completed/superseded plans (incl. all 4 QFM phase plans)
-12. `docs/superpowers/specs/2026-06-02-real-market-dashboard-design.md` — real-market dashboard design spec
-13. `kth/data/loader.py` — schema conversion and caching implementation
-14. `kth/data/universe.py` — universe, friction, and sector definitions
-15. `kth/models/kronos_wrapper.py` — KronosTH wrapper (adapted to real Kronos API)
-16. `kth/models/_kronos_bridge.py` — import bridge for non-pip-installable Kronos repo
+8. `docs/monthly-walkthrough.html` — 21-day simulated month with real trades
+9. `docs/superpowers/specs/` — approved design specs (7 active, 5 archived)
+10. `docs/superpowers/plans/` — implementation plans (5 active, 14 archived)
+11. `docs/superpowers/specs/2026-06-04-google-suite-dashboard-design.md` — **NEW** Google Suite spec (supersedes Flask)
+12. `docs/superpowers/plans/2026-06-04-google-suite-implementation-plan.md` — **NEW** 19-cell Colab + Apps Script plan (1,852 lines, all code)
+13. `docs/superpowers/specs/2026-06-02-real-market-dashboard-design.md` — Flask dashboard spec (superseded, reference only)
+14. `kth/data/loader.py` — schema conversion and caching implementation
+15. `kth/data/universe.py` — universe, friction, and sector definitions
+16. `kth/models/kronos_wrapper.py` — KronosTH wrapper (adapted to real Kronos API)
+17. `kth/models/_kronos_bridge.py` — import bridge for non-pip-installable Kronos repo
 

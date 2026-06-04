@@ -3,6 +3,14 @@
 > **Single-document review of the Kronos-TH project.**
 > Read this top-to-bottom before writing any more code. The goal is to confirm scope, design choices, and tradeoffs so we don't build the wrong thing.
 
+> ⚠️ **Layer 5 (Dashboard) is being superseded as of 2026-06-04.**
+> The local Flask dashboard (`scripts/dashboard.py`) is replaced by the Google Suite stack:
+> Colab daily pipeline + Google Sheets + Apps Script web app.
+> See [spec](docs/superpowers/specs/2026-06-04-google-suite-dashboard-design.md) and
+> [implementation plan](docs/superpowers/plans/2026-06-04-google-suite-implementation-plan.md).
+> All Layer 5 references to `scripts/dashboard.py`, `cron_pipeline.sh`, and `localhost:5555`
+> in this document describe the old system.
+
 ---
 
 ## Table of contents
@@ -545,6 +553,38 @@ Post-review data analysis surfaced the following — pending 2023 backtest befor
 - **Factor attribution:** Is the alpha genuinely predictive or a dressed momentum factor? Regress daily returns on SET 12-1 momentum factor.
 - **2023 n=50 result:** The most credible OOS year. p-value here determines whether the strategy has demonstrated statistically robust edge.
 
+### Layer 5 Migration — Google Suite (2026-06-04) 🔨 ACTIVE
+
+The local Flask dashboard (`scripts/dashboard.py`) is being superseded by a Google-hosted stack:
+
+| Component | Role | Status |
+|---|---|---|
+| `google_suite/kronos_daily_pipeline.ipynb` | 19-cell Colab notebook — daily compute + forecast + ticket | ⬜ To build |
+| `google_suite/apps_script/Code.gs` | Apps Script backend — reads Sheets, computes metrics | ⬜ To build |
+| `google_suite/apps_script/Index.html` | 5-tab web app SPA — Dashboard, Trade Ticket, Portfolio, History, Risk | ⬜ To build |
+
+**Architecture:** Colab → Google Sheets (fills input + data store) → Apps Script web app. JSON-bridge: `os.chdir(KTH_REPO)` makes all `Path("data/...")` calls resolve against Drive. Existing `kth.*` functions unchanged.
+
+**Spec:** `docs/superpowers/specs/2026-06-04-google-suite-dashboard-design.md`
+**Plan:** `docs/superpowers/plans/2026-06-04-google-suite-implementation-plan.md` (1,852 lines, all code written, ready to implement)
+
+### Paper Trading — Live Since 2026-06-04
+
+Portfolio initialised 2026-06-04 with 500,000 THB. Currently:
+- 8 trades recorded (CPF.BK, BCH.BK, HMPRO.BK via Flask dashboard)
+- 3 open positions: CPF.BK (500sh), BCH.BK (1,000sh), HMPRO.BK (1,700sh)
+- 94% cash (BEAR allocation — SET bull market regime)
+- Allocation band: NEUTRAL (bootstrap, <20 closed trades)
+
+Flask dashboard improvements shipped 2026-06-04 (inform Google Suite implementation):
+- Fill-price confirmation modal with editable shares + price per trade
+- Partial fill / no-fill support (0 shares = skip)
+- Trade history panel with inline edit (shares + price) and delete
+- Friction breakdown in modal (Gross | Friction | Cash Impact per row)
+- Per-class friction corrected in `execute_trade()` (was hardcoded 0.00268)
+- Initial capital setup banner (first-day only)
+- Run Pipeline button (one-click morning routine from browser)
+
 ---
 
-*Document version: 2026-06-03. Updated: QFM review findings, inv_vol rejection, friction analysis, open questions added.*
+*Document version: 2026-06-04. Updated: Google Suite migration announced, paper trading started, Flask dashboard improvements documented.*
