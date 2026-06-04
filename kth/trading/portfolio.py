@@ -437,8 +437,9 @@ def delete_trade(index: int, mode: str = "paper") -> dict:
     return {"deleted": deleted, "remaining_trades": len(rows)}
 
 
-def edit_trade(index: int, new_price: float, mode: str = "paper") -> dict:
-    """Edit fill price of trade at CSV row index and rebuild portfolio."""
+def edit_trade(index: int, new_price: float | None = None,
+               new_shares: int | None = None, mode: str = "paper") -> dict:
+    """Edit fill price and/or shares of a trade at CSV row index, then rebuild portfolio."""
     path = _trade_log_path()
     if not path.exists():
         return {"error": "No trade log found"}
@@ -448,10 +449,21 @@ def edit_trade(index: int, new_price: float, mode: str = "paper") -> dict:
         rows = list(reader)
     if index < 0 or index >= len(rows):
         return {"error": f"Invalid index {index}"}
-    old_price = rows[index]["price"]
-    rows[index]["price"] = str(round(new_price, 4))
+
+    old_price = float(rows[index]["price"])
+    old_shares = int(rows[index]["shares"])
+
+    if new_price is not None:
+        rows[index]["price"] = str(round(new_price, 4))
+    if new_shares is not None:
+        if new_shares <= 0 or new_shares % 100 != 0:
+            return {"error": f"Shares must be a positive multiple of 100, got {new_shares}"}
+        rows[index]["shares"] = str(new_shares)
+
+    price = float(rows[index]["price"])
     shares = int(rows[index]["shares"])
-    rows[index]["friction_cost"] = str(round(shares * new_price * _one_way_friction_rate(rows[index]["ticker"]), 2))
+    rows[index]["friction_cost"] = str(round(shares * price * _one_way_friction_rate(rows[index]["ticker"]), 2))
+
     tmp = path.with_suffix(".tmp")
     with open(tmp, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=fieldnames)
@@ -459,7 +471,11 @@ def edit_trade(index: int, new_price: float, mode: str = "paper") -> dict:
         w.writerows(rows)
     os.replace(tmp, path)
     rebuild_from_trades(mode)
-    return {"updated": True, "old_price": float(old_price), "new_price": new_price}
+    return {
+        "updated": True,
+        "old_price": old_price, "new_price": price,
+        "old_shares": old_shares, "new_shares": shares,
+    }
 
 
 def export_broker_csv(mode: str = "paper", output_path: str = None) -> str:

@@ -468,33 +468,69 @@ async function loadHistory() {
   let rows = "";
   for (const t of [...trades].reverse()) {
     const actionCls = t.action==="buy" ? "green" : t.action==="exit"||t.action==="sell" ? "red" : "orange";
-    rows += `<tr>
+    rows += `<tr id="hrow-${t.index}">
       <td class="muted">${t.index + 1}</td>
       <td>${t.date}</td>
       <td class="ticker">${t.ticker}</td>
       <td class="${actionCls} fw">${t.action.toUpperCase()}</td>
       <td class="num">${parseInt(t.shares).toLocaleString()}</td>
-      <td class="num" id="hp-${t.index}">${parseFloat(t.price).toFixed(2)}</td>
+      <td class="num">${parseFloat(t.price).toFixed(2)}</td>
       <td class="num muted">${parseFloat(t.friction_cost||0).toFixed(2)}</td>
-      <td><button class="btn-hist-edit" onclick="editTradePrompt(${t.index}, ${t.price})">✏️</button></td>
-      <td><button class="btn-hist-del" onclick="deleteTrade(${t.index}, '${t.ticker}', '${t.action}')">🗑️</button></td>
+      <td><button class="btn-hist-edit" onclick="startEditRow(${t.index},${t.shares},${t.price})">✏️ Edit</button></td>
+      <td><button class="btn-hist-del" onclick="deleteTrade(${t.index},'${t.ticker}','${t.action}')">🗑️</button></td>
     </tr>`;
   }
   $("hist-tbody").innerHTML = rows;
 }
 
-async function editTradePrompt(index, currentPrice) {
-  const newPrice = prompt(`Edit fill price for trade #${index + 1}\nCurrent: ${parseFloat(currentPrice).toFixed(2)} THB\n\nEnter new fill price:`);
-  if (!newPrice) return;
-  const price = parseFloat(newPrice);
-  if (!price || price <= 0) { alert("Invalid price."); return; }
+function startEditRow(index, currentShares, currentPrice) {
+  const row = document.getElementById(`hrow-${index}`);
+  if (!row) return;
+  row.innerHTML = `
+    <td class="muted">${index + 1}</td>
+    <td colspan="2" class="edit-label">✏️ Editing #${index + 1}</td>
+    <td></td>
+    <td><label class="edit-lbl">Shares</label>
+        <input class="hist-edit-input" id="he-sh-${index}" type="number" step="100" min="100" value="${currentShares}"></td>
+    <td><label class="edit-lbl">Price (THB)</label>
+        <input class="hist-edit-input" id="he-pr-${index}" type="number" step="0.01" min="0.01" value="${parseFloat(currentPrice).toFixed(2)}"></td>
+    <td></td>
+    <td><button class="btn-hist-save" onclick="saveEditRow(${index},${currentShares},${currentPrice})">✓ Save</button></td>
+    <td><button class="btn-hist-cancel" onclick="loadHistory()">✕</button></td>`;
+  document.getElementById(`he-sh-${index}`)?.select();
+}
+
+async function saveEditRow(index, oldShares, oldPrice) {
+  const newSharesEl = document.getElementById(`he-sh-${index}`);
+  const newPriceEl  = document.getElementById(`he-pr-${index}`);
+  const newShares = parseInt(newSharesEl?.value);
+  const newPrice  = parseFloat(newPriceEl?.value);
+
+  if (!newShares || newShares <= 0 || newShares % 100 !== 0) {
+    newSharesEl?.classList.add("input-err");
+    alert("Shares must be a positive multiple of 100 (SET board lot)."); return;
+  }
+  if (!newPrice || newPrice <= 0) {
+    newPriceEl?.classList.add("input-err");
+    alert("Fill price must be a positive number."); return;
+  }
+
+  const body = {};
+  if (newShares !== oldShares) body.shares = newShares;
+  if (Math.abs(newPrice - oldPrice) > 0.0001) body.price = newPrice;
+  if (Object.keys(body).length === 0) { loadHistory(); return; }
+
   const r = await fetch(`/api/trades/history/${index}`, {
     method: "PATCH", headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({price})
+    body: JSON.stringify(body)
   });
   const res = await r.json();
   if (!r.ok) { alert("Error: " + res.error); return; }
-  alert(`Trade #${index + 1} updated: ${res.old_price} → ${res.new_price} THB. Portfolio recalculated.`);
+
+  const parts = [];
+  if (res.old_shares !== res.new_shares) parts.push(`shares ${res.old_shares} → ${res.new_shares}`);
+  if (Math.abs(res.old_price - res.new_price) > 0.001) parts.push(`price ${res.old_price.toFixed(2)} → ${res.new_price.toFixed(2)}`);
+  alert(`Trade #${index + 1} updated: ${parts.join(", ")}. Portfolio recalculated.`);
   loadHistory();
   refresh();
 }
