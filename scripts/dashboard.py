@@ -127,7 +127,20 @@ def api_forecasts_compare():
         result.append({**f, "delta_exp_ret": delta_exp,
                         "prev_confidence": p.get("confidence"), "flag_changed": flag_change})
     result.sort(key=lambda x: x["rank_score"], reverse=True)
+
+    # Find the actual close data date (last row of any raw parquet)
+    data_date = None
+    try:
+        from kth.data.loader import load_cached
+        sample = next(iter(today_fc.keys()), None)
+        if sample:
+            df = load_cached(sample)
+            data_date = str(df["timestamps"].iloc[-1].date())
+    except Exception:
+        pass
+
     return jsonify({"today": today_date, "prev": prev_date,
+                    "data_date": data_date,
                     "count": len(result), "forecasts": result})
 
 

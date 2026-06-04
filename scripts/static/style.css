@@ -71,6 +71,7 @@ tr:hover { background: #f8f9ff; }
 .flag-dn  { font-size: 0.75em; color: #c62828; cursor: help; }
 .compare-note { font-size: 0.7em; color: var(--muted); margin: 2px 0 0; padding-left: 4px; }
 th[title] { cursor: help; border-bottom: 1px dotted #90a4ae; }
+.data-date-badge { font-size: 0.65em; font-weight: 400; color: #1565C0; background: #e3f2fd; border-radius: 4px; padding: 2px 8px; margin-left: 8px; vertical-align: middle; white-space: nowrap; }
 .col-legend { font-size: 0.7em; color: #555; background: #f5f7fa; border-left: 3px solid #90a4ae; padding: 5px 10px; margin: 4px 0 2px; border-radius: 0 4px 4px 0; line-height: 1.8; }
 .row-exit   { border-left: 3px solid var(--red); }
 .row-reduce { border-left: 3px solid var(--orange); }

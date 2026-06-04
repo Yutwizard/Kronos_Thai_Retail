@@ -76,13 +76,13 @@
         <div id="positions-body"></div>
       </section>
       <section id="morning-panel" class="panel">
-        <h2>Morning Brief — Top 10</h2>
+        <h2>Morning Brief — Top 10 <span id="morning-data-badge" class="data-date-badge"></span></h2>
         <div id="morning-body"></div>
       </section>
     </div>
 
     <section id="ranking-panel" class="panel collapsible">
-      <h2 onclick="toggleRanking()">Full Ranking (49 tickers) <span id="rank-toggle">▼</span></h2>
+      <h2 onclick="toggleRanking()">Full Ranking (49 tickers) <span id="rank-toggle">▼</span> <span id="ranking-data-badge" class="data-date-badge"></span></h2>
       <div id="ranking-search"><input type="text" placeholder="Search ticker..." oninput="filterRanking(this.value)"></div>
       <div id="ranking-body"></div>
     </section>
@@ -329,6 +329,15 @@ function updateForecasts(fc) {
   html += LEGEND_MORNING;
   if (hasDelta && fc.prev) html += '<p class="compare-note">Δ compared to forecast from ' + fc.prev + ' — hover column headers (?) for definitions</p>';
   $("morning-body").innerHTML = html;
+
+  // Data date badge — shown in both section headings
+  if (fc.data_date) {
+    const badge = `📅 Data: ${fc.data_date}`;
+    const el1 = $("morning-data-badge");
+    const el2 = $("ranking-data-badge");
+    if (el1) el1.textContent = badge;
+    if (el2) el2.textContent = badge;
+  }
 
   let rankHtml = `<table><thead><tr>
     <th title="${COL.rank}">#</th>
