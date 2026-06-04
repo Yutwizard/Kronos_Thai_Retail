@@ -48,6 +48,7 @@ Defined in `kth/data/universe.py`. 100 tickers across 9 asset classes:
 - ✅ **Daily decision report** (`notebooks/05_decision_report.ipynb`): 3 toggleable views (morning/trader/quant), 22 columns, 100 tickers.
 - ✅ **User manual** (`docs/user-manual.md` — text, `docs/user-manual.html` — interactive with charts): complete methodology, usage, cautions, and results.
 - ✅ **Monthly walkthrough** (`docs/monthly-walkthrough.md` — text, `docs/monthly-walkthrough.html` — visual with timeline): 21-day simulation with real allocations, exits, and rebalancing.
+- 🔨 **Google Suite dashboard** (`google_suite/`): replacing the local Flask dashboard with a zero-cost Google-hosted alternative — Colab daily pipeline + Google Sheets data store + Apps Script web app. See [spec](docs/superpowers/specs/2026-06-04-google-suite-dashboard-design.md) and [implementation plan](docs/superpowers/plans/2026-06-04-google-suite-implementation-plan.md).
 
 ## Quick start
 
@@ -71,15 +72,29 @@ The notebook downloads ~10 years of daily OHLCV for all 100 tickers (~5–10 min
 ```
 kronos-th/
 ├── kth/
-│   └── data/
-│       ├── universe.py      # 100-ticker universe + per-class FRICTION costs
-│       └── loader.py        # yfinance → Kronos schema, caching, quality checks
+│   ├── data/
+│   │   ├── universe.py      # 100-ticker universe + per-class FRICTION costs
+│   │   └── loader.py        # yfinance → Kronos schema, caching, quality checks
+│   ├── models/              # KronosTH wrapper + fine-tune
+│   ├── backtest/            # walk-forward, metrics, strategy
+│   └── trading/             # portfolio engine, trade_gen, paper trading
+├── google_suite/            # 🔨 Google Suite dashboard (in progress)
+│   ├── README.md            # setup guide
+│   ├── kronos_daily_pipeline.ipynb  # Colab notebook (19 cells)
+│   ├── migrate_to_sheets.py # one-time data migration
+│   └── apps_script/
+│       ├── Code.gs          # Apps Script backend
+│       └── Index.html       # 5-tab web app SPA
+├── scripts/
+│   └── dashboard.py         # Flask dashboard (superseded — kept for reference)
 ├── notebooks/
 │   └── 01_data_layer.ipynb  # Colab: verify real yfinance access
 ├── data/
 │   ├── raw/                 # cached parquet files (one per ticker)
-│   └── processed/           # train/val/test splits (later)
-├── configs/                 # YAML configs for fine-tuning (later)
+│   └── backtest_results/    # walk-forward results per run
+├── docs/
+│   ├── superpowers/specs/   # approved design specs
+│   └── superpowers/plans/   # implementation plans
 ├── verify_data_layer.py     # offline test runner
 └── requirements.txt
 ```

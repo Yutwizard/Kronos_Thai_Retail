@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kronos-TH Portfolio</title>
+<style>
+:root {
+  --green:           #34a853;
+  --yellow:          #fbbc04;
+  --red:             #ea4335;
+  --dark-red:        #b31412;
+  --blue:            #4285f4;
+  --gray:            #80868b;
+  --pnl-pos-bg:      #e6f4ea;
+  --pnl-neg-bg:      #fce8e6;
+  --bg:              #f1f3f4;
+  --card:            #ffffff;
+  --border:          #dadce0;
+  --text:            #202124;
+  --text-muted:      #5f6368;
+  --font:            'Google Sans', Arial, sans-serif;
+  --font-mono:       'Roboto Mono', monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); }
+.banner { padding: 10px 16px; border-radius: 6px; margin-bottom: 12px; font-size: 0.9rem; }
+.banner-green  { background: #e6f4ea; color: #137333; border-left: 4px solid var(--green); }
+.banner-yellow { background: #fef7e0; color: #b06000; border-left: 4px solid var(--yellow); }
+.banner-red    { background: #fce8e6; color: #c5221f; border-left: 4px solid var(--red); }
+.banner-gray   { background: #f1f3f4; color: var(--text-muted); border-left: 4px solid var(--gray); }
+#tab-bar { display: flex; gap: 4px; background: var(--card);
+           border-bottom: 1px solid var(--border); padding: 0 16px; }
+.tab-btn { padding: 12px 16px; border: none; background: none; cursor: pointer;
+           font-family: var(--font); font-size: 0.9rem; color: var(--text-muted);
+           border-bottom: 3px solid transparent; }
+.tab-btn.active { color: var(--blue); border-bottom-color: var(--blue); }
+#content { padding: 16px; }
+.panel { display: none; }
+.panel.active { display: block; }
+.cards { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.card-primary { flex: 2; min-width: 200px; background: var(--card);
+                border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+.card { flex: 1; min-width: 120px; background: var(--card);
+        border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
+.card-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;
+              letter-spacing: 0.5px; margin-bottom: 6px; }
+.card-value { font-size: 1.5rem; font-family: var(--font-mono); font-weight: 500; }
+.card-primary .card-value { font-size: 2rem; }
+.card-sub { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
+.table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+th, td { padding: 8px 12px; border-bottom: 1px solid var(--border); text-align: left; }
+th { background: #f8f9fa; font-weight: 500; cursor: pointer; user-select: none; white-space: nowrap; }
+th:hover { background: #e8eaed; }
+th.sorted-asc::after  { content: ' ▲'; font-size: 0.7rem; }
+th.sorted-desc::after { content: ' ▼'; font-size: 0.7rem; }
+td.num { font-family: var(--font-mono); text-align: right; }
+tr.cancelled td { text-decoration: line-through; color: var(--gray); }
+tr:hover { background: #f8f9fa; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 12px;
+         font-size: 0.75rem; font-weight: 500; }
+.badge-green  { background: #e6f4ea; color: #137333; }
+.badge-yellow { background: #fef7e0; color: #b06000; }
+.badge-red    { background: #fce8e6; color: #c5221f; }
+.badge-gray   { background: #f1f3f4; color: var(--gray); }
+.regime { display: inline-flex; align-items: center; gap: 8px;
+          padding: 6px 14px; border-radius: 20px; font-weight: 600; font-size: 1rem; }
+.regime-BULL    { background: #e6f4ea; color: #137333; }
+.regime-NEUTRAL { background: #fef7e0; color: #b06000; }
+.regime-BEAR    { background: #fce8e6; color: #c5221f; }
+.regime-EXIT    { background: #f4c7c3; color: #b31412; }
+.sub-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+.sub-tab { padding: 6px 14px; border: 1px solid var(--border); border-radius: 16px;
+           background: none; cursor: pointer; font-size: 0.85rem; }
+.sub-tab.active { background: var(--blue); color: white; border-color: var(--blue); }
+#spinner { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+           font-size: 1.2rem; color: var(--text-muted); }
+.empty-state { padding: 40px; text-align: center; color: var(--text-muted); }
+@media (max-width: 600px) {
+  .cards { flex-direction: column; }
+  .card-primary, .card { flex: none; width: 100%; }
+  .tab-btn { font-size: 0.75rem; padding: 8px 8px; }
+}
+</style>
+</head>
+<body>
+
+<div id="status-banner"></div>
+
+<nav id="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('dashboard')">Dashboard</button>
+  <button class="tab-btn"        onclick="switchTab('positions')">Positions</button>
+  <button class="tab-btn"        onclick="switchTab('tradelog')">Trade Log</button>
+  <button class="tab-btn"        onclick="switchTab('forecasts')">Forecasts</button>
+  <button class="tab-btn"        onclick="switchTab('ticket')">Trade Ticket</button>
+</nav>
+
+<main id="content">
+  <div id="panel-dashboard" class="panel active"></div>
+  <div id="panel-positions" class="panel"></div>
+  <div id="panel-tradelog"  class="panel"></div>
+  <div id="panel-forecasts" class="panel"></div>
+  <div id="panel-ticket"    class="panel"></div>
+</main>
+
+<div id="spinner">Loading</div>
+
+<script src="https://www.gstatic.com/charts/loader.js"></script>
+
+<script>
+var fmt = {
+  thb:    v => '฿' + Number(v).toLocaleString('th-TH',
+                  {minimumFractionDigits:2, maximumFractionDigits:2}),
+  thbM:   v => Math.abs(v) >= 1e6
+                ? '฿' + (v/1e6).toFixed(2) + 'M'
+                : '฿' + Number(v).toLocaleString('th-TH',
+                    {minimumFractionDigits:0, maximumFractionDigits:0}),
+  pct:    v => (v == null ? '—' : (v >= 0 ? '+' : '') + (v * 100).toFixed(2) + '%'),
+  ratio:  v => (v == null ? '—' : Number(v).toFixed(2)),
+  date:   v => {
+    if (!v) return '—';
+    var d = new Date(String(v).length === 10 ? v + 'T12:00:00' : v);
+    return d.toLocaleDateString('en-GB',
+      {day:'2-digit', month:'short', year:'numeric'});
+  },
+  shares: v => Number(v).toLocaleString(),
+};
+
+var MOCK = {
+  pipeline:    { status: 'completed', last_run_timestamp: '2026-06-04T08:15:00', error_message: null },
+  portfolio:   [{ cash: 350000, initial_capital: 500000, forecast_date: '2026-06-04' }],
+  equityCurve: [
+    { date: '2026-05-01', equity: 500000, cash: 500000, invested: 0 },
+    { date: '2026-05-15', equity: 511200, cash: 355000, invested: 156200 },
+    { date: '2026-06-04', equity: 523400, cash: 350000, invested: 173400 },
+  ],
+  positions:   [
+    { ticker: 'PTT.BK', shares: 1000, avg_cost: 33.50, entry_date: '2026-05-15',
+      sector: 'Energy', current_price: 35.00, pnl: 1500, pnl_pct: 0.0448, pct_to_stoploss: 0.1448 },
+    { ticker: 'AOT.BK', shares: 500, avg_cost: 58.00, entry_date: '2026-05-20',
+      sector: 'Transport', current_price: 56.50, pnl: -750, pnl_pct: -0.0259, pct_to_stoploss: 0.0741 },
+  ],
+  tradeLog: [
+    { timestamp: '2026-05-15', ticker: 'PTT.BK', action: 'buy', shares: 1000,
+      price: 33.50, rationale: 'rank#1 net_ret=+3.2%', id: '20260515_PTT.BK_buy_a1b2', ref_id: null },
+    { timestamp: '2026-05-20', ticker: 'AOT.BK', action: 'buy', shares: 500,
+      price: 58.00, rationale: 'rank#2 net_ret=+2.1%', id: '20260520_AOT.BK_buy_c3d4', ref_id: null },
+  ],
+  forecasts: [
+    { ticker: 'PTT.BK',    rank_score: 3.2, exp_ret: 0.045, band_width: 0.08,
+      confidence: 'green',  net_return: 0.039, p50: 36.75, sector: 'Energy' },
+    { ticker: 'ADVANC.BK', rank_score: 2.1, exp_ret: 0.031, band_width: 0.18,
+      confidence: 'yellow', net_return: 0.025, p50: 225.0, sector: 'Telecom' },
+    { ticker: 'KBANK.BK',  rank_score: 0.8, exp_ret: 0.012, band_width: 0.35,
+      confidence: 'red',    net_return: 0.006, p50: 142.0, sector: 'Finance' },
+  ],
+  forecastHistory: [
+    { date: '2026-06-03', ticker: 'PTT.BK', predicted_direction: 'up',
+      predicted_return: 0.032, entry_close: 34.00, actual_return: 0.029, was_correct: 1 },
+    { date: '2026-06-04', ticker: 'PTT.BK', predicted_direction: 'up',
+      predicted_return: 0.045, entry_close: 34.99, actual_return: null, was_correct: null },
+  ],
+  ticket: [
+    { ticker: 'ADVANC.BK', action: 'buy', shares: 500, est_cost_thb: 113000,
+      rationale: 'rank#1 net_ret=+2.5%', sector: 'Telecom', confidence: 'yellow',
+      filled_price: null, filled_shares: null, fill_timestamp: null },
+  ],
+  riskMetrics: [
+    { date: '2026-06-04', trailing_sharpe_12w: 1.42, max_drawdown_pct: -0.08,
+      allocation_band: 'BULL', allocation_pct: 0.15, is_frozen: 0,
+      mtd_pnl_pct: 0.047, friction_ytd_pct: 0.008, calmar_ratio: 3.25,
+      sortino_ratio: 1.85, drawdown_velocity: 0.002 },
+  ],
+};
+
+function switchTab(name) {
+  document.querySelectorAll('.panel').forEach(function(p) { p.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('panel-' + name).classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(function(b) {
+    if (b.getAttribute('onclick').indexOf("'" + name + "'") >= 0) b.classList.add('active');
+  });
+}
+
+function showSpinner() { document.getElementById('spinner').style.display = 'block'; }
+function hideSpinner() { document.getElementById('spinner').style.display = 'none'; }
+
+var EMPTY_STATES = {
+  dashboard:  'Run the Colab pipeline to see your portfolio.',
+  positions:  'No open positions. Check the <strong>Trade Ticket</strong> tab for today\'s recommendations.',
+  tradelog:   'No trades recorded yet. Execute your first Trade Ticket to start the audit trail.',
+  forecasts:  'No forecasts available. Run the pipeline first.',
+  ticket:     'No recommendations today — either the pipeline hasn\'t run, or no signals passed the 3-filter rule.',
+};
+function showEmptyState(panelName) {
+  document.getElementById('panel-' + panelName).innerHTML =
+    '<div class="empty-state">' + EMPTY_STATES[panelName] + '</div>';
+}
+
+function showError(err) {
+  hideSpinner();
+  document.getElementById('status-banner').innerHTML =
+    '<div class="banner banner-red">App error: ' + String(err) + '</div>';
+}
+
+function renderAll(d) {
+  renderPipelineStatus(d.pipeline);
+  renderDashboard(d.portfolio, d.equityCurve, d.riskMetrics, d.ticket);
+  renderPositions(d.positions, d.riskMetrics, d.portfolio);
+  renderTradeLog(d.tradeLog);
+  renderForecasts(d.forecasts, d.forecastHistory);
+  renderTicket(d.ticket);
+}
+
+function renderPipelineStatus(pipeline) {
+  var el = document.getElementById('status-banner');
+  if (!pipeline) {
+    el.innerHTML = '<div class="banner banner-gray">No data yet. Run the Colab pipeline first.</div>';
+    return;
+  }
+  var hoursAgo = (Date.now() - new Date(pipeline.last_run_timestamp).getTime()) / 3600000;
+  var html;
+  if (pipeline.status === 'running') {
+    html = '<div class="banner banner-yellow">Pipeline running… please wait and refresh in a few minutes.</div>';
+  } else if (pipeline.status === 'failed') {
+    html = '<div class="banner banner-red">Pipeline failed: '
+         + (pipeline.error_message || 'unknown error') + ' ('
+         + fmt.date(pipeline.last_run_timestamp) + ')</div>';
+  } else if (hoursAgo > 24) {
+    html = '<div class="banner banner-yellow">Pipeline last ran '
+         + Math.round(hoursAgo) + ' hours ago. Data may be stale. Run the pipeline to refresh.</div>';
+  } else {
+    html = '<div class="banner banner-green">Last updated: '
+         + pipeline.last_run_timestamp.replace('T', ' ').substring(0, 16) + ' BKK</div>';
+  }
+  el.innerHTML = html;
+}
+
+function renderDashboard(portfolio, equityCurve, riskMetrics, ticket) {
+  var panel = document.getElementById('panel-dashboard');
+  if (!portfolio.length) { showEmptyState('dashboard'); return; }
+
+  var pf     = portfolio[0];
+  var lastRm = riskMetrics.length ? riskMetrics[riskMetrics.length - 1] : null;
+  var equity = (pf.cash || 0) + (lastRm ? (lastRm.equity - lastRm.cash) : 0);
+  if (lastRm && lastRm.equity) equity = lastRm.equity;
+
+  var confirmed = ticket ? ticket.filter(function(r) { return r.filled_price !== null; }).length : 0;
+  var pending   = ticket ? ticket.filter(function(r) { return r.filled_price === null; }).length : 0;
+  var fillsHtml = pending > 0
+    ? '<span style="color:var(--yellow)">' + confirmed + ' confirmed / ' + pending + ' pending fills</span>'
+    : (confirmed > 0 ? '<span style="color:var(--green)">All fills confirmed</span>' : '');
+
+  var band = lastRm ? lastRm.allocation_band : 'NEUTRAL';
+  var pctPerPos = lastRm ? (lastRm.allocation_pct * 100).toFixed(0) + '% per position' : '';
+  var regimeHtml = '<span class="regime regime-' + band + '">' + band + '</span>'
+                 + ' <span style="font-size:0.85rem;color:var(--text-muted)">' + pctPerPos + '</span>';
+
+  panel.innerHTML =
+    '<div class="cards">' +
+      '<div class="card-primary">' +
+        '<div class="card-label">Total Capital</div>' +
+        '<div class="card-value">' + fmt.thbM(equity) + '</div>' +
+        '<div class="card-sub">Cash: ' + fmt.thb(pf.cash) + ' | ' + fillsHtml + '</div>' +
+      '</div>' +
+      _heroCard('P&L MTD',    lastRm ? fmt.pct(lastRm.mtd_pnl_pct) : '—',
+                lastRm && lastRm.mtd_pnl_pct > 0 ? 'var(--pnl-pos-bg)' : lastRm && lastRm.mtd_pnl_pct < 0 ? 'var(--pnl-neg-bg)' : '') +
+      _heroCard('Sharpe 12w', lastRm ? fmt.ratio(lastRm.trailing_sharpe_12w) : '—', '') +
+      _heroCard('Max DD',     lastRm ? fmt.pct(lastRm.max_drawdown_pct) : '—',
+                lastRm && lastRm.max_drawdown_pct < -0.15 ? 'var(--pnl-neg-bg)' : '') +
+      _heroCard('Friction YTD', lastRm ? fmt.pct(lastRm.friction_ytd_pct) : '—', '') +
+    '</div>' +
+    '<div style="margin:12px 0">' + regimeHtml + '</div>' +
+    '<p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:16px">' +
+      'Backtest 2022-2024: CAGR +31.4%, Sharpe 1.40, Alpha vs. EW +29.9%/yr. ' +
+      'Model is trend-following; alpha was lower in the 2023 bull market.' +
+    '</p>' +
+    '<div id="equity-chart" style="min-height:280px"></div>';
+
+  setTimeout(function() { _drawEquityCurve(equityCurve, pf.initial_capital); }, 0);
+}
+
+function _heroCard(label, value, bgColor) {
+  return '<div class="card"' + (bgColor ? ' style="background:' + bgColor + '"' : '') + '>' +
+    '<div class="card-label">' + label + '</div>' +
+    '<div class="card-value">' + value + '</div>' +
+    '</div>';
+}
+
+function _drawEquityCurve(equityCurve, initialCapital) {
+  if (!equityCurve.length) return;
+  var dt = new google.visualization.DataTable();
+  dt.addColumn('string', 'Date');
+  dt.addColumn('number', 'Portfolio');
+  dt.addColumn('number', 'Initial Capital');
+  equityCurve.forEach(function(r) {
+    dt.addRow([fmt.date(r.date), r.equity, initialCapital]);
+  });
+  var chart = new google.visualization.LineChart(
+    document.getElementById('equity-chart'));
+  chart.draw(dt, {
+    height: 280,
+    legend: { position: 'bottom' },
+    colors: ['#4285f4', '#dadce0'],
+    series: { 1: { lineDashStyle: [4, 4] } },
+    vAxis:  { format: '฿#,##0', gridlines: { count: 4 } },
+    hAxis:  { slantedText: true, slantedTextAngle: 30 },
+    chartArea: { width: '88%', height: '75%' },
+  });
+}
+
+function renderPositions(positions, riskMetrics, portfolio) {
+  var panel = document.getElementById('panel-positions');
+  var lastRm = riskMetrics.length ? riskMetrics[riskMetrics.length - 1] : null;
+  var pf     = portfolio.length ? portfolio[0] : null;
+
+  var frozenHtml = (lastRm && lastRm.is_frozen)
+    ? '<div class="banner banner-red">Portfolio frozen — drawdown limit reached. ' +
+      'Liquidate all positions and re-run Cell 4 to resume.</div>'
+    : '';
+  var asOf = pf ? '<p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:8px">' +
+                  'Positions as of ' + fmt.date(pf.forecast_date) + '</p>' : '';
+
+  if (!positions.length) {
+    panel.innerHTML = frozenHtml + asOf + '<div class="empty-state">' + EMPTY_STATES.positions + '</div>';
+    return;
+  }
+
+  var rows = positions.map(function(p) {
+    var pctStyle = p.pnl_pct > 0 ? 'color:var(--green)' : p.pnl_pct < 0 ? 'color:var(--red)' : '';
+    var stopStyle = p.pct_to_stoploss < 0.03 ? 'background:var(--pnl-neg-bg);color:var(--red)' : '';
+    return '<tr>' +
+      _td(p.ticker) +
+      _tdNum(fmt.shares(p.shares), p.shares) +
+      _tdNum(fmt.thb(p.avg_cost), p.avg_cost) +
+      _td(fmt.date(p.entry_date)) +
+      _td(p.sector || '—') +
+      _tdNum(fmt.thb(p.current_price), p.current_price) +
+      '<td class="num" style="' + pctStyle + '" data-val="' + p.pnl_pct + '">' + fmt.pct(p.pnl_pct) + '</td>' +
+      '<td class="num" style="' + stopStyle + '" data-val="' + p.pct_to_stoploss + '">' + fmt.pct(p.pct_to_stoploss) + '</td>' +
+      '</tr>';
+  }).join('');
+
+  panel.innerHTML = frozenHtml + asOf +
+    '<div class="table-wrapper">' +
+    '<table id="tbl-positions">' +
+    '<thead><tr>' +
+      '<th>Ticker</th><th>Shares</th><th>Avg Cost</th><th>Entry Date</th>' +
+      '<th>Sector</th><th>Current Price</th><th>P&L %</th><th>% to Stop</th>' +
+    '</tr></thead>' +
+    '<tbody>' + rows + '</tbody>' +
+    '</table></div>';
+  _makeSortable('tbl-positions');
+}
+
+function renderTradeLog(tradeLog) {
+  var panel = document.getElementById('panel-tradelog');
+  if (!tradeLog.length) { showEmptyState('tradelog'); return; }
+
+  var cancelledIds = {};
+  tradeLog.forEach(function(r) {
+    if (r.action === 'CANCEL' && r.ref_id) cancelledIds[r.ref_id] = true;
+  });
+
+  var rows = tradeLog.map(function(r) {
+    var isCancel    = (r.action === 'CANCEL');
+    var isCancelled = cancelledIds[r.id];
+    var actionCell  = isCancel
+      ? 'cancels ' + (r.ref_id || '')
+      : r.action;
+    var rowClass = (isCancel || isCancelled) ? ' class="cancelled"' : '';
+    return '<tr' + rowClass + '>' +
+      _td(fmt.date(r.timestamp)) +
+      _td(r.ticker) +
+      '<td>' + actionCell + '</td>' +
+      _tdNum(fmt.shares(r.shares), r.shares) +
+      _tdNum(r.price != null ? fmt.thb(r.price) : '—', r.price) +
+      _td(r.rationale) +
+      '</tr>';
+  }).join('');
+
+  panel.innerHTML =
+    '<div class="table-wrapper">' +
+    '<table id="tbl-tradelog">' +
+    '<thead><tr>' +
+      '<th>Date</th><th>Ticker</th><th>Action</th>' +
+      '<th>Shares</th><th>Price</th><th>Rationale</th>' +
+    '</tr></thead>' +
+    '<tbody>' + rows + '</tbody>' +
+    '</table></div>' +
+    '<p style="font-size:0.8rem;color:var(--text-muted);margin-top:8px">' +
+    'CANCEL rows only update this display — also correct the Portfolio sheet cash/positions manually.' +
+    '</p>';
+  _makeSortable('tbl-tradelog');
+}
+
+function renderForecasts(forecasts, forecastHistory) {
+  var panel = document.getElementById('panel-forecasts');
+  if (!forecasts.length) { showEmptyState('forecasts'); return; }
+
+  function confBadge(c) {
+    var cls = c === 'green' ? 'badge-green' : c === 'yellow' ? 'badge-yellow' : 'badge-red';
+    var tip = c === 'green' ? 'band_width <= 10%' : c === 'yellow' ? 'band_width 10-30%' : 'band_width > 30%';
+    return '<span class="badge ' + cls + '" title="' + tip + '">' + c + '</span>';
+  }
+
+  var fcRows = forecasts.map(function(r) {
+    return '<tr>' +
+      _td(r.ticker) +
+      _tdNum(fmt.ratio(r.rank_score), r.rank_score) +
+      _tdNum(fmt.pct(r.exp_ret), r.exp_ret) +
+      '<td>' + confBadge(r.confidence) + '</td>' +
+      _tdNum(fmt.pct(r.net_return), r.net_return) +
+      _tdNum(r.p50 != null ? fmt.thb(r.p50) : '—', r.p50) +
+      _td(r.sector) +
+    '</tr>';
+  }).join('');
+
+  var resolved = (forecastHistory || []).filter(function(r) { return r.actual_return !== null; });
+  var correct  = resolved.filter(function(r) { return r.was_correct === 1; }).length;
+  var accuracyText = resolved.length
+    ? correct + ' of ' + resolved.length + ' correct (' +
+      Math.round(correct / resolved.length * 100) + '%)'
+    : 'No resolved predictions yet.';
+
+  var fhRows = (forecastHistory || []).map(function(r) {
+    var correctCell = r.was_correct === 1
+      ? '<td><span class="badge badge-green">correct</span></td>'
+      : r.was_correct === 0
+        ? '<td><span class="badge badge-red">wrong</span></td>'
+        : '<td><span class="badge badge-gray">pending</span></td>';
+    return '<tr>' +
+      _td(fmt.date(r.date)) + _td(r.ticker) + _td(r.predicted_direction) +
+      _tdNum(fmt.pct(r.predicted_return), r.predicted_return) +
+      _tdNum(r.actual_return != null ? fmt.pct(r.actual_return) : '—', r.actual_return) +
+      correctCell + '</tr>';
+  }).join('');
+
+  panel.innerHTML =
+    '<div class="sub-tabs">' +
+      '<button class="sub-tab active" id="st-fc"  onclick="showSubTab(\'fc\')">Forecasts</button>' +
+      '<button class="sub-tab"        id="st-fh"  onclick="showSubTab(\'fh\')">Accuracy History</button>' +
+    '</div>' +
+    '<div id="sub-fc">' +
+      '<div class="table-wrapper">' +
+      '<table id="tbl-forecasts">' +
+      '<thead><tr>' +
+        '<th>Ticker</th>' +
+        '<th title="Expected return / uncertainty band">Rank Score</th>' +
+        '<th title="Expected 20-day return">Exp Return</th>' +
+        '<th title="Band width: green <=10%, yellow 10-30%, red >30%">Confidence</th>' +
+        '<th title="Expected return minus round-trip friction">Net Return</th>' +
+        '<th title="Median (p50) price forecast">P50 Price</th>' +
+        '<th>Sector</th>' +
+      '</tr></thead>' +
+      '<tbody>' + fcRows + '</tbody>' +
+      '</table></div>' +
+    '</div>' +
+    '<div id="sub-fh" hidden>' +
+      '<p style="margin-bottom:8px;font-size:0.9rem"><strong>Accuracy: </strong>' + accuracyText + '</p>' +
+      '<div class="table-wrapper">' +
+      '<table id="tbl-fh">' +
+      '<thead><tr>' +
+        '<th>Date</th><th>Ticker</th><th>Direction</th>' +
+        '<th>Predicted Return</th><th>Actual Return</th><th>Result</th>' +
+      '</tr></thead>' +
+      '<tbody>' + fhRows + '</tbody>' +
+      '</table></div>' +
+    '</div>';
+
+  _makeSortable('tbl-forecasts');
+  _makeSortable('tbl-fh');
+}
+
+function showSubTab(name) {
+  ['fc','fh'].forEach(function(n) {
+    document.getElementById('sub-' + n).hidden = (n !== name);
+    var btn = document.getElementById('st-' + n);
+    if (btn) btn.classList.toggle('active', n === name);
+  });
+}
+
+function renderTicket(ticket) {
+  var panel  = document.getElementById('panel-ticket');
+  var banner = '<div id="ticket-action-banner"></div>';
+
+  if (!ticket || !ticket.length) {
+    panel.innerHTML = banner + '<div class="empty-state">' + EMPTY_STATES.ticket + '</div>';
+    return;
+  }
+
+  var confirmed = ticket.filter(function(r) { return r.filled_price !== null; }).length;
+  var pending   = ticket.filter(function(r) { return r.filled_price === null; }).length;
+  var actionBanner;
+  if (confirmed === 0 && pending > 0) {
+    actionBanner = '<div class="banner banner-yellow">' +
+      'Step 1: Click "Export CSV" and place these orders at your broker. ' +
+      'Step 2: After orders fill, open the Trade Ticket sheet and enter ' +
+      'actual fill prices in columns 8-10 (filled_price, filled_shares, fill_timestamp).</div>';
+  } else if (confirmed > 0 && pending > 0) {
+    actionBanner = '<div class="banner banner-green">' +
+      confirmed + ' fills confirmed. ' + pending + ' still pending — enter fills in the sheet.</div>';
+  } else if (confirmed > 0 && pending === 0) {
+    actionBanner = '<div class="banner banner-green">' +
+      'All ' + confirmed + ' fills recorded. Portfolio updated on next pipeline run.</div>';
+  } else {
+    actionBanner = '';
+  }
+
+  var hasExits = ticket.some(function(r) { return r.action === 'sell'; });
+  var hasBuys  = ticket.some(function(r) { return r.action === 'buy'; });
+  var t2Html   = (hasExits && hasBuys)
+    ? '<div class="banner banner-yellow">T+2: exit proceeds settle in 2 business days. ' +
+      'Today\'s buys draw from existing cash only.</div>'
+    : '';
+
+  var rows = ticket.map(function(r) {
+    var fillStatus = r.filled_price !== null
+      ? '<span style="color:var(--green)">' + fmt.thb(r.filled_price) + '</span>'
+      : '<span style="color:var(--gray)">pending</span>';
+    return '<tr>' +
+      _td(r.ticker) +
+      '<td><span class="badge ' + (r.action === 'buy' ? 'badge-green' : 'badge-red') + '">' + r.action + '</span></td>' +
+      _tdNum(fmt.shares(r.shares), r.shares) +
+      _tdNum(fmt.thb(r.est_cost_thb), r.est_cost_thb) +
+      _td(r.sector) +
+      '<td>' + (r.confidence ? '<span class="badge badge-' + r.confidence + '">' + r.confidence + '</span>' : '—') + '</td>' +
+      '<td>' + fillStatus + '</td>' +
+      _td(r.rationale) +
+    '</tr>';
+  }).join('');
+
+  panel.innerHTML = actionBanner + t2Html +
+    '<button onclick="exportCsv()" style="margin-bottom:12px;padding:8px 16px;' +
+    'background:var(--blue);color:white;border:none;border-radius:4px;cursor:pointer">' +
+    'Export CSV</button>' +
+    '<button onclick="refreshData()" style="margin:0 0 12px 8px;padding:8px 16px;' +
+    'background:none;color:var(--blue);border:1px solid var(--blue);border-radius:4px;cursor:pointer">' +
+    'Refresh</button>' +
+    '<p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:12px">' +
+    'Execute at next market open (Bangkok time). Prices are previous close estimates.</p>' +
+    '<div class="table-wrapper">' +
+    '<table id="tbl-ticket"><thead><tr>' +
+      '<th>Ticker</th><th>Action</th><th>Shares</th><th>Est. Cost (THB)</th>' +
+      '<th>Sector</th><th>Confidence</th><th>Fill Status</th><th>Rationale</th>' +
+    '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+  _makeSortable('tbl-ticket');
+}
+
+function _makeSortable(tableId) {
+  var table = document.getElementById(tableId);
+  if (!table) return;
+  var headers = table.querySelectorAll('th');
+  var sortCol = -1; var sortAsc = true;
+  headers.forEach(function(th, colIdx) {
+    th.addEventListener('click', function() {
+      var rows = Array.from(table.querySelectorAll('tbody tr'));
+      sortAsc = (sortCol === colIdx) ? !sortAsc : true;
+      sortCol = colIdx;
+      headers.forEach(function(h) { h.classList.remove('sorted-asc','sorted-desc'); });
+      th.classList.add(sortAsc ? 'sorted-asc' : 'sorted-desc');
+      rows.sort(function(a, b) {
+        var av = a.cells[colIdx] ? a.cells[colIdx].dataset.val || a.cells[colIdx].textContent : '';
+        var bv = b.cells[colIdx] ? b.cells[colIdx].dataset.val || b.cells[colIdx].textContent : '';
+        var an = parseFloat(av), bn = parseFloat(bv);
+        var cmp = (!isNaN(an) && !isNaN(bn)) ? an - bn : av.localeCompare(bv);
+        return sortAsc ? cmp : -cmp;
+      });
+      var tbody = table.querySelector('tbody');
+      rows.forEach(function(r) { tbody.appendChild(r); });
+    });
+  });
+}
+
+function _td(v)         { return '<td>' + (v != null ? v : '—') + '</td>'; }
+function _tdNum(disp, raw) { return '<td class="num" data-val="' + raw + '">' + disp + '</td>'; }
+
+google.charts.load('current', {packages: ['corechart']});
+google.charts.setOnLoadCallback(function() {
+  showSpinner();
+  hideSpinner();
+  renderAll(MOCK);
+
+  /*
+  google.script.run
+    .withSuccessHandler(function(d) { hideSpinner(); renderAll(d); })
+    .withFailureHandler(showError)
+    .getAllData();
+  */
+});
+
+function refreshData() {
+  showSpinner();
+  google.script.run
+    .withSuccessHandler(function(d) { hideSpinner(); renderAll(d); })
+    .withFailureHandler(showError)
+    .refreshAllData();
+}
+
+function exportCsv() {
+  google.script.run.withSuccessHandler(function(csv) {
+    var a   = document.createElement('a');
+    a.href  = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+    a.download = 'kronos_ticket.csv';
+    a.click();
+  }).getExportCsv();
+}
+
+</script>
+</body>
+</html>
