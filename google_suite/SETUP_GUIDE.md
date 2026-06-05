@@ -11,7 +11,7 @@
 
 You need the `google_suite/` folder on your computer. This folder contains the notebook, scripts, and code for the dashboard. Here's how to get it:
 
-1. Go to **https://github.com/anomalyco/Kronos_Thai_Retail**
+1. Go to **https://github.com/Yutwizard/Kronos_Thai_Retail**
 2. Click the green **"Code"** button
 3. Click **"Download ZIP"**
 4. Open the downloaded ZIP file on your computer
@@ -105,11 +105,10 @@ Now add the rest of the sheet tabs. For each one:
 7. Press **Ctrl+V** (Windows) or **Cmd+V** (Mac) to paste
 8. Click **Data > Split text to columns > Comma** (same as step 1.4)
 
-**Create tabs 1 through 9 first** — these are the main data sheets:
+**The `Portfolio` tab was already created in Step 1.3.** Skip it here and create tabs 2 through 9:
 
 | # | Tab name | Paste this into A1 |
 |---|----------|--------------------|
-| 1 | `Portfolio` | `cash,initial_capital,mode,model_version,forecast_date` |
 | 2 | `Equity Curve` | `date,equity,cash,invested` |
 | 3 | `Positions` | `ticker,shares,avg_cost,entry_date,sector,current_price,pnl,pnl_pct,pct_to_stoploss` |
 | 4 | `Trade Log` | `timestamp,ticker,action,shares,price,rationale,friction_cost,model_version,id,ref_id` |
@@ -130,13 +129,13 @@ Now add the rest of the sheet tabs. For each one:
 | 14 | `Risk Metrics_staging` | Copy headers from the **Risk Metrics** tab |
 
 For each staging tab (10-14), do this:
-1. Click on the **matching original tab** (e.g. Portfolio for Portfolio_staging)
-2. Click cell **A1**, then drag your mouse across all the header columns to select them
-3. Press **Ctrl+C** (copy)
-4. Click the **staging tab** (e.g. Portfolio_staging)
+1. Click on the **matching original tab** (e.g. click "Portfolio" at the bottom)
+2. Click cell **A1**, then hold **Shift** and click the last header cell (e.g. E1 for Portfolio — 5 columns) to select all headers
+3. Press **Ctrl+C** (Windows) or **Cmd+C** (Mac) to copy
+4. Click the **staging tab** at the bottom (e.g. "Portfolio_staging")
 5. Click cell **A1**
-6. Press **Ctrl+V** (paste)
-7. **Data > Split text to columns > Comma** (if it didn't split automatically)
+6. Press **Ctrl+V** (Windows) or **Cmd+V** (Mac) to paste
+   - The headers will paste as separate cells automatically — no need to split
 
 ### Step 1.6 — Verify you have exactly 14 tabs
 
@@ -218,8 +217,6 @@ Look at the left sidebar of Apps Script. You should see two files listed:
 - `Code.gs` (under "Files")
 - `Index.html` (under "HTML Files")
 
-If you also see a file called `myFunction`, right-click it and choose **Remove**.
-
 ### Step 2.6 — Verify V8 runtime
 
 1. In Apps Script, click **Project Settings** (the gear icon in the left sidebar)
@@ -246,7 +243,7 @@ If you also see a file called `myFunction`, right-click it and choose **Remove**
    - Click **Advanced** (small text near the bottom-left)
    - Click **Go to Kronos-TH Portfolio Dashboard (unsafe)**
    - Click **Allow** (check the boxes and click the blue button)
-10. Go back to the deployment panel
+   - You will be sent back to the deployment panel automatically
 
 ### Step 2.8 — Copy your Web App URL
 
@@ -262,12 +259,11 @@ If you also see a file called `myFunction`, right-click it and choose **Remove**
 2. Paste the Web App URL you just copied
 3. Press **Enter**
 4. You should see a page titled "Kronos-TH Portfolio" with:
-   - A gray banner at the top saying "No data yet" or "last updated"
+   - A **gray banner** at the top saying **"No data yet. Run the Colab pipeline first."**
    - Five tabs: Dashboard, Positions, Trade Log, Forecasts, Trade Ticket
-   - The page is pre-loaded with **mock data** (sample numbers we included so you can see how the dashboard looks — like a furniture store showing a fully-decorated room)
-   - A chart showing the equity curve
+   - All tabs show empty state messages — this is normal! The spreadsheet has no data yet because you haven't run the pipeline.
 
-If you see the page with data, **congratulations — the dashboard is working!**
+If you see the page with the gray banner and five tabs, **congratulations — the dashboard is working!** The "No data yet" message means it's connected to your spreadsheet correctly. Data will appear after you run the Colab pipeline in Phase 4.
 
 **Common problem:** If you see a blank white page, try:
 - Wait 30 seconds and refresh
@@ -337,14 +333,13 @@ The notebook needs the entire `Kronos_Thai_Retail` project folder on your Google
 
 1. Open a new browser tab and go to **https://drive.google.com**
 2. Look at the top-left, click **+ New** (blue button)
-3. Click **File upload** (no, not this one — we need a folder)
-4. Click **+ New** again, then click **Folder upload** (NOT "File upload")
-5. A file picker opens. Find the `Kronos_Thai_Retail` folder on your computer (the one you extracted from the ZIP in "Before You Start")
-6. Select the **entire `Kronos_Thai_Retail` folder** (not just the files inside it) and click **Upload**
+3. A menu appears with several options. Click **Folder upload** (NOT "File upload")
+4. A file picker opens. Find the `Kronos_Thai_Retail` folder on your computer (the one you extracted from the ZIP in "Before You Start")
+5. Select the **entire `Kronos_Thai_Retail` folder** (not just the files inside it) and click **Upload**
    - **Windows:** Click the folder once to highlight it, then click **OK**
    - **Mac:** Click the folder once, then click **Upload**
-7. Wait for the upload to finish — this takes 1-2 minutes depending on your internet
-8. Once done, you should see a folder named `Kronos_Thai_Retail` in your Google Drive
+6. Wait for the upload to finish — this takes 1-2 minutes depending on your internet
+7. Once done, you should see a folder named `Kronos_Thai_Retail` in your Google Drive
 
 **Important:** The notebook assumes this folder is at `/content/drive/MyDrive/Kronos_Thai_Retail`. If you upload it to a subfolder (e.g. inside a "Trading" folder), you'll need to update the path in Step 3.8 below.
 
@@ -425,7 +420,7 @@ Change `500_000.0` to however much money you're starting with (in Thai Baht). Ex
 | 15 | Appends trade log | ~2 sec | Prints "Trade Log: 0 new entries appended." (first run) |
 | 16 | Updates forecast history | ~2 sec | Prints "Forecast History: appended N predictions." |
 | 17 | Sets status to "completed" | ~2 sec | Prints "Pipeline completed in XXXs." |
-| 18 | Sends LINE notification | ~2 sec | Prints "LINE Notify: not configured" (if no token) |
+| 18 | Sends LINE notification | ~2 sec | Prints nothing and skips silently if no LINE token was set |
 | 19 | Prints summary table | ~2 sec | Shows a table with all key metrics |
 
 ### Step 4.3 — Check for errors
@@ -461,53 +456,40 @@ Change `500_000.0` to however much money you're starting with (in Thai Baht). Ex
 
 1. Open the Web App URL you saved in Phase 2.8
 2. Bookmark it in your browser for daily use
+3. You'll see a gray banner: **"No data yet. Run the Colab pipeline first."** — this is expected. The dashboard is connected to your spreadsheet, but the spreadsheet is empty until the pipeline runs. After Phase 4 (First Run), refresh this page and you'll see your real data.
 
-### Step 5.2 — Switch from Mock to Live data
+### Step 5.2 — Confirm dashboard is using live data
 
-The dashboard currently shows **mock data** (sample numbers we pre-loaded). To see your **real data**:
+The dashboard is already set up to load real data from your spreadsheet. No changes needed. To confirm:
 
 1. Go to Apps Script (from Phase 2.1: **Extensions > Apps Script**)
 2. Click on `Index.html` in the left sidebar
-3. Scroll **all the way to the bottom** of the file — look for this section:
+3. Press **Ctrl+F** (Windows) or **Cmd+F** (Mac) to search. Type `renderAll`
+4. You should see **only one result**: `renderAll(d)` inside the `withSuccessHandler` block — like this:
    ```javascript
-   hideSpinner();
-   renderAll(MOCK);
-   
-   /*
+   showSpinner();
    google.script.run
      .withSuccessHandler(function(d) { hideSpinner(); renderAll(d); })
      .withFailureHandler(showError)
      .getAllData();
-   */
    ```
-4. **Tell it to stop using mock data:** Put your cursor at the start of the line `renderAll(MOCK);` and type `//` — this makes the computer ignore that line (called "commenting out"):
-   ```javascript
-   // renderAll(MOCK);     ← "//" means "skip this line"
-   ```
-5. **Tell it to start using live data:** Delete the `/*` before `google.script.run` and delete the `*/` after `.getAllData();`
+   If you see this, the dashboard is already on live data. **You're done — skip to Step 5.3.**
 
-   The `/*` and `*/` are like a light switch — `/*` turns OFF everything between it and `*/`. By removing them, the code inside turns ON.
-
-   Before:
-   ```javascript
-   /*
-   google.script.run
-     ...lines here...
-     .getAllData();
-   */
-   ```
-   After:
-   ```javascript
-   google.script.run
-     ...lines here...
-     .getAllData();
-   ```
-6. Press **Ctrl+S** to save
-7. **Deploy > Manage deployments** (you need to re-deploy every time you change the code)
-8. Click the **pencil (edit) icon** on your deployment
-9. Click **New version**
-10. Click **Deploy**
-11. Refresh your dashboard browser tab — it now shows your REAL portfolio data from the spreadsheet
+5. If instead you see `renderAll(MOCK)`, the dashboard is showing fake sample data. Fix it:
+   - Find these lines near the bottom:
+     ```javascript
+     hideSpinner();
+     renderAll(MOCK);
+     ```
+   - Put `//` in front of each line to disable them:
+     ```javascript
+     // hideSpinner();
+     // renderAll(MOCK);
+     ```
+   - Find the `/*` and `*/` lines around the `google.script.run` block and delete them
+   - Press **Ctrl+S** to save
+   - **Deploy > Manage deployments > Edit (pencil) > New version > Deploy**
+   - Refresh the dashboard
 
 ### Step 5.3 — What each tab shows
 
@@ -552,7 +534,11 @@ Every trading morning (Bangkok time, 7:00-8:30):
 ### Step 6.1 — Run the pipeline
 
 1. Go to **https://colab.research.google.com**
-2. Open your saved `kronos_daily_pipeline` notebook
+2. Open your saved notebook:
+   - Click **File > Open notebook**
+   - Click the **Google Drive** tab
+   - Find `Copy of kronos_daily_pipeline` (or `kronos_daily_pipeline`) and click it
+   - Alternatively, go to **https://drive.google.com**, find the file, and double-click it
 3. Click **Runtime > Run all**
 4. Wait 5-10 minutes for it to complete
 5. Check Cell 19 for the summary table — make sure there are no errors
@@ -630,6 +616,14 @@ If you've been using the Flask dashboard and have existing trades in `data/posit
 ---
 
 ## Troubleshooting
+
+### After Phase 4, the dashboard still shows "No data yet"
+
+1. Open the Web App URL
+2. Click the **Refresh** button on the Trade Ticket tab
+3. If still empty: go to your spreadsheet and check the **Portfolio** tab has data in row 2
+4. If row 2 is empty, the pipeline didn't complete — go back to Colab and check for red X errors
+5. If the Portfolio tab has data but the dashboard still shows "No data yet": re-deploy the web app (Deploy > Manage deployments > New version > Deploy)
 
 ### Spreadsheet says "Loading..." forever
 

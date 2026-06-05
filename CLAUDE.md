@@ -50,10 +50,10 @@ There is no test framework, lint config, CI, or build step. `verify_data_layer.p
 Five-layer pipeline (bottom-up build order):
 
 ```
-Layer 5: Dashboard / Report     google_suite/                           🔨 in progress (Google Suite — supersedes Flask)
-                                  kronos_daily_pipeline.ipynb           planned — Colab notebook (19 cells)
-                                  apps_script/Code.gs                   planned — Apps Script backend
-                                  apps_script/Index.html                planned — 5-tab web app SPA
+Layer 5: Dashboard / Report     google_suite/                           ✅ built (Google Suite — supersedes Flask)
+                                  kronos_daily_pipeline.ipynb           ✅ built — Colab notebook (19 cells)
+                                  apps_script/Code.gs                   ✅ built — Apps Script backend
+                                  apps_script/Index.html                ✅ built — 5-tab web app SPA
                                 scripts/dashboard.py                    ✅ built (Flask — superseded, keep for reference)
                                 kth/trading/portfolio.py                ✅ built
                                 kth/trading/trade_gen.py                ✅ built
@@ -78,7 +78,7 @@ Layer 1: Universe definition    kth/data/universe.py                    ✅ done
 **Flask dashboard features shipped 2026-06-04** (kept as reference; Google Suite is the new target):
 Run Pipeline button, fill-price modal (editable shares+price, partial/no-fill), trade history panel (inline edit+delete), friction display in modal, initial capital setup, limit price clarification, forecast comparison (Δ Prev column), data date badge, column tooltips, positions table enriched with Exp Ret/Band/Signal, Full Ranking historical date selector, historical forecast backfill (slice parquet to any past date). Evening pipeline run recommended (uses today's close → more accurate for tomorrow). GULF.BK excluded until ~Oct 2026 (281 rows, needs ≥400).
 
-**Layer 5 is migrating to Google Suite (2026-06-04):** `google_suite/` directory (to be created) will contain `kronos_daily_pipeline.ipynb` (19-cell Colab), `apps_script/Code.gs`, and `apps_script/Index.html`. Spec: `docs/superpowers/specs/2026-06-04-google-suite-dashboard-design.md`. Plan: `docs/superpowers/plans/2026-06-04-google-suite-implementation-plan.md`.
+**Layer 5 Google Suite migration complete (2026-06-04):** `google_suite/` built and deployed. Colab notebook (19 cells), Apps Script web app (5-tab SPA), Google Sheets data store (14 tabs). Features: staging→validate→promote pipeline, fill-price modal (enter fills from web app), Δ Prev forecast comparison column, positions enriched with Exp Ret/Signal, data date badge, immutable Trade Log with CANCEL convention, Forecast History accuracy tracking, historical date selector (view predictions ranked by return for any past pipeline run date). Spec: `docs/superpowers/specs/2026-06-04-google-suite-dashboard-design.md`. Plan: `docs/superpowers/plans/2026-06-04-google-suite-implementation-plan.md`.
 
 **Library code** lives in `kth/` (tested, reused across notebooks). **Research narrative** lives in `notebooks/` (exploratory, with plots).
 

@@ -78,6 +78,44 @@ function refreshAllData() {
   return getAllData();
 }
 
+function submitFills(fills) {
+  // fills = [{ticker, filled_price, filled_shares, fill_timestamp}, ...]
+  // Writes fill data to the Trade Ticket sheet columns 8-10 and clears cache
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ws = ss.getSheetByName('Trade Ticket');
+  var data = ws.getDataRange().getValues();
+  if (data.length <= 1) return { ok: false, msg: 'Trade Ticket sheet is empty' };
+
+  var headers  = data[0];
+  var tickerCol = headers.indexOf('ticker');
+  var fpCol     = headers.indexOf('filled_price');
+  var fsCol     = headers.indexOf('filled_shares');
+  var ftCol     = headers.indexOf('fill_timestamp');
+  if (fpCol === -1) return { ok: false, msg: 'filled_price column not found — check sheet headers' };
+
+  // Collect all updates and write in one batch to minimise API calls
+  var updates = [];
+  fills.forEach(function(fill) {
+    for (var i = 1; i < data.length; i++) {
+      if (String(data[i][tickerCol]) === String(fill.ticker)) {
+        updates.push({ row: i + 1, fp: fill.filled_price,
+                       fs: fill.filled_shares, ft: fill.fill_timestamp });
+        break;
+      }
+    }
+  });
+
+  updates.forEach(function(u) {
+    ws.getRange(u.row, fpCol + 1).setValue(u.fp);
+    ws.getRange(u.row, fsCol + 1).setValue(u.fs);
+    ws.getRange(u.row, ftCol + 1).setValue(u.ft);
+  });
+
+  // Invalidate cache so next getAllData() returns fresh data with fills
+  CacheService.getScriptCache().remove('all_data');
+  return { ok: true, updated: updates.length };
+}
+
 function getExportCsv() {
   var ss      = SpreadsheetApp.getActiveSpreadsheet();
   var status  = _readSheet(ss, 'Pipeline Status');

@@ -62,12 +62,23 @@ Click the key icon in the Colab left sidebar → Add new secret:
 4. In Cell 2, set `INITIAL_CAPITAL` to your starting capital in THB
 5. **Run All** (takes ~5-10 min: 2 min data download + 3-5 min forecasts)
 
+## Dashboard Features
+
+| Tab | Features |
+|-----|----------|
+| **Dashboard** | Total capital, P&L MTD, Sharpe, Max DD, Friction YTD hero cards; equity curve chart; regime badge (BULL/NEUTRAL/BEAR/EXIT) with per-position allocation %; fill confirmation status |
+| **Positions** | Sortable table with P&L colouring; **Exp Ret** and **Signal** columns from today's forecast; % to stop-loss (red if < 3%); frozen-portfolio banner |
+| **Trade Log** | Append-only audit trail; cancelled rows shown with strikethrough; `↩ cancels {ref_id}` for CANCEL entries |
+| **Forecasts** | **Δ Prev column** (▲▼ change vs previous pipeline run); **📅 data date badge**; confidence badges (green/yellow/red); Forecast History sub-tab with accuracy % |
+| **Trade Ticket** | Today's recommendations; **Export CSV** button; **Enter Fills** button (modal to record actual broker fills without leaving the dashboard); T+2 warning when exits + buys co-exist |
+
 ## Daily Routine
 
 1. **Morning (7:00-8:30 BKK):** Open Colab → "Run All"
 2. After pipeline completes, open the web app to review today's Trade Ticket
 3. Click **Export CSV** → place orders at your broker
-4. After orders fill: open the Trade Ticket sheet → columns 8-10 → enter `filled_price`, `filled_shares`, `fill_timestamp`
+4. After orders fill: click **Enter Fills** in the Trade Ticket tab → enter actual prices in the modal → Save Fills
+   - Alternatively: open the Trade Ticket sheet → columns H-J → enter `filled_price`, `filled_shares`, `fill_timestamp`
 5. Next pipeline run picks up fills automatically
 
 ## CANCEL Convention
@@ -86,21 +97,6 @@ To correct a wrong entry: append a row to Trade Log with `action=CANCEL` and `re
 | Export CSV download doesn't work on iPhone | iOS Safari Blob issue | Already handled with `data:` URI in `exportCsv()` |
 | `gspread.exceptions.APIError: 429` | Too many API calls | Sleep 1s between writes in Cell 13 |
 
-## Switching Web App to Live Data
+## Live Data
 
-In `Index.html`, find the bootstrap block and switch from MOCK to live:
-
-```javascript
-// Comment out:
-// renderAll(MOCK);
-
-// Uncomment:
-/*
-google.script.run
-  .withSuccessHandler(function(d) { hideSpinner(); renderAll(d); })
-  .withFailureHandler(showError)
-  .getAllData();
-*/
-```
-
-Then redeploy: **Deploy > Manage deployments > New version**.
+The dashboard is already configured to load live data from Sheets. No changes needed. After the first successful pipeline run, refresh the web app and all tabs will populate with real data.

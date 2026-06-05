@@ -574,6 +574,21 @@ status banner that frames all other content. `d.pipeline` is a plain object (sin
 extracted in `getAllData()`), not an array — access fields directly as `d.pipeline.status`,
 `d.pipeline.last_run_timestamp`, etc.
 
+### `submitFills()` — Fill Confirmation from Web App
+
+Allows users to enter actual broker fill prices directly from the dashboard without
+opening the spreadsheet. Called by the fill modal in `renderTicket`.
+
+```javascript
+function submitFills(fills) {
+  // fills = [{ticker, filled_price, filled_shares, fill_timestamp}, ...]
+  // Writes to Trade Ticket sheet cols 8-10, then clears cache
+}
+```
+
+Returns `{ok: true, updated: N}`. On success, the frontend calls `refreshAllData()` so
+fill status updates immediately without a manual page reload.
+
 ### Single `getAllData()` Function
 
 One server round-trip on page load. Multiple simultaneous `google.script.run` calls would
@@ -717,9 +732,9 @@ google.script.run.withSuccessHandler(function(csv) {
 
 ### Files (in `google_suite/apps_script/`)
 
-- `Code.gs` — `doGet()`, `getAllData()`, `getExportCsv()`, `_readSheet()`,
-  `_readSheetLimited()`, `_rowToObj()`, `_csvField()`
-- `Index.html` — 5-tab SPA with Google Charts load order as specified above
+- `Code.gs` — `doGet()`, `getAllData()`, `refreshAllData()`, `submitFills()`,
+  `getExportCsv()`, `_readSheet()`, `_readSheetLimited()`, `_rowToObj()`, `_csvField()`
+- `Index.html` — 5-tab SPA with Google Charts load order, fill modal, sortable tables
 
 ### Frontend Tabs
 
@@ -728,14 +743,23 @@ google.script.run.withSuccessHandler(function(csv) {
    with plain-English band definition; hero cards (capital, P&L MTD, Sharpe, MaxDD, Friction YTD);
    equity curve chart; fills status indicator ("X confirmed / Y assumed today")
 2. **Positions** — sortable table, green/gray/red P&L, `% to stop-loss` (red < 3%);
-   red frozen banner if `is_frozen = true`; "as of {forecast_date}" freshness label
+   red frozen banner if `is_frozen = true`; "as of {forecast_date}" freshness label;
+   **Exp Ret** and **Signal** columns showing today's forecast for each open position
+   (joined client-side from `d.forecasts` by ticker)
 3. **Trade Log** — read-only audit trail, sortable. Cancelled rows strikethrough.
    CANCEL entries show `↩ cancels {ref_id}`. Note: "CANCEL only updates this display —
    also correct the Portfolio sheet manually if needed."
-4. **Forecasts** — sorted by rank_score; confidence badges (green/yellow/red); Forecast
-   History sub-tab showing prediction accuracy. Metric tooltips using Glossary definitions.
+4. **Forecasts** — sorted by rank_score; confidence badges (green/yellow/red); **Δ Prev column**
+   showing change in `exp_ret` vs previous pipeline run (▲ green / ▼ red; only shown when
+   history exists); **📅 data date badge**; Forecast History sub-tab with:
+   - **Historical date selector** dropdown (newest first, "📅 All dates" default) — filters
+     the accuracy table to any past run date; rows sorted by predicted_return desc for that
+     date (equivalent to a historical ranking view); per-date accuracy summary updates live.
+   - `_forecastHistory` kept in module scope; `filterHistoryByDate(date)` re-renders table
+     and re-attaches column sort. `_buildHistoryTable(rows)` is a shared helper.
+   All column headers have tooltips using Glossary definitions.
 5. **Trade Ticket** — recommendations (board-lot rounded) + fill status per ticker
-   (confirmed/assumed) + "Export CSV" button
+   (confirmed/assumed) + "Export CSV" button + **"Enter Fills" button** (opens fill modal)
 
 ### Regime Indicator
 
