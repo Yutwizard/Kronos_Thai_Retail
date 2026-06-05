@@ -622,15 +622,19 @@ function filterRanking(q) {
 
 async function populateDateSelector() {
   const sel = $("ranking-date-select");
-  if (!sel || sel.options.length > 1) return; // already populated
+  if (!sel) return;
   const data = await fetchJSON("/api/forecasts/dates");
   if (!data) return;
+  // Always refresh — clears stale list if pipeline ran since last open
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">📅 Select date to compare...</option>';
   data.dates.forEach((d, i) => {
     const opt = document.createElement("option");
     opt.value = d;
     opt.textContent = (i === 0 ? "📅 " + d + " (latest)" : "📅 " + d);
     sel.appendChild(opt);
   });
+  if (prev && data.dates.includes(prev)) sel.value = prev; // restore selection
 }
 
 async function loadRankingForDate(selectedDate) {
@@ -842,6 +846,9 @@ async function pollPipeline() {
     if (s.stage === "complete") {
       btn.textContent = "✅ Done";
       setTimeout(() => { btn.textContent = "▶ Run Pipeline"; }, 6000);
+      // Reset date selector so it re-populates with new date on next open
+      const sel = $("ranking-date-select");
+      if (sel) sel.innerHTML = '<option value="">📅 Select date to compare...</option>';
       setTimeout(refresh, 1500);
     } else if (s.stage === "failed") {
       btn.textContent = "❌ Failed";
