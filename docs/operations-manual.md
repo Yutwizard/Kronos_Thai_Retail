@@ -160,6 +160,12 @@ using today's close prices. This is the recommended time — not the morning.
 python scripts/dashboard.py --generate
 ```
 
+**Or one-command (recommended for fresh setups):**
+```bash
+./scripts/start_dashboard.sh
+```
+Idempotent launcher: creates venv, installs data + ML deps, downloads data, runs pipeline, starts dashboard on port 5555. Subcommands: `stop`, `restart`, `status`, `logs`, `clean`. See `scripts/start_dashboard.sh help` for full usage.
+
 **Verify forecasts are ready:**
 ```bash
 ls data/forecast_cache/NeoQuasar_Kronos-small/$(date +%Y-%m-%d)/ | wc -l

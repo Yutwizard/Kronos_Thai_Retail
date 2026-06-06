@@ -90,6 +90,13 @@ Downloading 100 tickers (10 years each)...
 
 ## Step 3 — Generate Forecasts (~12 min on GTX 1060)
 
+**One command (recommended):**
+```bash
+./scripts/start_dashboard.sh
+```
+This single command sets up the venv (first run only), downloads data, generates forecasts, and starts the dashboard. Subcommands: `stop`, `restart`, `status`, `logs`, `clean`.
+
+**Or manual (step-by-step):**
 ```bash
 python scripts/dashboard.py --generate
 ```

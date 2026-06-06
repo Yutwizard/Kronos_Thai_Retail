@@ -44,6 +44,14 @@ The dashboard is a **local web application** that:
 - Does NOT place orders automatically
 - Does NOT require internet for the dashboard (only for data download via cron)
 
+### One-command launcher (recommended)
+
+For a fresh Linux box, just run:
+```bash
+./scripts/start_dashboard.sh
+```
+This idempotent script creates the venv, installs both `requirements.txt` and `requirements-ml.txt`, downloads data (skips if any parquet < 24h old), runs the forecast pipeline, starts the server on port 5555, and waits for `/api/health`. Subcommands: `stop`, `restart`, `status`, `logs`, `clean`. Run `./scripts/start_dashboard.sh help` for full usage.
+
 ### Dashboard URL
 
 ```

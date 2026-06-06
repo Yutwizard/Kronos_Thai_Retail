@@ -86,7 +86,8 @@ kronos-th/
 │       ├── Code.gs          # Apps Script backend (15 functions)
 │       └── Index.html       # 5-tab web app SPA (Flask-parity)
 ├── scripts/
-│   └── dashboard.py         # Flask dashboard (local GPU option)
+│   ├── dashboard.py         # Flask dashboard (local GPU option)
+│   └── start_dashboard.sh   # one-command launcher: venv + data + pipeline + serve
 ├── notebooks/
 │   └── 01_data_layer.ipynb  # Colab: verify real yfinance access
 ├── data/

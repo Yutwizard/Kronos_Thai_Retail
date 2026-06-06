@@ -55,9 +55,10 @@ Layer 5: Dashboard / Report     google_suite/                           ✅ buil
                                   apps_script/Code.gs                   ✅ built — Apps Script backend (15 functions, 60s cache)
                                   apps_script/Index.html                ✅ built — 5-tab web app SPA (Flask-parity)
                                 scripts/dashboard.py                    ✅ built (Flask — local GPU option)
+                                scripts/start_dashboard.sh              ✅ built (one-command launcher: venv + data + pipeline + serve)
                                 kth/trading/portfolio.py                ✅ built
                                 kth/trading/trade_gen.py                ✅ built
-                                scripts/cron_pipeline.sh                ✅ built (superseded by Colab notebook)
+                                scripts/cron_pipeline.sh                ✅ built
                                 notebooks/05_decision_report.ipynb      ✅ built (Colab version)
 Layer 4: Backtest               kth/backtest/walkforward.py             ✅ built
                                 kth/backtest/strategy.py                ✅ built

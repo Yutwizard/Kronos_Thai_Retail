@@ -168,13 +168,20 @@ After this, if the `cron_pipeline.sh` fails (download or forecast step), you'll 
 
 Two dashboard options are available — choose based on your environment:
 
-- **Flask dashboard** (this section) — local Python + GPU, run via `scripts/dashboard.py`
+- **Flask dashboard** (this section) — local Python + GPU, run via `scripts/dashboard.py` or the one-command launcher `scripts/start_dashboard.sh`
 - **Google Suite dashboard** (`google_suite/SETUP_GUIDE.md`) — zero-cost, browser-based, no local GPU required
 
 Both reached feature parity on 2026-06-06 and are fully functional. Pick whichever fits your setup.
 
 ### Option A: Flask Dashboard (Local GPU)
 
+**Easiest way — one command:**
+```bash
+./scripts/start_dashboard.sh
+```
+This single command creates the venv, installs dependencies (data + ML stack), downloads data (skips if fresh), runs the forecast pipeline, and starts the dashboard at **http://localhost:5555**. Subcommands: `stop`, `restart`, `status`, `logs`, `clean`. Run `./scripts/start_dashboard.sh help` for full usage.
+
+**Manual way** (if you want step-by-step control):
 ```bash
 python scripts/dashboard.py --generate
 ```

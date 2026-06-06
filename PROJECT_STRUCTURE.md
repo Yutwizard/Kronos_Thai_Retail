@@ -170,6 +170,7 @@ These were debated and chosen earlier:
 
 LAYER 5: Dashboard / Report   google_suite/                          ✅ built (Google Suite dashboard)
                                 scripts/dashboard.py                    ✅ built (Flask dashboard — local GPU option)
+                                scripts/start_dashboard.sh              ✅ built (one-command launcher: venv + data + pipeline + serve)
                                 kth/trading/portfolio.py                ✅ built
                                 kth/trading/trade_gen.py                ✅ built
                                 scripts/cron_pipeline.sh                ✅ built
@@ -270,7 +271,7 @@ Cells:
 
 ### Notebook 05 — Daily decision report ✅
 
-**Built.** `notebooks/05_decision_report.ipynb` (Colab version, 3 views). For daily use, the two dashboard options are: the Google Suite dashboard (`google_suite/`, zero-cost, no local GPU) and the local Flask dashboard (`scripts/dashboard.py`, requires local GPU + cron). Both are fully functional.
+**Built.** `notebooks/05_decision_report.ipynb` (Colab version, 3 views). For daily use, the two dashboard options are: the Google Suite dashboard (`google_suite/`, zero-cost, no local GPU) and the local Flask dashboard (`scripts/dashboard.py`, requires local GPU + cron). Both are fully functional. The Flask dashboard can also be launched with one command via `scripts/start_dashboard.sh` (idempotent venv + data + pipeline + serve).
 
 ---
 

@@ -40,6 +40,12 @@ make build && make verify
 - `requirements-ml.txt` contains the ML stack (torch, transformers, etc.) — installed separately in Docker with the correct CPU or CUDA variant.
 - `pyproject.toml` makes `kth` installable via `pip install -e .` — required for imports to work outside Docker.
 
+## Start the Flask dashboard (one command)
+```bash
+./scripts/start_dashboard.sh
+```
+Idempotent launcher: creates venv, installs both `requirements.txt` and `requirements-ml.txt`, downloads data (skips if any parquet < 24h old), runs the forecast pipeline, starts the server on port 5555, waits for `/api/health`. Subcommands: `stop`, `restart`, `status`, `logs`, `clean`. Env vars: `KRONOS_PORT` (default 5555), `INITIAL_CAPITAL`, `KRONOS_MODE` (default paper). See `scripts/start_dashboard.sh help` for full usage.
+
 ## Key conventions an agent might miss
 
 ### Kronos schema (enforced in `kth/data/loader.py`)
