@@ -58,6 +58,9 @@ th.sorted-desc::after { content: ' ▼'; font-size: 0.7rem; }
 td.num { font-family: var(--font-mono); text-align: right; }
 tr.cancelled td { text-decoration: line-through; color: var(--gray); }
 tr:hover { background: #f8f9fa; }
+tr.row-hold  { border-left: 4px solid var(--green); }
+tr.row-reduce { border-left: 4px solid var(--yellow); }
+tr.row-exit  { border-left: 4px solid var(--red); }
 .badge { display: inline-block; padding: 2px 8px; border-radius: 12px;
          font-size: 0.75rem; font-weight: 500; }
 .badge-green  { background: #e6f4ea; color: #137333; }
@@ -476,7 +479,13 @@ function renderPositions(positions, riskMetrics, portfolio, forecasts) {
           fc.confidence + '</span></td>'
       : '<td>—</td>';
 
-    return '<tr>' +
+    var expRetForBand = fc ? fc.exp_ret : 0.03;
+    var band = expRetForBand > 0.02 ? 'row-hold'
+             : expRetForBand > 0    ? 'row-reduce'
+             : 'row-exit';
+    var rowClass = ' class="' + band + '"';
+
+    return '<tr' + rowClass + '>' +
       _td(p.ticker) +
       _tdNum(fmt.shares(p.shares), p.shares) +
       _tdNum(fmt.thb(p.avg_cost), p.avg_cost) +
