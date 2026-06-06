@@ -520,6 +520,18 @@ _write_staging('Risk Metrics_staging',
 print("All 5 staging sheets written.")
 """)
 
+md("""## Cell 13b — Append Equity Curve to Staging
+
+**Why a new sheet:** The live `Equity Curve` sheet is read by Cell 9 and rendered by the Apps Script chart, but the Colab pipeline never appended to it. This cell fixes that by writing today's row to a new `Equity Curve_staging` sheet, which Cell 14 promotes.""")
+
+code(r"""equity = pos['total_value']
+_write_staging('Equity Curve_staging',
+    ['date', 'equity', 'cash', 'invested'],
+    [[today_str, round(equity, 2), round(pf_data['cash'], 2),
+      round(equity - pf_data['cash'], 2)]])
+print("Equity Curve staging row appended.")
+""")
+
 md("""## Cell 14 — Promote Staging to Live Sheets""")
 
 code(r"""STAGING_MAP = {
@@ -528,6 +540,7 @@ code(r"""STAGING_MAP = {
     'Forecasts_staging':     'Forecasts',
     'Trade Ticket_staging':  'Trade Ticket',
     'Risk Metrics_staging':  'Risk Metrics',
+    'Equity Curve_staging':  'Equity Curve',
 }
 for staging_name, live_name in STAGING_MAP.items():
     staging_ws = sh.worksheet(staging_name)
