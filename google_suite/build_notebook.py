@@ -127,13 +127,13 @@ md("""## Cell 4b — Apply Capital Reset
 **Applies:** Calls `reset_portfolio('paper', newCapital)` from `kth.trading.portfolio`.
 **Writes:** Cleared `Capital Reset` sheet, fresh `paper_portfolio.json`, then re-runs staging writes + promotion.""")
 
-code(r"""capital_reset_ws = sh.worksheet('Capital Reset')
+code(r"""from kth.trading.portfolio import reset_portfolio, get_positions, init_portfolio
+capital_reset_ws = sh.worksheet('Capital Reset')
 capital_reset_data = capital_reset_ws.get_all_values()
 capital_reset_headers = ['date', 'action', 'capital', 'confirm_text', 'requested_at']
 if not capital_reset_data:
     capital_reset_ws.append_row(capital_reset_headers)
 else:
-    from kth.trading.portfolio import reset_portfolio, get_positions
     for row in capital_reset_data[1:]:
         if not row or not row[0]: continue
         action = row[1]
@@ -400,14 +400,14 @@ md("""## Cell 9b — Apply Trade Edits
 **Reads:** `Trade Edits` staging sheet (rows with `action = "edit"` or `"CANCEL"`).
 **Applies:** Calls `edit_trade()` / `delete_trade()` from `kth.trading.portfolio`, then re-runs the staging write + promotion logic (the same as Cells 13/14).""")
 
-code(r"""trade_edits_ws = sh.worksheet('Trade Edits')
+code(r"""from kth.trading.portfolio import edit_trade, delete_trade, init_portfolio, get_positions
+trade_edits_ws = sh.worksheet('Trade Edits')
 trade_edits_data = trade_edits_ws.get_all_values()
 trade_edits_headers = ['date', 'action', 'index', 'ticker', 'shares', 'price', 'ref_id', 'requested_at']
 if not trade_edits_data:
     trade_edits_ws.append_row(trade_edits_headers)
 else:
     # Process existing edits
-    from kth.trading.portfolio import edit_trade, delete_trade
     pf = init_portfolio('paper')
     for row in trade_edits_data[1:]:
         if not row or not row[0]: continue
