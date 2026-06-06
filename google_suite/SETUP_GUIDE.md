@@ -261,6 +261,10 @@ Look at the left sidebar of Apps Script. You should see two files listed:
 3. Paste this URL into a text file or sticky note — this is your dashboard URL
 4. Click **Done**
 
+**Important:** The Apps Script web app URL stays the same across deploys **only if you do NOT create a new deployment**. To publish updated code: in Apps Script editor, click "Deploy" → "Manage deployments" → pencil icon next to the existing deployment → update version → Deploy. The URL is unchanged.
+
+If you click "Deploy" → "New deployment", you get a new URL. This is almost never what you want.
+
 ### Step 2.9 — Test your web app
 
 1. Open a new browser tab
@@ -272,6 +276,12 @@ Look at the left sidebar of Apps Script. You should see two files listed:
    - All tabs show empty state messages — this is normal! The spreadsheet has no data yet because you haven't run the pipeline.
 
 If you see the page with the gray banner and five tabs, **congratulations — the dashboard is working!** The "No data yet" message means it's connected to your spreadsheet correctly. Data will appear after you run the Colab pipeline in Phase 4.
+
+**What you'll see once the pipeline has run at least once:**
+- **Reset Portfolio (⚙ button, top-right of Dashboard)** — change your initial capital
+- **Trade Log edit/delete** — click ✏️ or 🗑️ in any Trade Log row
+- **Health banner** — appears on Dashboard if P5/P95 band coverage diverges from 90% target
+- **First-run setup banner** — appears once when no portfolio exists yet
 
 **Common problem:** If you see a blank white page, try:
 - Wait 30 seconds and refresh
