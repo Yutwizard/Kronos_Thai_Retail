@@ -312,6 +312,84 @@ pf = init_portfolio('paper')
 print(f"After fills: ฿{pf['cash']:,.0f} cash, {len(pf.get('positions',{}))} positions")
 """)
 
+md("""## Cell 9b — Apply Trade Edits
+
+**When to run:** Only when the Apps Script shows a "edit/delete queued" banner. Replaces Cells 9-15 in this single Colab session.
+
+**Reads:** `Trade Edits` staging sheet (rows with `action = "edit"` or `"CANCEL"`).
+**Applies:** Calls `edit_trade()` / `delete_trade()` from `kth.trading.portfolio`, then re-runs the staging write + promotion logic (the same as Cells 13/14).""")
+
+code(r"""trade_edits_ws = sh.worksheet('Trade Edits')
+trade_edits_data = trade_edits_ws.get_all_values()
+trade_edits_headers = ['date', 'action', 'index', 'ticker', 'shares', 'price', 'ref_id', 'requested_at']
+if not trade_edits_data:
+    trade_edits_ws.append_row(trade_edits_headers)
+else:
+    # Process existing edits
+    from kth.trading.portfolio import edit_trade, delete_trade
+    pf = init_portfolio('paper')
+    for row in trade_edits_data[1:]:
+        if not row or not row[0]: continue
+        action = row[1]
+        if action == 'edit':
+            try:
+                # edit_trade signature: (index, new_price, new_shares, mode) — kth/trading/portfolio.py:439
+                edit_trade(int(row[2]), new_price=float(row[5]), new_shares=int(float(row[4])), mode='paper')
+                print(f"  Applied edit: {row[3]} -> shares={row[4]} price={row[5]}")
+            except Exception as e:
+                print(f"  Edit failed for row {row[2]}: {e}")
+        elif action == 'CANCEL':
+            try:
+                delete_trade(int(row[2]), 'paper')
+                print(f"  Applied delete: index {row[2]}")
+            except Exception as e:
+                print(f"  Delete failed for row {row[2]}: {e}")
+    trade_edits_ws.clear()
+    trade_edits_ws.append_row(trade_edits_headers)
+    print("Trade Edits cleared.")
+
+# Re-run staging writes + promotion (mirror Cells 13/14)
+pf_data = init_portfolio('paper')
+_write_staging('Portfolio_staging',
+    ['cash', 'initial_capital', 'mode', 'model_version', 'forecast_date'],
+    [[pf_data['cash'], pf_data['initial_capital'], 'paper', MODEL_VERSION, today_str]])
+
+pos = get_positions('paper')
+pos_rows = []
+for p in pos['positions']:
+    close   = float(ohlcv_dict[p['ticker']]['close'].iloc[-1]) \
+              if p['ticker'] in ohlcv_dict else p['avg_cost']
+    pnl     = (close - p['avg_cost']) * p['shares']
+    pnl_pct = (close / p['avg_cost'] - 1) if p['avg_cost'] else 0
+    pos_rows.append([p['ticker'], p['shares'], p['avg_cost'], p.get('entry_date', ''),
+                     get_sector(p['ticker']), round(close, 2), round(pnl, 2),
+                     round(pnl_pct, 4), round(pnl_pct + 0.10, 4)])
+_write_staging('Positions_staging',
+    ['ticker','shares','avg_cost','entry_date','sector','current_price','pnl','pnl_pct','pct_to_stoploss'],
+    pos_rows)
+
+STAGING_MAP = {
+    'Portfolio_staging':     'Portfolio',
+    'Positions_staging':     'Positions',
+    'Forecasts_staging':     'Forecasts',
+    'Trade Ticket_staging':  'Trade Ticket',
+    'Risk Metrics_staging':  'Risk Metrics',
+    'Equity Curve_staging':  'Equity Curve',
+}
+for staging_name, live_name in STAGING_MAP.items():
+    try:
+        staging_ws = sh.worksheet(staging_name)
+        live_ws    = sh.worksheet(live_name)
+        data = staging_ws.get_all_values()
+        if data:
+            live_ws.clear()
+            live_ws.update('A1', data)
+        staging_ws.clear()
+    except Exception as e:
+        print(f"  Promotion {staging_name} -> {live_name} failed: {e}")
+print("Trade edits applied and staging promoted.")
+""")
+
 md("""## Cell 10 — Generate Trade Ticket ← RUNS AFTER CELL 9""")
 
 code(r"""from kth.trading.trade_gen import generate_trade_ticket

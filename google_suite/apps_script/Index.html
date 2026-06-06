@@ -97,7 +97,9 @@ tr.row-exit  { border-left: 4px solid var(--red); }
 .btn-primary { padding: 8px 18px; background: var(--blue); color: white;
                border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem; }
 .btn-secondary { padding: 8px 18px; background: none; color: var(--text-muted);
-                 border: 1px solid var(--border); border-radius: 4px; cursor: pointer; }
+                  border: 1px solid var(--border); border-radius: 4px; cursor: pointer; }
+.btn-icon { background: none; border: none; cursor: pointer; padding: 2px 6px; font-size: 1rem; }
+.btn-icon:hover { background: #f0f0f0; border-radius: 4px; }
 /* Data date badge */
 .data-badge { font-size: 0.75rem; color: var(--text-muted); margin-left: 8px; }
 /* Delta column */
@@ -111,6 +113,8 @@ tr.row-exit  { border-left: 4px solid var(--red); }
 </style>
 </head>
 <body>
+
+<div id="pending-edits-banner" class="banner banner-yellow" hidden style="position:sticky;top:0;z-index:100;padding:12px;text-align:center"></div>
 
 <div id="status-banner"></div>
 
@@ -157,9 +161,25 @@ tr.row-exit  { border-left: 4px solid var(--red); }
   </div>
 </div>
 
+<!-- Edit-trade modal -->
+<div id="edit-trade-modal" class="modal-overlay" hidden>
+  <div class="modal-box">
+    <h3>✏️ Edit Trade</h3>
+    <p>Ticker: <strong id="edit-ticker">—</strong></p>
+    <p>New shares (multiple of 100): <input class="modal-input" id="edit-shares" type="number" min="100" step="100"></p>
+    <p>New price (THB): <input class="modal-input" id="edit-price" type="number" min="0.01" step="0.01"></p>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="submitTradeEdit()">Save</button>
+      <button class="btn-secondary" onclick="closeEditTradeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://www.gstatic.com/charts/loader.js"></script>
 
 <script>
+var _allData = null;
+
 var fmt = {
   thb:    v => '฿' + Number(v).toLocaleString('th-TH',
                   {minimumFractionDigits:2, maximumFractionDigits:2}),
@@ -270,12 +290,14 @@ function showError(err) {
 }
 
 function renderAll(d) {
+  _allData = d;
   renderPipelineStatus(d.pipeline);
   renderDashboard(d.portfolio, d.equityCurve, d.riskMetrics, d.ticket, d.health);
   renderPositions(d.positions, d.riskMetrics, d.portfolio, d.forecasts);
   renderTradeLog(d.tradeLog);
   renderForecasts(d.forecasts, d.forecastHistory);
   renderTicket(d.ticket);
+  checkPendingEditsBanner();
 }
 
 // ── Fill modal ─────────────────────────────────────────────────────────────
@@ -305,6 +327,75 @@ function openFillModal(ticket) {
 
 function closeFillModal() {
   document.getElementById('fill-modal').hidden = true;
+}
+
+var _editTradeIndex = -1;
+
+function openEditTradeModal(idx) {
+  _editTradeIndex = idx;
+  var trade = (_allData && _allData.tradeLog) ? _allData.tradeLog[idx] : null;
+  if (!trade) { alert('Trade not found'); return; }
+  document.getElementById('edit-ticker').textContent = trade.ticker;
+  document.getElementById('edit-shares').value = trade.shares;
+  document.getElementById('edit-price').value = trade.price;
+  document.getElementById('edit-trade-modal').hidden = false;
+}
+
+function closeEditTradeModal() {
+  document.getElementById('edit-trade-modal').hidden = true;
+  _editTradeIndex = -1;
+}
+
+function submitTradeEdit() {
+  var shares = parseInt(document.getElementById('edit-shares').value);
+  var price = parseFloat(document.getElementById('edit-price').value);
+  if (!Number.isInteger(shares) || shares <= 0 || shares % 100 !== 0) {
+    alert('Shares must be a positive multiple of 100'); return;
+  }
+  if (!price || price <= 0) { alert('Price must be positive'); return; }
+  google.script.run
+    .withSuccessHandler(function(result) {
+      if (result.ok) {
+        closeEditTradeModal();
+        alert('Edit queued. Open Colab and run Cell 9b to apply.');
+      } else {
+        alert('Edit failed: ' + result.msg);
+      }
+    })
+    .withFailureHandler(function(err) { alert('Error: ' + String(err)); })
+    .submitTradeEdit(_editTradeIndex, shares, price);
+}
+
+function confirmDeleteTrade(idx) {
+  if (!_allData || !_allData.tradeLog[idx]) { alert('Trade not found'); return; }
+  var trade = _allData.tradeLog[idx];
+  if (!confirm('Delete trade #' + (idx + 1) + ': ' + trade.action.toUpperCase() + ' ' + trade.ticker + '?\nThis will be queued and applied when you re-run Colab Cell 9b.')) return;
+  google.script.run
+    .withSuccessHandler(function(result) {
+      if (result.ok) {
+        alert('Delete queued. Open Colab and run Cell 9b to apply.');
+      } else {
+        alert('Delete failed: ' + result.msg);
+      }
+    })
+    .withFailureHandler(function(err) { alert('Error: ' + String(err)); })
+    .submitTradeDelete(idx);
+}
+
+function checkPendingEditsBanner() {
+  google.script.run
+    .withSuccessHandler(function(pending) {
+      var banner = document.getElementById('pending-edits-banner');
+      if (banner) {
+        if (pending && pending.count > 0) {
+          banner.textContent = '⚠️ ' + pending.count + ' trade edit(s) pending — re-run Colab Cell 9b to apply.';
+          banner.hidden = false;
+        } else {
+          banner.hidden = true;
+        }
+      }
+    })
+    .getPendingEdits();
 }
 
 function saveFills() {
@@ -536,13 +627,17 @@ function renderTradeLog(tradeLog) {
     if (r.action === 'CANCEL' && r.ref_id) cancelledIds[r.ref_id] = true;
   });
 
-  var rows = tradeLog.map(function(r) {
+  var rows = tradeLog.map(function(r, idx) {
     var isCancel    = (r.action === 'CANCEL');
-    var isCancelled = cancelledIds[r.id];
+    var isCancelled = cancelledIds[r.trade_id];  // Pre-existing bug: was [r.id]; the field is `trade_id`
     var actionCell  = isCancel
       ? '↩ cancels ' + (r.ref_id || '')
       : r.action;
     var rowClass = (isCancel || isCancelled) ? ' class="cancelled"' : '';
+    var editCell = isCancel || isCancelled
+      ? '<td></td>'
+      : '<td><button class="btn-icon" onclick="openEditTradeModal(' + idx + ')" title="Edit">✏️</button>' +
+        ' <button class="btn-icon" onclick="confirmDeleteTrade(' + idx + ')" title="Delete">🗑️</button></td>';
     return '<tr' + rowClass + '>' +
       _td(fmt.date(r.timestamp)) +
       _td(r.ticker) +
@@ -550,6 +645,7 @@ function renderTradeLog(tradeLog) {
       _tdNum(fmt.shares(r.shares), r.shares) +
       _tdNum(r.price != null ? fmt.thb(r.price) : '—', r.price) +
       _td(r.rationale) +
+      editCell +
       '</tr>';
   }).join('');
 
@@ -559,6 +655,7 @@ function renderTradeLog(tradeLog) {
     '<thead><tr>' +
       '<th>Date</th><th>Ticker</th><th>Action</th>' +
       '<th>Shares</th><th>Price</th><th>Rationale</th>' +
+      '<th>Actions</th>' +
     '</tr></thead>' +
     '<tbody>' + rows + '</tbody>' +
     '</table></div>' +

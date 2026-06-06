@@ -117,6 +117,96 @@ function submitFills(fills) {
   return { ok: true, updated: updates.length };
 }
 
+function submitTradeEdit(index, newShares, newPrice) {
+  // Validate input
+  if (!Number.isInteger(index) || index < 0) {
+    return { ok: false, msg: 'Invalid trade index' };
+  }
+  if (!Number.isInteger(newShares) || newShares <= 0 || newShares % 100 !== 0) {
+    return { ok: false, msg: 'Shares must be a positive multiple of 100' };
+  }
+  if (typeof newPrice !== 'number' || newPrice <= 0) {
+    return { ok: false, msg: 'Price must be a positive number' };
+  }
+
+  // Verify the trade exists in the Trade Log sheet
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ws = ss.getSheetByName('Trade Log');
+  var data = ws.getDataRange().getValues();
+  if (data.length <= 1 || index >= data.length - 1) {
+    return { ok: false, msg: 'Trade index out of range' };
+  }
+  var ticker = data[index + 1][1];  // col 1 (0-indexed) is ticker
+
+  // Append to Trade Edits staging sheet
+  var editsWs = ss.getSheetByName('Trade Edits');
+  var editsData = editsWs.getDataRange().getValues();
+  if (editsData.length === 0) {
+    editsWs.appendRow(['date','action','index','ticker','shares','price','ref_id','requested_at']);
+  }
+  editsWs.appendRow([
+    new Date().toISOString().slice(0, 10),
+    'edit',
+    index,
+    ticker,
+    newShares,
+    newPrice,
+    '',
+    new Date().toISOString(),
+  ]);
+
+  // Invalidate cache
+  CacheService.getScriptCache().remove('all_data');
+  return { ok: true, status: 'edit queued — please re-run Colab Cell 9b' };
+}
+
+function submitTradeDelete(index) {
+  if (!Number.isInteger(index) || index < 0) {
+    return { ok: false, msg: 'Invalid trade index' };
+  }
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ws = ss.getSheetByName('Trade Log');
+  var data = ws.getDataRange().getValues();
+  if (data.length <= 1 || index >= data.length - 1) {
+    return { ok: false, msg: 'Trade index out of range' };
+  }
+  var tradeId = data[index + 1][8];  // col 8 is the trade_id
+
+  var editsWs = ss.getSheetByName('Trade Edits');
+  var editsData = editsWs.getDataRange().getValues();
+  if (editsData.length === 0) {
+    editsWs.appendRow(['date','action','index','ticker','shares','price','ref_id','requested_at']);
+  }
+  editsWs.appendRow([
+    new Date().toISOString().slice(0, 10),
+    'CANCEL',
+    index,
+    data[index + 1][1],
+    '',
+    '',
+    tradeId,
+    new Date().toISOString(),
+  ]);
+
+  CacheService.getScriptCache().remove('all_data');
+  return { ok: true, status: 'delete queued — please re-run Colab Cell 9b' };
+}
+
+function getPendingEdits() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ws = ss.getSheetByName('Trade Edits');
+  if (!ws) return { count: 0, edits: [] };
+  var data = ws.getDataRange().getValues();
+  if (data.length <= 1) return { count: 0, edits: [] };
+  var headers = data[0];
+  var edits = data.slice(1).map(function(r) {
+    var obj = {};
+    headers.forEach(function(h, i) { obj[h] = r[i]; });
+    return obj;
+  }).filter(function(e) { return e.action; });
+  return { count: edits.length, edits: edits };
+}
+
 function getExportCsv() {
   var ss      = SpreadsheetApp.getActiveSpreadsheet();
   var status  = _readSheet(ss, 'Pipeline Status');
