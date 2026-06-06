@@ -247,11 +247,11 @@ var MOCK = {
       price: 58.00, rationale: 'rank#2 net_ret=+2.1%', id: '20260520_AOT.BK_buy_c3d4', ref_id: null },
   ],
   forecasts: [
-    { ticker: 'PTT.BK',    rank_score: 3.2, exp_ret: 0.045, band_width: 0.08,
+    { date_updated: '2026-06-04', ticker: 'PTT.BK',    rank_score: 3.2, exp_ret: 0.045, band_width: 0.08,
       confidence: 'green',  net_return: 0.039, p50: 36.75, sector: 'Energy' },
-    { ticker: 'ADVANC.BK', rank_score: 2.1, exp_ret: 0.031, band_width: 0.18,
+    { date_updated: '2026-06-04', ticker: 'ADVANC.BK', rank_score: 2.1, exp_ret: 0.031, band_width: 0.18,
       confidence: 'yellow', net_return: 0.025, p50: 225.0, sector: 'Telecom' },
-    { ticker: 'KBANK.BK',  rank_score: 0.8, exp_ret: 0.012, band_width: 0.35,
+    { date_updated: '2026-06-04', ticker: 'KBANK.BK',  rank_score: 0.8, exp_ret: 0.012, band_width: 0.35,
       confidence: 'red',    net_return: 0.006, p50: 142.0, sector: 'Finance' },
   ],
   forecastHistory: [
@@ -1076,6 +1076,17 @@ function exportCsv() {
     a.click();
   }).getExportCsv();
 }
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    var fm = document.getElementById('fill-modal');
+    if (fm && !fm.hidden) fm.hidden = true;
+    var sm = document.getElementById('settings-modal');
+    if (sm && !sm.hidden) sm.hidden = true;
+    var em = document.getElementById('edit-trade-modal');
+    if (em && !em.hidden) em.hidden = true;
+  }
+});
 
 </script>
 </body>
