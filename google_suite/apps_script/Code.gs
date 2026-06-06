@@ -70,7 +70,7 @@ function getAllData() {
   };
 
   var json = JSON.stringify(data);
-  if (json.length < 100000) cache.put('all_data', json, 300);
+  if (json.length < 100000) cache.put('all_data', json, 60);
   return data;
 }
 

@@ -1053,12 +1053,20 @@ google.charts.setOnLoadCallback(function() {
 });
 
 function refreshData() {
+  _lastRefreshAt = Date.now();
   showSpinner();
   google.script.run
-    .withSuccessHandler(function(d) { hideSpinner(); renderAll(d); })
+    .withSuccessHandler(function(d) { hideSpinner(); renderAll(d); checkPendingEditsBanner(); })
     .withFailureHandler(showError)
     .refreshAllData();
 }
+
+var _lastRefreshAt = 0;
+setInterval(function() {
+  if (document.hidden) return;
+  if (Date.now() - _lastRefreshAt < 30000) return;
+  refreshData();
+}, 60000);
 
 function exportCsv() {
   google.script.run.withSuccessHandler(function(csv) {
