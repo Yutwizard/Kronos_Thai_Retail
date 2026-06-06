@@ -1,3 +1,27 @@
+"""
+build_notebook.py — generates google_suite/kronos_daily_pipeline.ipynb
+
+SCHEMA CONTRACT — Sheets ↔ Python field name alignment
+======================================================
+
+This pipeline writes staging sheets that promote to live Google Sheets tabs.
+The Apps Script web app (google_suite/apps_script/) reads those tabs and
+renders the dashboard. Apps Script reads by header name, so field-name
+alignment is critical.
+
+SHEET → PYTHON FIELD-NAME DIVERGENCES (3 known):
+  1. Risk Metrics: "trade_win_rate"  ← NOT  "win_rate"      (kth uses trade_win_rate)
+  2. Risk Metrics: "deployed_pct"    ← NOT  "exposure"      (kth uses deployed_pct)
+  3. Positions:   "pct_to_stoploss"  = pnl_pct + 0.10     (10pp stop loss band)
+
+Staging promotion pattern (Cells 13/14):
+  - Cell 13: writes 5 staging sheets (Portfolio, Positions, Forecasts, Trade Ticket, Risk Metrics)
+  - Cell 14: promotes each staging sheet to its live counterpart
+  - Cell 13b (Task 2): adds Equity Curve_staging
+  - Cell 11b (Task 4): appends to Calibration sheet directly (not staging)
+  - Cell 9b (Task 5): applies Trade Edits staging, then re-promotes
+  - Cell 4b (Task 6): applies Capital Reset staging, then re-promotes
+"""
 """Generate kronos_daily_pipeline.ipynb from source cells in the plan."""
 import json, hashlib
 
@@ -407,6 +431,8 @@ for p in pos['positions']:
               if p['ticker'] in ohlcv_dict else p['avg_cost']
     pnl     = (close - p['avg_cost']) * p['shares']
     pnl_pct = (close / p['avg_cost'] - 1) if p['avg_cost'] else 0
+# Schema divergence: pct_to_stoploss = pnl_pct + 0.10 (10pp stop-loss band above current P&L).
+# Apps Script expects "pct_to_stoploss" as the 9th column.
     pos_rows.append([
         p['ticker'], p['shares'], p['avg_cost'], p.get('entry_date', ''),
         get_sector(p['ticker']), round(close, 2),
@@ -450,6 +476,8 @@ _write_staging('Trade Ticket_staging',
     tt_rows)
 
 equity = pos['total_value']
+# Schema divergence: Apps Script reads "trade_win_rate" (NOT "win_rate" — kth trade_win_rate).
+# Schema divergence: "deployed_pct" (NOT "exposure" — kth deployed_pct).
 _write_staging('Risk Metrics_staging',
     ['date','equity','cash','deployed_pct','trailing_sharpe_12w','max_drawdown_pct',
      'mtd_pnl_pct','trade_win_rate','calmar_ratio','sortino_ratio','drawdown_velocity',
