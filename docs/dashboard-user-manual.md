@@ -1,4 +1,4 @@
-# Kronos-TH — Local Dashboard User Manual
+# Kronos-TH — Local Dashboard User Manual (Flask)
 
 > **Reference manual — detailed step-by-step procedures.**
 >
@@ -7,6 +7,12 @@
 > This manual assumes you've completed setup and understand the basic concepts (paper trading, confidence flags, allocation bands). It provides the full daily/weekly/monthly/quarterly operating procedures for the dashboard. If you encounter a term you don't recognize, check the [glossary](getting-started.md#5-glossary--words-you-need-to-know).
 >
 > Thai equity only. 500,000 THB starting capital. Not financial advice.
+>
+> **Alternative dashboard available:** A second dashboard option exists — the **Google Suite dashboard** (`google_suite/SETUP_GUIDE.md`), which is zero-cost, browser-based, and requires no local GPU. Both dashboards reached feature parity on 2026-06-06. Choose based on your environment:
+> - **This Flask dashboard** — local Python + GPU, run via `scripts/dashboard.py`, requires cron or manual start
+> - **Google Suite dashboard** — Colab + Sheets + Apps Script, runs in any browser, no local install
+>
+> Both are fully functional. This Flask manual remains the authoritative reference for Flask-specific features.
 
 ---
 

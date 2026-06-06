@@ -166,7 +166,14 @@ After this, if the `cron_pipeline.sh` fails (download or forecast step), you'll 
 
 ## 3. Your First Run
 
-### Option A: With GPU (Recommended)
+Two dashboard options are available — choose based on your environment:
+
+- **Flask dashboard** (this section) — local Python + GPU, run via `scripts/dashboard.py`
+- **Google Suite dashboard** (`google_suite/SETUP_GUIDE.md`) — zero-cost, browser-based, no local GPU required
+
+Both reached feature parity on 2026-06-06 and are fully functional. Pick whichever fits your setup.
+
+### Option A: Flask Dashboard (Local GPU)
 
 ```bash
 python scripts/dashboard.py --generate
@@ -183,14 +190,17 @@ python scripts/dashboard.py --serve
 
 Open your browser and go to: **http://localhost:5555**
 
-### Option B: Google Colab (No GPU, Notebook Workflow)
+### Option B: Google Suite Dashboard (Zero-Cost, Browser-Based)
 
-If you don't have an NVIDIA GPU, you can use Google Colab's free T4 GPU — but note this is a **different workflow** from the dashboard:
+See [`google_suite/SETUP_GUIDE.md`](../google_suite/SETUP_GUIDE.md) for full setup. Summary:
+- No local GPU required (runs on Colab's free T4)
+- Browser-based, accessible from any device
+- Includes Reset Capital, Signal Health Banner, Trade Log edit/delete, 60s auto-refresh
+- 44-cell Colab notebook + 18-tab Google Sheets + 5-tab Apps Script web app
 
-- **Google Colab** = Jupyter notebooks, covers all 100 tickers (Thai + US + crypto + ETFs), no dashboard UI
-- **Local GPU** = Flask dashboard, 49 Thai stocks only, web-based interface
+### Option C: Google Colab (Notebook Workflow, No Dashboard)
 
-Choose one path and stick with it. The dashboard is recommended for daily trading.
+If you don't need a dashboard UI and just want a notebook workflow:
 
 1. Go to https://colab.research.google.com
 2. Upload `notebooks/01_data_layer.ipynb` and run it to download data

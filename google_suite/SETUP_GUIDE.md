@@ -2,6 +2,8 @@
 
 > **For absolute beginners to Google Sheets, Apps Script, and Colab.**
 > No prior experience needed. Each step tells you exactly what to click and what to type.
+>
+> **Note:** This is one of two dashboard options. The Google Suite dashboard is zero-cost, browser-based, and requires no local GPU. The Flask dashboard (`docs/dashboard-user-manual.md`) is the alternative for users with a local Python + GPU setup. Both are fully functional; choose based on your environment.
 
 ---
 

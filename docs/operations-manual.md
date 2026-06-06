@@ -4,9 +4,10 @@
 >
 > For daily use, start here:
 > - **New to Kronos?** → [Getting Started Guide](getting-started.md) (installation, paper trading, day-by-day walkthrough)
-> - **Using the dashboard?** → [Dashboard User Manual](dashboard-user-manual.md) (step-by-step operating procedures)
+> - **Flask dashboard user?** → [Dashboard User Manual](dashboard-user-manual.md) (Flask dashboard setup, requires local GPU)
+> - **Google Suite dashboard user?** → [google_suite/SETUP_GUIDE.md](../google_suite/SETUP_GUIDE.md) (zero-cost, browser-based, no local GPU)
 >
-> This operations manual documents the original notebook-based workflow. The dashboard automates most of these steps. The decision rules (3-filter, signal interpretation, risk controls) remain authoritative and are referenced by the dashboard.
+> This operations manual documents the decision rules (3-filter, signal interpretation, risk controls) that are common to both dashboards. The Flask dashboard commands shown in this manual are also valid; the Google Suite equivalent uses Colab cells — see the SETUP_GUIDE.md for those.
 
 ---
 

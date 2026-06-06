@@ -3,13 +3,10 @@
 > **Single-document review of the Kronos-TH project.**
 > Read this top-to-bottom before writing any more code. The goal is to confirm scope, design choices, and tradeoffs so we don't build the wrong thing.
 
-> ⚠️ **Layer 5 (Dashboard) is being superseded as of 2026-06-04.**
-> The local Flask dashboard (`scripts/dashboard.py`) is replaced by the Google Suite stack:
-> Colab daily pipeline + Google Sheets + Apps Script web app.
-> See [spec](docs/superpowers/specs/2026-06-04-google-suite-dashboard-design.md) and
-> [implementation plan](docs/superpowers/plans/2026-06-04-google-suite-implementation-plan.md).
-> All Layer 5 references to `scripts/dashboard.py`, `cron_pipeline.sh`, and `localhost:5555`
-> in this document describe the old system.
+> **Layer 5: Two dashboards available** — Google Suite (Colab + Sheets + Apps Script, zero-cost, no local GPU required) and Flask (`scripts/dashboard.py`, requires local GPU). Google Suite reached feature parity with Flask on 2026-06-06. Both are fully functional; users can choose based on environment.
+> See [Google Suite spec](docs/superpowers/specs/2026-06-04-google-suite-dashboard-design.md) +
+> [parity fix spec](docs/superpowers/specs/2026-06-06-google-suite-dashboard-parity-fixes-design.md) +
+> [Flask spec](docs/superpowers/specs/2026-06-02-real-market-dashboard-design.md).
 
 ---
 
@@ -171,7 +168,8 @@ These were debated and chosen earlier:
 └────────────────────────────────────────────────────────────────┘
 ```
 
-LAYER 5: Dashboard / Report   scripts/dashboard.py                   ✅ built (Flask paper trading)
+LAYER 5: Dashboard / Report   google_suite/                          ✅ built (Google Suite dashboard)
+                                scripts/dashboard.py                    ✅ built (Flask dashboard — local GPU option)
                                 kth/trading/portfolio.py                ✅ built
                                 kth/trading/trade_gen.py                ✅ built
                                 scripts/cron_pipeline.sh                ✅ built
@@ -272,7 +270,7 @@ Cells:
 
 ### Notebook 05 — Daily decision report ✅
 
-**Built.** `notebooks/05_decision_report.ipynb` (Colab version, 3 views). Also superseded for daily use by the local Flask dashboard (`scripts/dashboard.py`) which runs automatically via cron and requires no Colab session.
+**Built.** `notebooks/05_decision_report.ipynb` (Colab version, 3 views). For daily use, the two dashboard options are: the Google Suite dashboard (`google_suite/`, zero-cost, no local GPU) and the local Flask dashboard (`scripts/dashboard.py`, requires local GPU + cron). Both are fully functional.
 
 ---
 
@@ -553,30 +551,34 @@ Post-review data analysis surfaced the following — pending 2023 backtest befor
 - **Factor attribution:** Is the alpha genuinely predictive or a dressed momentum factor? Regress daily returns on SET 12-1 momentum factor.
 - **2023 n=50 result:** The most credible OOS year. p-value here determines whether the strategy has demonstrated statistically robust edge.
 
-### Layer 5 Migration — Google Suite (2026-06-04) 🔨 ACTIVE
+### Layer 5 — Google Suite Dashboard (2026-06-04) ✅ AVAILABLE + Flask parity (2026-06-06)
 
-The local Flask dashboard (`scripts/dashboard.py`) is being superseded by a Google-hosted stack:
+A second dashboard option, in addition to the Flask dashboard. Zero-cost, browser-based, no local GPU required:
 
 | Component | Role | Status |
 |---|---|---|
-| `google_suite/kronos_daily_pipeline.ipynb` | 19-cell Colab notebook — daily compute + forecast + ticket | ⬜ To build |
-| `google_suite/apps_script/Code.gs` | Apps Script backend — reads Sheets, computes metrics | ⬜ To build |
-| `google_suite/apps_script/Index.html` | 5-tab web app SPA — Dashboard, Trade Ticket, Portfolio, History, Risk | ⬜ To build |
+| `google_suite/kronos_daily_pipeline.ipynb` | 44-cell Colab notebook — daily compute + forecast + ticket | ✅ Built (generated from `build_notebook.py`) |
+| `google_suite/apps_script/Code.gs` | Apps Script backend — reads Sheets, computes metrics (15 functions, 60s cache) | ✅ Built |
+| `google_suite/apps_script/Index.html` | 5-tab web app SPA — Dashboard, Trade Ticket, Portfolio, History, Risk (Flask-parity) | ✅ Built |
 
 **Architecture:** Colab → Google Sheets (fills input + data store) → Apps Script web app. JSON-bridge: `os.chdir(KTH_REPO)` makes all `Path("data/...")` calls resolve against Drive. Existing `kth.*` functions unchanged.
 
-**Spec:** `docs/superpowers/specs/2026-06-04-google-suite-dashboard-design.md`
-**Plan:** `docs/superpowers/plans/2026-06-04-google-suite-implementation-plan.md` (1,852 lines, all code written, ready to implement)
+**Spec:** `docs/superpowers/specs/2026-06-04-google-suite-dashboard-design.md` + `docs/superpowers/specs/2026-06-06-google-suite-dashboard-parity-fixes-design.md`
+**Plan:** `docs/superpowers/plans/2026-06-04-google-suite-implementation-plan.md` + `docs/superpowers/plans/2026-06-06-google-suite-dashboard-parity-fixes.md`
 
 ### Paper Trading — Live Since 2026-06-04
 
 Portfolio initialised 2026-06-04 with 500,000 THB. Currently:
-- 8 trades recorded (CPF.BK, BCH.BK, HMPRO.BK via Flask dashboard)
+- 8 trades recorded (CPF.BK, BCH.BK, HMPRO.BK)
 - 3 open positions: CPF.BK (500sh), BCH.BK (1,000sh), HMPRO.BK (1,700sh)
 - 94% cash (BEAR allocation — SET bull market regime)
 - Allocation band: NEUTRAL (bootstrap, <20 closed trades)
 
-Flask dashboard improvements shipped 2026-06-04 (inform Google Suite implementation):
+Both dashboards are available for daily use. Choose based on environment:
+- **Google Suite** (`google_suite/`) — zero-cost, browser-based, no local GPU, includes Reset Capital, Signal Health Banner, Trade Log edit/delete, 60s auto-refresh
+- **Flask** (`scripts/dashboard.py`) — local Python + GPU, Run Pipeline button, fill-price modal, trade history inline edit, historical backfill
+
+Flask dashboard improvements shipped 2026-06-04 (still functional):
 - Fill-price confirmation modal with editable shares + price per trade
 - Partial fill / no-fill support (0 shares = skip)
 - Trade history panel with inline edit (shares + price) and delete
@@ -587,4 +589,4 @@ Flask dashboard improvements shipped 2026-06-04 (inform Google Suite implementat
 
 ---
 
-*Document version: 2026-06-04. Updated: Google Suite migration announced, paper trading started, Flask dashboard improvements documented.*
+*Document version: 2026-06-06. Updated: Google Suite dashboard reached Flask parity, both dashboards documented as available options.*

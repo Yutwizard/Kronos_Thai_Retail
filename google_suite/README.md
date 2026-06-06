@@ -1,9 +1,11 @@
 # Google Suite Dashboard — Kronos-TH
 
-Replaces the local Flask dashboard with a zero-cost Google-hosted stack:
+Zero-cost, browser-based dashboard option, available alongside the Flask dashboard (`scripts/dashboard.py`, requires local GPU):
 - **Google Colab** — daily compute engine (T4 GPU)
 - **Google Sheets** — persistent data store + fill-confirmation input
 - **Google Apps Script web app** — 5-tab dashboard accessible from any device
+
+Google Suite reached feature parity with the Flask dashboard on 2026-06-06. Both are fully functional; choose based on environment. See [docs/dashboard-user-manual.md](../docs/dashboard-user-manual.md) for the Flask alternative.
 
 ## Prerequisites
 

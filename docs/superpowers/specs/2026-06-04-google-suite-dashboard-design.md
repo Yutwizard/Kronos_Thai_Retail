@@ -1,8 +1,8 @@
 # Google Suite Dashboard Design
 
 **Date:** 2026-06-04
-**Status:** Revised v5 (pre-implementation final 2026-06-04)
-**Supersedes:** The Flask dashboard (`scripts/dashboard.py`) — this design replaces it entirely.
+**Status:** Revised v5 (pre-implementation final 2026-06-04) + parity fixes shipped 2026-06-06
+**Companion to:** The Flask dashboard (`scripts/dashboard.py`, `docs/superpowers/specs/2026-06-02-real-market-dashboard-design.md`) — both are available; choose based on environment. Google Suite is zero-cost, browser-based, no local GPU; Flask is local Python + GPU.
 **Implementation plan:** [docs/superpowers/plans/2026-06-04-google-suite-implementation-plan.md](../plans/2026-06-04-google-suite-implementation-plan.md)
 
 ---

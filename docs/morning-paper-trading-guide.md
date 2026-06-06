@@ -1,9 +1,11 @@
-# Daily Paper Trading Guide — Kronos-TH
+# Daily Paper Trading Guide — Kronos-TH (Flask Dashboard)
 
 > **Recommended workflow: run the pipeline in the EVENING after market closes.**
 > This uses today's close prices and means tomorrow morning you just open the
 > dashboard and trade — no waiting 12 minutes before market opens.
 > Environment: Local GTX 1060, cron NOT configured → manual run required
+>
+> **Using the Google Suite dashboard instead?** See [`google_suite/SETUP_GUIDE.md`](../google_suite/SETUP_GUIDE.md) for the Colab-based equivalent. The decision rules are identical; only the compute environment differs.
 
 ---
 

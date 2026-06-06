@@ -78,15 +78,15 @@ kronos-th/
 │   ├── models/              # KronosTH wrapper + fine-tune
 │   ├── backtest/            # walk-forward, metrics, strategy
 │   └── trading/             # portfolio engine, trade_gen, paper trading
-├── google_suite/            # 🔨 Google Suite dashboard (in progress)
-│   ├── README.md            # setup guide
-│   ├── kronos_daily_pipeline.ipynb  # Colab notebook (19 cells)
+├── google_suite/            # Google Suite dashboard (zero-cost, browser-based)
+│   ├── SETUP_GUIDE.md       # click-by-step setup
+│   ├── kronos_daily_pipeline.ipynb  # Colab notebook (44 cells)
 │   ├── migrate_to_sheets.py # one-time data migration
 │   └── apps_script/
-│       ├── Code.gs          # Apps Script backend
-│       └── Index.html       # 5-tab web app SPA
+│       ├── Code.gs          # Apps Script backend (15 functions)
+│       └── Index.html       # 5-tab web app SPA (Flask-parity)
 ├── scripts/
-│   └── dashboard.py         # Flask dashboard (superseded — kept for reference)
+│   └── dashboard.py         # Flask dashboard (local GPU option)
 ├── notebooks/
 │   └── 01_data_layer.ipynb  # Colab: verify real yfinance access
 ├── data/

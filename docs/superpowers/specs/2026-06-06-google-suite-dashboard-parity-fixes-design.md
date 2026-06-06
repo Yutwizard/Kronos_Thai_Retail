@@ -345,8 +345,8 @@ None. All 14 items have concrete designs.
 
 ## 10. References
 
-- `docs/superpowers/specs/2026-06-04-google-suite-dashboard-design.md` — original Layer 5 spec
-- `docs/superpowers/specs/2026-06-02-real-market-dashboard-design.md` — Flask dashboard spec (now superseded but kept for reference)
+- `docs/superpowers/specs/2026-06-04-google-suite-dashboard-design.md` — original Google Suite spec
+- `docs/superpowers/specs/2026-06-02-real-market-dashboard-design.md` — Flask dashboard spec (companion — both available)
 - `scripts/dashboard.py` — Flask backend (450 lines, the source of parity)
 - `scripts/static/dashboard.html` — Flask frontend (888 lines)
 - `google_suite/build_notebook.py` — Colab notebook generator (668 lines, target of edits)
