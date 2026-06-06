@@ -119,6 +119,87 @@ else:
     print(f"Portfolio already initialised: ฿{float(rows[1][0]):,.0f} cash")
 """)
 
+md("""## Cell 4b — Apply Capital Reset
+
+**When to run:** Only when the Apps Script shows a Reset queued banner. Replaces Cells 5-15 in this single Colab session.
+
+**Reads:** `Capital Reset` staging sheet (rows with `confirm_text = "RESET"` or `"SETUP"`).
+**Applies:** Calls `reset_portfolio('paper', newCapital)` from `kth.trading.portfolio`.
+**Writes:** Cleared `Capital Reset` sheet, fresh `paper_portfolio.json`, then re-runs staging writes + promotion.""")
+
+code(r"""capital_reset_ws = sh.worksheet('Capital Reset')
+capital_reset_data = capital_reset_ws.get_all_values()
+capital_reset_headers = ['date', 'action', 'capital', 'confirm_text', 'requested_at']
+if not capital_reset_data:
+    capital_reset_ws.append_row(capital_reset_headers)
+else:
+    from kth.trading.portfolio import reset_portfolio, get_positions
+    for row in capital_reset_data[1:]:
+        if not row or not row[0]: continue
+        action = row[1]
+        capital = float(row[2])
+        confirm = row[3]
+        if confirm not in ('RESET', 'SETUP'):
+            print(f"  Skipping row with invalid confirm_text: {confirm}")
+            continue
+        try:
+            reset_portfolio('paper', capital)
+            print(f"  Applied {action}: capital={capital:,.0f} THB (confirm={confirm})")
+        except Exception as e:
+            print(f"  Reset failed: {e}")
+    capital_reset_ws.clear()
+    capital_reset_ws.append_row(capital_reset_headers)
+    print("Capital Reset cleared.")
+
+# Re-run staging writes (mirror Cells 13/14)
+pf_data = init_portfolio('paper')
+_write_staging('Portfolio_staging',
+    ['cash', 'initial_capital', 'mode', 'model_version', 'forecast_date'],
+    [[pf_data['cash'], pf_data['initial_capital'], 'paper', MODEL_VERSION, today_str]])
+
+# Clear Positions sheet (capital reset wipes all positions)
+pos = get_positions('paper')
+pos_rows = []
+for p in pos['positions']:
+    close = float(ohlcv_dict[p['ticker']]['close'].iloc[-1]) if p['ticker'] in ohlcv_dict else p['avg_cost']
+    pnl = (close - p['avg_cost']) * p['shares']
+    pnl_pct = (close / p['avg_cost'] - 1) if p['avg_cost'] else 0
+    pos_rows.append([p['ticker'], p['shares'], p['avg_cost'], p.get('entry_date', ''),
+                     get_sector(p['ticker']), round(close, 2), round(pnl, 2),
+                     round(pnl_pct, 4), round(pnl_pct + 0.10, 4)])
+_write_staging('Positions_staging',
+    ['ticker','shares','avg_cost','entry_date','sector','current_price','pnl','pnl_pct','pct_to_stoploss'],
+    pos_rows)
+
+# Append new equity curve row (post-reset: equity == initial_capital, invested == 0)
+_write_staging('Equity Curve_staging',
+    ['date', 'equity', 'cash', 'invested'],
+    [[today_str, round(pf_data['initial_capital'], 2), round(pf_data['cash'], 2), 0.0]])
+
+# Promote all staging to live (Cell 14 mirror)
+STAGING_MAP = {
+    'Portfolio_staging': 'Portfolio',
+    'Positions_staging': 'Positions',
+    'Forecasts_staging': 'Forecasts',
+    'Trade Ticket_staging': 'Trade Ticket',
+    'Risk Metrics_staging': 'Risk Metrics',
+    'Equity Curve_staging': 'Equity Curve',
+}
+for staging_name, live_name in STAGING_MAP.items():
+    try:
+        staging_ws = sh.worksheet(staging_name)
+        live_ws = sh.worksheet(live_name)
+        data = staging_ws.get_all_values()
+        if data:
+            live_ws.clear()
+            live_ws.update('A1', data)
+        staging_ws.clear()
+    except Exception as e:
+        print(f"  Promotion {staging_name} -> {live_name} failed: {e}")
+
+print("Capital reset applied and staging promoted.")
+""")
+
 md("""## Cell 5 — Set Pipeline Status: Running""")
 
 code(r"""import time

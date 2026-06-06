@@ -175,6 +175,34 @@ tr.row-exit  { border-left: 4px solid var(--red); }
   </div>
 </div>
 
+<!-- Setup banner (first run only) -->
+<div id="setup-banner" class="banner banner-blue" hidden style="padding:20px">
+  <h3>🏦 First-day setup</h3>
+  <p>Set your starting capital before recording any trades.</p>
+  <p>Capital (THB): <input class="modal-input" id="setup-capital" type="number" min="1" max="100000000" step="1000" value="500000" style="width:140px"></p>
+  <button class="btn-primary" onclick="submitSetup()">Start Paper Trading</button>
+  <p style="font-size:0.8rem;margin-top:8px">This will queue a setup in the Capital Reset sheet. Re-run Colab Cell 4b to apply.</p>
+</div>
+
+<!-- Settings button + modal -->
+<button id="settings-btn" class="btn-secondary" onclick="openSettingsModal()" style="position:fixed;top:12px;right:12px;z-index:50">⚙ Settings</button>
+<div id="settings-modal" class="modal-overlay" hidden>
+  <div class="modal-box">
+    <h3>⚙ Settings</h3>
+    <p>Current capital: <strong id="settings-current-capital">—</strong></p>
+    <p>Total trades: <strong id="settings-trade-count">—</strong></p>
+    <hr style="margin:16px 0;border:none;border-top:1px solid var(--border)">
+    <h4 style="color:var(--red)">Reset Portfolio (destructive)</h4>
+    <p class="modal-note">This will delete all trades, positions, equity curve, and trade log. The portfolio will be reinitialised with a new capital amount.</p>
+    <p>New capital (THB): <input class="modal-input" id="settings-new-capital" type="number" min="1" max="100000000" step="1000"></p>
+    <p>Type <code>RESET</code> to confirm: <input class="modal-input" id="settings-confirm-text" type="text" style="width:120px"></p>
+    <button class="btn-primary" id="settings-reset-btn" disabled onclick="submitReset()">⚠ Reset Portfolio</button>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeSettingsModal()">Close</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://www.gstatic.com/charts/loader.js"></script>
 
 <script>
@@ -380,6 +408,70 @@ function confirmDeleteTrade(idx) {
     })
     .withFailureHandler(function(err) { alert('Error: ' + String(err)); })
     .submitTradeDelete(idx);
+}
+
+function submitSetup() {
+  var capital = parseFloat(document.getElementById('setup-capital').value);
+  if (!capital || capital < 1 || capital > 100000000) {
+    alert('Capital must be between 1 and 100,000,000 THB'); return;
+  }
+  google.script.run
+    .withSuccessHandler(function(result) {
+      if (result.ok) {
+        document.getElementById('setup-banner').hidden = true;
+        alert('Setup queued. Open Colab and run Cell 4b to apply.');
+      } else {
+        alert('Setup failed: ' + result.msg);
+      }
+    })
+    .withFailureHandler(function(err) { alert('Error: ' + String(err)); })
+    .resetCapital(capital, 'SETUP');
+}
+
+function openSettingsModal() {
+  google.script.run
+    .withSuccessHandler(function(status) {
+      document.getElementById('settings-current-capital').textContent = '฿' + status.currentCapital.toLocaleString('th-TH');
+      document.getElementById('settings-trade-count').textContent = status.hasTrades ? 'trades exist' : '0 (fresh)';
+      document.getElementById('settings-modal').hidden = false;
+    })
+    .getSetupStatus();
+}
+
+function closeSettingsModal() {
+  document.getElementById('settings-modal').hidden = true;
+}
+
+// Enable reset button only when RESET is typed
+document.addEventListener('DOMContentLoaded', function() {
+  var confirmInput = document.getElementById('settings-confirm-text');
+  var resetBtn = document.getElementById('settings-reset-btn');
+  if (confirmInput && resetBtn) {
+    confirmInput.addEventListener('input', function() {
+      resetBtn.disabled = confirmInput.value !== 'RESET';
+    });
+  }
+});
+
+function submitReset() {
+  var capital = parseFloat(document.getElementById('settings-new-capital').value);
+  var confirm = document.getElementById('settings-confirm-text').value;
+  if (confirm !== 'RESET') { alert('Type RESET to confirm.'); return; }
+  if (!capital || capital < 1 || capital > 100000000) {
+    alert('Capital must be between 1 and 100,000,000 THB'); return;
+  }
+  if (!confirm('This will DELETE ALL TRADES. Continue?')) return;
+  google.script.run
+    .withSuccessHandler(function(result) {
+      if (result.ok) {
+        closeSettingsModal();
+        alert('Reset queued. Open Colab and run Cell 4b to apply. DESTRUCTIVE: clears all trades.');
+      } else {
+        alert('Reset failed: ' + result.msg);
+      }
+    })
+    .withFailureHandler(function(err) { alert('Error: ' + String(err)); })
+    .resetCapital(capital, 'RESET');
 }
 
 function checkPendingEditsBanner() {
@@ -944,7 +1036,18 @@ google.charts.load('current', {packages: ['corechart']});
 google.charts.setOnLoadCallback(function() {
   showSpinner();
   google.script.run
-    .withSuccessHandler(function(d) { hideSpinner(); renderAll(d); })
+    .withSuccessHandler(function(d) {
+      hideSpinner();
+      renderAll(d);
+      checkPendingEditsBanner();
+      google.script.run
+        .withSuccessHandler(function(status) {
+          if (status.isFirstRun) {
+            document.getElementById('setup-banner').hidden = false;
+          }
+        })
+        .getSetupStatus();
+    })
     .withFailureHandler(showError)
     .getAllData();
 });

@@ -207,6 +207,53 @@ function getPendingEdits() {
   return { count: edits.length, edits: edits };
 }
 
+function resetCapital(newCapital, confirmText) {
+  if (typeof newCapital !== 'number' || newCapital < 1 || newCapital > 100000000) {
+    return { ok: false, msg: 'Capital must be between 1 and 100,000,000 THB' };
+  }
+  if (confirmText !== 'RESET' && confirmText !== 'SETUP') {
+    return { ok: false, msg: 'Confirmation text must be RESET (destructive) or SETUP (first run)' };
+  }
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ws = ss.getSheetByName('Capital Reset');
+  var data = ws.getDataRange().getValues();
+  if (data.length === 0) {
+    ws.appendRow(['date','action','capital','confirm_text','requested_at']);
+  }
+  ws.appendRow([
+    new Date().toISOString().slice(0, 10),
+    confirmText === 'RESET' ? 'reset' : 'setup',
+    newCapital,
+    confirmText,
+    new Date().toISOString(),
+  ]);
+
+  CacheService.getScriptCache().remove('all_data');
+  return {
+    ok: true,
+    status: confirmText === 'RESET'
+      ? 'reset queued — please re-run Colab Cell 4b (DESTRUCTIVE: clears all trades)'
+      : 'setup queued — please re-run Colab Cell 4b',
+  };
+}
+
+function getSetupStatus() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var portfolioWs = ss.getSheetByName('Portfolio');
+  var tradeLogWs = ss.getSheetByName('Trade Log');
+  var portfolioRows = portfolioWs ? portfolioWs.getDataRange().getValues() : [];
+  var tradeLogRows  = tradeLogWs ? tradeLogWs.getDataRange().getValues() : [];
+  var hasPortfolio = portfolioRows.length > 1;
+  var hasTrades = tradeLogRows.length > 1;
+  var currentCapital = hasPortfolio ? Number(portfolioRows[1][0]) || 0 : 0;
+  return {
+    isFirstRun: !hasPortfolio,
+    hasTrades: hasTrades,
+    currentCapital: currentCapital,
+  };
+}
+
 function getExportCsv() {
   var ss      = SpreadsheetApp.getActiveSpreadsheet();
   var status  = _readSheet(ss, 'Pipeline Status');
