@@ -48,7 +48,7 @@ Defined in `kth/data/universe.py`. 100 tickers across 9 asset classes:
 - ✅ **Daily decision report** (`notebooks/05_decision_report.ipynb`): 3 toggleable views (morning/trader/quant), 22 columns, 100 tickers.
 - ✅ **User manual** (`docs/user-manual.md` — text, `docs/user-manual.html` — interactive with charts): complete methodology, usage, cautions, and results.
 - ✅ **Monthly walkthrough** (`docs/monthly-walkthrough.md` — text, `docs/monthly-walkthrough.html` — visual with timeline): 21-day simulation with real allocations, exits, and rebalancing.
-- 🔨 **Google Suite dashboard** (`google_suite/`): replacing the local Flask dashboard with a zero-cost Google-hosted alternative — Colab daily pipeline + Google Sheets data store + Apps Script web app. See [spec](docs/superpowers/specs/2026-06-04-google-suite-dashboard-design.md) and [implementation plan](docs/superpowers/plans/2026-06-04-google-suite-implementation-plan.md).
+- 🔨 **Google Suite dashboard** (`google_suite/`): Colab daily pipeline + Google Sheets data store + Apps Script web app. **Now with:** Trade Log inline edit/delete, Reset Capital modal, Signal Health banner, Position row colors, 60s auto-refresh. See [spec](docs/superpowers/specs/2026-06-04-google-suite-dashboard-design.md), [parity-fix spec](docs/superpowers/specs/2026-06-06-google-suite-dashboard-parity-fixes-design.md), and [implementation plan](docs/superpowers/plans/2026-06-06-google-suite-dashboard-parity-fixes.md).
 
 ## Quick start
 
