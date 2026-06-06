@@ -174,7 +174,7 @@ cd /home/yut/VSCode/Kronos_Thai_Retail
 python google_suite/build_notebook.py
 ```
 
-Expected output: `Generated google_suite/kronos_daily_pipeline.ipynb — 36 cells` (count may vary as new cells are added in later tasks; for Task 1, should be 19 since no new code cells were added — just docstrings and comments).
+Expected output: `Generated google_suite/kronos_daily_pipeline.ipynb — 36 cells` (no change — Task 1 only adds docstrings and comments to existing cells, no new cells).
 
 - [ ] **Step 1.5: Commit**
 
@@ -360,27 +360,24 @@ git commit -m "feat(google-suite): add red/orange/green left-border row colors t
 - Modify: `google_suite/apps_script/Index.html` (add health banner render in `renderDashboard`)
 - Modify: `google_suite/SETUP_GUIDE.md` (add `Calibration` to tabs table)
 
-**Context:** Flask shows a signal health banner when model accuracy diverges from backtest. Google Suite has no equivalent. This task adds a new `Calibration` sheet, a Colab cell to write to it, an Apps Script function to read it, and a banner in the Dashboard UI.
+**Context:** Flask shows a signal health banner when model calibration diverges from the 90% target. Google Suite has no equivalent. This task adds a new `Calibration` sheet, a Colab cell to write to it, an Apps Script function to read it, and a banner in the Dashboard UI.
 
 - [ ] **Step 4.1: Add `Calibration` to SETUP_GUIDE.md tab-creation table**
 
-In `google_suite/SETUP_GUIDE.md`, find the list of "Live tabs (9)" and add `Calibration`. The live tabs count should go from 9 to 10, and the grand total from 17 to 18... wait, the spec said 17 tabs. Re-check: 17 = 11 live + 6 staging. Live: Portfolio, Positions, Trade Ticket, Trade Log, Forecasts, Forecast History, Equity Curve, Risk Metrics, Pipeline Status, Calibration, Trade Edits (no — Trade Edits is staging). Let me recount: 10 live (add Calibration) + 6 staging + 1 Capital Reset staging = 17 total. The Capital Reset is staging. Trade Edits is staging. So 10 live + 7 staging? No — the spec said "11 live + 6 staging" = 17. So:
-- 10 live: Portfolio, Positions, Trade Ticket, Trade Log, Forecasts, Forecast History, Equity Curve, Risk Metrics, Pipeline Status, Calibration
-- 7 staging: 5 originals + Equity Curve_staging + Capital Reset + Trade Edits = wait, that's 8
-- Actually: 5 original staging (Portfolio, Positions, Forecasts, Trade Ticket, Risk Metrics) + Equity Curve_staging + Capital Reset + Trade Edits = 8 staging
-- Total: 10 + 8 = 18 tabs
+**Sheet count note:** The spec at §8 says "11 live + 6 staging" but that count is off by 1. The correct count after this spec is **10 live + 8 staging = 18 tabs**:
+- **Live (10):** Portfolio, Positions, Trade Ticket, Trade Log, Forecasts, Forecast History, Equity Curve, Risk Metrics, Pipeline Status, Calibration
+- **Staging (8):** Portfolio_staging, Positions_staging, Forecasts_staging, Trade Ticket_staging, Risk Metrics_staging, Equity Curve_staging, Trade Edits, Capital Reset
+  - 5 original staging + Equity Curve_staging (Task 2) + Trade Edits (Task 5) + Capital Reset (Task 6) = 8
 
-Reconcile with the spec's claim of 17. The spec at §8 says "11 live + 6 staging". The discrepancy comes from counting `Trade Edits` and `Capital Reset` as "staging" or as "Apps Script writes only" sheets. The cleanest count: 17 tabs total = 10 live + 7 staging where Trade Edits and Capital Reset are staging. The spec's "11 live" overcounts by 1 (probably because it included Trade Edits and Capital Reset as live sheets — but they're written by Apps Script and read by Colab, so they're "transactional" sheets; let's call them staging for sheet-counting purposes).
-
-In `SETUP_GUIDE.md`, update the tab creation to list 10 live + 7 staging = 17 tabs:
+In `google_suite/SETUP_GUIDE.md`, find the list of "Live tabs (9)" and add `Calibration`. Update the staging tabs list to 8 (add `Equity Curve_staging`, `Trade Edits`, `Capital Reset`). Update any "14 tabs" or "17 tabs" references to "18 tabs".
 
 ```markdown
 **Live tabs (10):** `Portfolio`, `Positions`, `Trade Ticket`, `Trade Log`, `Forecasts`, `Forecast History`, `Equity Curve`, `Risk Metrics`, `Pipeline Status`, `Calibration`
 
-**Staging tabs (7):** `Portfolio_staging`, `Positions_staging`, `Forecasts_staging`, `Trade Ticket_staging`, `Risk Metrics_staging`, `Equity Curve_staging`, `Trade Edits`, `Capital Reset`
+**Staging tabs (8):** `Portfolio_staging`, `Positions_staging`, `Forecasts_staging`, `Trade Ticket_staging`, `Risk Metrics_staging`, `Equity Curve_staging`, `Trade Edits`, `Capital Reset`
 ```
 
-Note: Trade Edits and Capital Reset are technically "staging" in the sense that they hold in-flight operations, but they're written by Apps Script not by the Colab notebook. They're single-sheet operations queues.
+Note: Trade Edits and Capital Reset are written by Apps Script (not by the Colab notebook) and read by Colab Cells 9b/4b. They're functionally staging sheets for in-flight operations, not for general data flow.
 
 - [ ] **Step 4.2: Add Cell 11b — Compute Calibration**
 
@@ -391,12 +388,13 @@ md("""## Cell 11b — Compute Calibration
 
 **Writes to:** `Calibration` sheet (1 row appended per pipeline run).
 
-**What it measures:** Mean predicted return vs mean actual return for the past 20 resolved forecasts. Used by the Apps Script health banner to warn if model accuracy diverges from backtest.""")
+**What it measures:** P5/P95 band coverage — fraction of actual prices that fell inside the model's 90% confidence band over the last 60 resolved forecasts. Target ~0.90 (well-calibrated). Used by the Apps Script health banner.
+
+**Why it matters:** If actuals fall outside the 90% band more than 10% of the time, the model is overconfident. If they fall inside more than 95% of the time, the bands are too wide and signals are weak.""")
 
 code(r"""calibration_ws = sh.worksheet('Calibration')
 calibration_data = calibration_ws.get_all_values()
-calibration_headers = ['date', 'coverage', 'n_samples', 'mean_predicted_return',
-                       'mean_actual_return', 'accuracy_pct', 'backtest_baseline', 'status']
+calibration_headers = ['date', 'coverage', 'n_samples', 'status']
 if not calibration_data:
     calibration_ws.append_row(calibration_headers)
 
@@ -405,25 +403,30 @@ try:
     cal = compute_calibration(
         forecast_cache_dir=Path('data/forecast_cache') / 'NeoQuasar_Kronos-small',
         raw_data_dir=Path('data/raw'),
-        tickers=[t for t in ohlcv_dict if t in fc_by_ticker],
+        tickers=list(ohlcv_dict.keys()),
     )
-    if cal.get('n_samples', 0) > 0:
-        # Read the most recent Calibration row to get the previous backtest baseline
-        backtest_baseline = 0.567  # from BACKTEST_METRICS thai_equity.sharpe proxy; for accuracy compare
-        acc = cal.get('accuracy', 0)
-        status = 'on_track' if acc >= backtest_baseline - 0.05 else \
-                 'monitor' if acc >= backtest_baseline - 0.10 else 'diverged'
+    cov = cal.get('coverage')
+    n = cal.get('n_samples', 0)
+    status = cal.get('status', 'insufficient_data')
+    if n > 0 and cov is not None:
+        # Map the function's 2-status output to the 4-status used by the health banner
+        if status == 'insufficient_data':
+            banner_status = 'insufficient_data'
+        elif cov < 0.80:
+            banner_status = 'diverged'   # way below 90% target — actuals too often outside band
+        elif cov < 0.85:
+            banner_status = 'monitor'    # below 90% target
+        elif cov > 0.95:
+            banner_status = 'overconfident'  # function already flags this, but make explicit
+        else:
+            banner_status = 'on_track'   # 0.85-0.95 inclusive
         calibration_ws.append_row([
             today_str,
-            round(cal.get('coverage', 0), 4),
-            cal.get('n_samples', 0),
-            round(cal.get('mean_predicted_return', 0), 4),
-            round(cal.get('mean_actual_return', 0), 4),
-            round(acc, 4),
-            round(backtest_baseline, 4),
-            status,
+            round(cov, 4),
+            n,
+            banner_status,
         ])
-        print(f"Calibration: n={cal['n_samples']} acc={acc:.2%} status={status}")
+        print(f"Calibration: n={n} coverage={cov:.2%} status={banner_status}")
     else:
         print("Calibration: no resolved samples yet — skip write")
 except Exception as e:
@@ -439,27 +442,36 @@ In `google_suite/apps_script/Code.gs`, append this function at the end (after `g
 function getHealthCheck() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var ws = ss.getSheetByName('Calibration');
-  if (!ws) return { status: 'unknown', accuracy: null, baseline: 0.567, divergence: 0,
+  if (!ws) return { status: 'unknown', coverage: null, target: 0.90, divergence: 0,
                     recommendation: 'Run the pipeline to compute calibration.' };
   var lastRow = ws.getLastRow();
-  if (lastRow <= 1) return { status: 'unknown', accuracy: null, baseline: 0.567,
+  if (lastRow <= 1) return { status: 'unknown', coverage: null, target: 0.90,
                               divergence: 0, recommendation: 'Calibration sheet is empty.' };
   var headers = ws.getRange(1, 1, 1, ws.getLastColumn()).getValues()[0];
   var values  = ws.getRange(lastRow, 1, 1, ws.getLastColumn()).getValues()[0];
   var row = {};
   headers.forEach(function(h, i) { row[h] = values[i]; });
-  var acc = Number(row.accuracy_pct) || 0;
-  var base = Number(row.backtest_baseline) || 0.567;
-  var divergence = acc - base;
+  var coverage = Number(row.coverage) || 0;
+  var target = 0.90;  // P5/P95 band target for a well-calibrated model
+  var divergence = coverage - target;
+  var status = String(row.status || 'unknown');
   var recommendation;
-  if (divergence < -0.10) recommendation = 'Halve position sizes — model accuracy is diverging from backtest.';
-  else if (divergence < -0.05) recommendation = 'Monitor — model accuracy is below baseline.';
-  else recommendation = 'On track — model accuracy is within 5pp of backtest baseline.';
+  if (status === 'diverged' || coverage < 0.80) {
+    recommendation = 'Coverage is well below the 90% target. Consider halving position sizes.';
+  } else if (status === 'monitor' || coverage < 0.85) {
+    recommendation = 'Coverage is below the 90% target. Monitor closely.';
+  } else if (status === 'overconfident' || coverage > 0.95) {
+    recommendation = 'Coverage exceeds 95% — bands may be too wide. Model is underconfident.';
+  } else if (status === 'insufficient_data') {
+    recommendation = 'Need at least 10 resolved forecasts. Keep running the pipeline daily.';
+  } else {
+    recommendation = 'On track — model calibration is within 5pp of the 90% target.';
+  }
   return {
-    accuracy: acc,
-    baseline: base,
+    coverage: coverage,
+    target: target,
     divergence: divergence,
-    status: String(row.status || 'on_track'),
+    status: status,
     recommendation: recommendation,
     n_samples: Number(row.n_samples) || 0,
     date: row.date || null,
@@ -506,12 +518,13 @@ Then in `renderDashboard`, after the `var band = lastRm ? lastRm.allocation_band
 
 ```javascript
   var healthHtml = '';
-  if (health && health.accuracy !== null) {
-    var healthCls = health.status === 'diverged' ? 'banner-red' :
-                    health.status === 'monitor'   ? 'banner-yellow' : 'banner-green';
+  if (health && health.coverage !== null) {
+    var healthCls = health.status === 'diverged'      ? 'banner-red' :
+                    health.status === 'monitor'        ? 'banner-yellow' :
+                    health.status === 'overconfident'  ? 'banner-blue' : 'banner-green';
     healthHtml = '<div class="banner ' + healthCls + '">' +
-      'Model accuracy: ' + (health.accuracy * 100).toFixed(1) + '% ' +
-      '(baseline ' + (health.baseline * 100).toFixed(1) + '%, n=' + health.n_samples + '). ' +
+      'P5/P95 band coverage: ' + (health.coverage * 100).toFixed(1) + '% ' +
+      '(target ' + (health.target * 100).toFixed(0) + '%, n=' + health.n_samples + '). ' +
       health.recommendation +
       '</div>';
   }
@@ -541,7 +554,7 @@ Expected: `Generated google_suite/kronos_daily_pipeline.ipynb — 40 cells` (38 
 
 ```bash
 git add google_suite/build_notebook.py google_suite/kronos_daily_pipeline.ipynb google_suite/apps_script/Code.gs google_suite/apps_script/Index.html google_suite/SETUP_GUIDE.md
-git commit -m "feat(google-suite): add Calibration sheet + Health Banner (model accuracy vs backtest)"
+git commit -m "feat(google-suite): add Calibration sheet + Health Banner (P5/P95 band coverage)"
 ```
 
 ---
@@ -587,7 +600,8 @@ else:
         action = row[1]
         if action == 'edit':
             try:
-                edit_trade(int(row[2]), int(float(row[4])), float(row[5]), 'paper')
+                # edit_trade signature: (index, new_price, new_shares, mode) — kth/trading/portfolio.py:439
+                edit_trade(int(row[2]), new_price=float(row[5]), new_shares=int(float(row[4])), mode='paper')
                 print(f"  Applied edit: {row[3]} -> shares={row[4]} price={row[5]}")
             except Exception as e:
                 print(f"  Edit failed for row {row[2]}: {e}")
@@ -673,9 +687,9 @@ function submitTradeEdit(index, newShares, newPrice) {
   var editsWs = ss.getSheetByName('Trade Edits');
   var editsData = editsWs.getDataRange().getValues();
   if (editsData.length === 0) {
-    editsWs.append_row(['date','action','index','ticker','shares','price','ref_id','requested_at']);
+    editsWs.appendRow(['date','action','index','ticker','shares','price','ref_id','requested_at']);
   }
-  editsWs.append_row([
+  editsWs.appendRow([
     new Date().toISOString().slice(0, 10),
     'edit',
     index,
@@ -712,9 +726,9 @@ function submitTradeDelete(index) {
   var editsWs = ss.getSheetByName('Trade Edits');
   var editsData = editsWs.getDataRange().getValues();
   if (editsData.length === 0) {
-    editsWs.append_row(['date','action','index','ticker','shares','price','ref_id','requested_at']);
+    editsWs.appendRow(['date','action','index','ticker','shares','price','ref_id','requested_at']);
   }
-  editsWs.append_row([
+  editsWs.appendRow([
     new Date().toISOString().slice(0, 10),
     'CANCEL',
     index,
@@ -758,7 +772,7 @@ In `google_suite/apps_script/Index.html`, find the `renderTradeLog(tradeLog)` fu
 ```js
 var rows = tradeLog.map(function(r) {
     var isCancel    = (r.action === 'CANCEL');
-    var isCancelled = cancelledIds[r.id];
+    var isCancelled = cancelledIds[r.trade_id];  // Pre-existing bug: was [r.id]; the field is `trade_id`
     var actionCell  = isCancel
       ? '↩ cancels ' + (r.ref_id || '')
       : r.action;
@@ -779,7 +793,7 @@ Replace with:
 ```js
 var rows = tradeLog.map(function(r, idx) {
     var isCancel    = (r.action === 'CANCEL');
-    var isCancelled = cancelledIds[r.id];
+    var isCancelled = cancelledIds[r.trade_id];  // Pre-existing bug: was [r.id]; the field is `trade_id`
     var actionCell  = isCancel
       ? '↩ cancels ' + (r.ref_id || '')
       : r.action;
@@ -1082,7 +1096,12 @@ _write_staging('Positions_staging',
     ['ticker','shares','avg_cost','entry_date','sector','current_price','pnl','pnl_pct','pct_to_stoploss'],
     pos_rows)
 
-# Promote (Cell 14 mirror)
+# Append new equity curve row (post-reset: equity == initial_capital, invested == 0)
+_write_staging('Equity Curve_staging',
+    ['date', 'equity', 'cash', 'invested'],
+    [[today_str, round(pf_data['initial_capital'], 2), round(pf_data['cash'], 2), 0.0]])
+
+# Promote all staging to live (Cell 14 mirror)
 STAGING_MAP = {
     'Portfolio_staging': 'Portfolio',
     'Positions_staging': 'Positions',
@@ -1102,23 +1121,6 @@ for staging_name, live_name in STAGING_MAP.items():
         staging_ws.clear()
     except Exception as e:
         print(f"  Promotion {staging_name} -> {live_name} failed: {e}")
-
-# Append new equity curve row
-_write_staging('Equity Curve_staging',
-    ['date', 'equity', 'cash', 'invested'],
-    [[today_str, round(pf_data['initial_capital'], 2), round(pf_data['cash'], 2), 0.0]])
-
-for staging_name, live_name in STAGING_MAP.items():
-    try:
-        staging_ws = sh.worksheet(staging_name)
-        live_ws = sh.worksheet(live_name)
-        data = staging_ws.get_all_values()
-        if data:
-            live_ws.clear()
-            live_ws.update('A1', data)
-        staging_ws.clear()
-    except Exception as e:
-        print(f"  Final promotion {staging_name} -> {live_name} failed: {e}")
 
 print("Capital reset applied and staging promoted.")
 """)
@@ -1141,9 +1143,9 @@ function resetCapital(newCapital, confirmText) {
   var ws = ss.getSheetByName('Capital Reset');
   var data = ws.getDataRange().getValues();
   if (data.length === 0) {
-    ws.append_row(['date','action','capital','confirm_text','requested_at']);
+    ws.appendRow(['date','action','capital','confirm_text','requested_at']);
   }
-  ws.append_row([
+  ws.appendRow([
     new Date().toISOString().slice(0, 10),
     confirmText === 'RESET' ? 'reset' : 'setup',
     newCapital,
@@ -1505,7 +1507,7 @@ Find the "What you'll see" section (if it exists; if not, create one near the to
 ```markdown
 - **Reset Portfolio (⚙ button, top-right of Dashboard)** — change your initial capital
 - **Trade Log edit/delete** — click ✏️ or 🗑️ in any Trade Log row
-- **Health banner** — appears on Dashboard if model accuracy diverges from backtest
+- **Health banner** — appears on Dashboard if P5/P95 band coverage diverges from 90% target
 - **First-run setup banner** — appears once when no portfolio exists yet
 ```
 
@@ -1546,14 +1548,14 @@ git commit -m "docs: README links to parity-fix spec + lists new features"
 
 After all 10 tasks complete, run this end-to-end checklist:
 
-1. **Verify cell count** — the .ipynb should have 44 cells (started at 36, added 4 new md + 4 new code = 8 new from Tasks 2/4/5/6).
+1. **Verify cell count** — the .ipynb should have 44 cells (started at 36, added 4 new cells × {1 md + 1 code each} = 8 new cells from Tasks 2/4/5/6: 36 → 38 → 40 → 42 → 44).
 
 ```bash
 cd /home/yut/VSCode/Kronos_Thai_Retail
 python -c "import json; nb=json.load(open('google_suite/kronos_daily_pipeline.ipynb')); print(f'Cells: {len(nb[\"cells\"])}'); [print(i, c['cell_type']) for i, c in enumerate(nb['cells'])]"
 ```
 
-Expected: 27 cells, mix of markdown and code.
+Expected: 44 cells, alternating markdown and code (md = description, code = Python).
 
 2. **Verify all Apps Script functions exist:**
 
