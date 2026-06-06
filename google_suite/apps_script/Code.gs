@@ -66,6 +66,7 @@ function getAllData() {
     forecastHistory: _readSheetLimited(ss, 'Forecast History', 180),
     ticket:          _readSheet(ss, 'Trade Ticket'),
     riskMetrics:     _readSheetLimited(ss, 'Risk Metrics',     365),
+    health:          getHealthCheck(),
   };
 
   var json = JSON.stringify(data);
@@ -133,4 +134,43 @@ function getExportCsv() {
     return [r.ticker, r.action, r.shares, r.est_cost_thb, _csvField(r.rationale)].join(',');
   });
   return warning + header + 'ticker,action,shares,est_cost_thb,rationale\n' + rows.join('\n');
+}
+
+function getHealthCheck() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ws = ss.getSheetByName('Calibration');
+  if (!ws) return { status: 'unknown', coverage: null, target: 0.90, divergence: 0,
+                    recommendation: 'Run the pipeline to compute calibration.' };
+  var lastRow = ws.getLastRow();
+  if (lastRow <= 1) return { status: 'unknown', coverage: null, target: 0.90,
+                              divergence: 0, recommendation: 'Calibration sheet is empty.' };
+  var headers = ws.getRange(1, 1, 1, ws.getLastColumn()).getValues()[0];
+  var values  = ws.getRange(lastRow, 1, 1, ws.getLastColumn()).getValues()[0];
+  var row = {};
+  headers.forEach(function(h, i) { row[h] = values[i]; });
+  var coverage = Number(row.coverage) || 0;
+  var target = 0.90;  // P5/P95 band target for a well-calibrated model
+  var divergence = coverage - target;
+  var status = String(row.status || 'unknown');
+  var recommendation;
+  if (status === 'diverged' || coverage < 0.80) {
+    recommendation = 'Coverage is well below the 90% target. Consider halving position sizes.';
+  } else if (status === 'monitor' || coverage < 0.85) {
+    recommendation = 'Coverage is below the 90% target. Monitor closely.';
+  } else if (status === 'overconfident' || coverage > 0.95) {
+    recommendation = 'Coverage exceeds 95% — bands may be too wide. Model is underconfident.';
+  } else if (status === 'insufficient_data') {
+    recommendation = 'Need at least 10 resolved forecasts. Keep running the pipeline daily.';
+  } else {
+    recommendation = 'On track — model calibration is within 5pp of the 90% target.';
+  }
+  return {
+    coverage: coverage,
+    target: target,
+    divergence: divergence,
+    status: status,
+    recommendation: recommendation,
+    n_samples: Number(row.n_samples) || 0,
+    date: row.date || null,
+  };
 }

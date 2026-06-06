@@ -91,7 +91,7 @@ Now we need to split the text into separate columns (one word per column):
 8. Choose **"Comma"** from the list
 9. The text splits into 5 separate columns (A through E), each with its own header word
 
-### Step 1.5 — Create the remaining 16 tabs
+### Step 1.5 — Create the remaining 17 tabs
 
 Now add the rest of the sheet tabs. For each one:
 
@@ -105,7 +105,7 @@ Now add the rest of the sheet tabs. For each one:
 7. Press **Ctrl+V** (Windows) or **Cmd+V** (Mac) to paste
 8. Click **Data > Split text to columns > Comma** (same as step 1.4)
 
-**The `Portfolio` tab was already created in Step 1.3.** Skip it here and create tabs 2 through 9:
+**The `Portfolio` tab was already created in Step 1.3.** Skip it here and create tabs 2 through 10:
 
 | # | Tab name | Paste this into A1 |
 |---|----------|--------------------|
@@ -117,21 +117,26 @@ Now add the rest of the sheet tabs. For each one:
 | 7 | `Trade Ticket` | `ticker,action,shares,est_cost_thb,rationale,sector,confidence,filled_price,filled_shares,fill_timestamp` |
 | 8 | `Risk Metrics` | *This one is long. Copy-paste this exactly:*<br>`date,equity,cash,deployed_pct,trailing_sharpe_12w,max_drawdown_pct,mtd_pnl_pct,trade_win_rate,calmar_ratio,sortino_ratio,drawdown_velocity,allocation_band,allocation_pct,market_state,is_frozen,bootstrap_p_value,friction_ytd_pct,friction_ytd_thb` |
 | 9 | `Pipeline Status` | `last_run_timestamp,status,duration_seconds,error_message,sheets_updated` |
+| 10 | `Calibration` | `date,coverage,n_samples,status` |
 
-**Staging tabs (6):** `Portfolio_staging`, `Positions_staging`, `Forecasts_staging`, `Trade Ticket_staging`, `Risk Metrics_staging`, `Equity Curve_staging`
+**Staging tabs (8):** `Portfolio_staging`, `Positions_staging`, `Forecasts_staging`, `Trade Ticket_staging`, `Risk Metrics_staging`, `Equity Curve_staging`, `Trade Edits`, `Capital Reset`
 
-**Now create tabs 10 through 15** — these are "staging" copies used by the pipeline. For each one, you will **copy the headers from the matching tab above**:
+> **Note:** `Trade Edits` and `Capital Reset` are written by the Apps Script dashboard (not by the Colab notebook) and read by Colab Cells 9b and 4b respectively. Leave their A1 cells empty — the dashboard populates them.
+
+**Now create tabs 11 through 18** — these are "staging" copies used by the pipeline. For each one, you will **copy the headers from the matching tab above**:
 
 | # | Tab name | How to fill A1 |
 |---|----------|----------------|
-| 10 | `Portfolio_staging` | Copy headers from the **Portfolio** tab (instructions below) |
-| 11 | `Positions_staging` | Copy headers from the **Positions** tab |
-| 12 | `Forecasts_staging` | Copy headers from the **Forecasts** tab |
-| 13 | `Trade Ticket_staging` | Copy headers from the **Trade Ticket** tab |
-| 14 | `Risk Metrics_staging` | Copy headers from the **Risk Metrics** tab |
-| 15 | `Equity Curve_staging` | Copy headers from the **Equity Curve** tab |
+| 11 | `Portfolio_staging` | Copy headers from the **Portfolio** tab (instructions below) |
+| 12 | `Positions_staging` | Copy headers from the **Positions** tab |
+| 13 | `Forecasts_staging` | Copy headers from the **Forecasts** tab |
+| 14 | `Trade Ticket_staging` | Copy headers from the **Trade Ticket** tab |
+| 15 | `Risk Metrics_staging` | Copy headers from the **Risk Metrics** tab |
+| 16 | `Equity Curve_staging` | Copy headers from the **Equity Curve** tab |
+| 17 | `Trade Edits` | Leave A1 empty (Apps Script dashboard populates this) |
+| 18 | `Capital Reset` | Leave A1 empty (Apps Script dashboard populates this) |
 
-For each staging tab (10-15), do this:
+For each staging tab (11-18), do this:
 1. Click on the **matching original tab** (e.g. click "Portfolio" at the bottom)
 2. Click cell **A1**, then hold **Shift** and click the last header cell (e.g. E1 for Portfolio — 5 columns) to select all headers
 3. Press **Ctrl+C** (Windows) or **Cmd+C** (Mac) to copy
@@ -140,11 +145,11 @@ For each staging tab (10-15), do this:
 6. Press **Ctrl+V** (Windows) or **Cmd+V** (Mac) to paste
    - The headers will paste as separate cells automatically — no need to split
 
-### Step 1.6 — Verify you have exactly 17 tabs
+### Step 1.6 — Verify you have exactly 18 tabs
 
-Check the bottom of your screen. You should see these 17 tabs in order:
+Check the bottom of your screen. You should see these 18 tabs in order:
 ```
-Portfolio | Equity Curve | Positions | Trade Log | Forecasts | Forecast History | Trade Ticket | Risk Metrics | Pipeline Status | Portfolio_staging | Positions_staging | Forecasts_staging | Trade Ticket_staging | Risk Metrics_staging | Equity Curve_staging
+Portfolio | Equity Curve | Positions | Trade Log | Forecasts | Forecast History | Trade Ticket | Risk Metrics | Pipeline Status | Calibration | Portfolio_staging | Positions_staging | Forecasts_staging | Trade Ticket_staging | Risk Metrics_staging | Equity Curve_staging | Trade Edits | Capital Reset
 ```
 
 **Keep this browser tab open.** You'll come back to it later.
@@ -648,7 +653,7 @@ If you've been using the Flask dashboard and have existing trades in `data/posit
 
 1. Your spreadsheet might be missing some data
 2. Make sure you've run the Colab pipeline at least once successfully
-3. Check that all 17 tabs exist with correct headers
+3. Check that all 18 tabs exist with correct headers
 4. Redeploy the web app
 
 ### Colab cell 8 fails with "out of memory"

@@ -368,6 +368,55 @@ print(f"Band: {metrics['allocation_band']}  "
       f"Friction YTD: {metrics['friction_ytd_pct']:.2%}")
 """)
 
+md("""## Cell 11b — Compute Calibration
+
+**Writes to:** `Calibration` sheet (1 row appended per pipeline run).
+
+**What it measures:** P5/P95 band coverage — fraction of actual prices that fell inside the model's 90% confidence band over the last 60 resolved forecasts. Target ~0.90 (well-calibrated). Used by the Apps Script health banner.
+
+**Why it matters:** If actuals fall outside the 90% band more than 10% of the time, the model is overconfident. If they fall inside more than 95% of the time, the bands are too wide and signals are weak.""")
+
+code(r"""calibration_ws = sh.worksheet('Calibration')
+calibration_data = calibration_ws.get_all_values()
+calibration_headers = ['date', 'coverage', 'n_samples', 'status']
+if not calibration_data:
+    calibration_ws.append_row(calibration_headers)
+
+try:
+    from kth.backtest.metrics import compute_calibration
+    cal = compute_calibration(
+        forecast_cache_dir=Path('data/forecast_cache') / 'NeoQuasar_Kronos-small',
+        raw_data_dir=Path('data/raw'),
+        tickers=list(ohlcv_dict.keys()),
+    )
+    cov = cal.get('coverage')
+    n = cal.get('n_samples', 0)
+    status = cal.get('status', 'insufficient_data')
+    if n > 0 and cov is not None:
+        # Map the function's 2-status output to the 4-status used by the health banner
+        if status == 'insufficient_data':
+            banner_status = 'insufficient_data'
+        elif cov < 0.80:
+            banner_status = 'diverged'   # way below 90% target — actuals too often outside band
+        elif cov < 0.85:
+            banner_status = 'monitor'    # below 90% target
+        elif cov > 0.95:
+            banner_status = 'overconfident'  # function already flags this, but make explicit
+        else:
+            banner_status = 'on_track'   # 0.85-0.95 inclusive
+        calibration_ws.append_row([
+            today_str,
+            round(cov, 4),
+            n,
+            banner_status,
+        ])
+        print(f"Calibration: n={n} coverage={cov:.2%} status={banner_status}")
+    else:
+        print("Calibration: no resolved samples yet — skip write")
+except Exception as e:
+    print(f"Calibration: skipped ({e})")
+""")
+
 md("""## Cell 12 — Validate Data""")
 
 code(r"""from kth.trading.portfolio import get_positions

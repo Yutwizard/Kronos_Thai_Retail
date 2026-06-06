@@ -28,6 +28,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); }
 .banner-green  { background: #e6f4ea; color: #137333; border-left: 4px solid var(--green); }
 .banner-yellow { background: #fef7e0; color: #b06000; border-left: 4px solid var(--yellow); }
 .banner-red    { background: #fce8e6; color: #c5221f; border-left: 4px solid var(--red); }
+.banner-blue   { background: #e8f0fe; color: #1967d2; border-left: 4px solid var(--blue); }
 .banner-gray   { background: #f1f3f4; color: var(--text-muted); border-left: 4px solid var(--gray); }
 #tab-bar { display: flex; gap: 4px; background: var(--card);
            border-bottom: 1px solid var(--border); padding: 0 16px; }
@@ -270,7 +271,7 @@ function showError(err) {
 
 function renderAll(d) {
   renderPipelineStatus(d.pipeline);
-  renderDashboard(d.portfolio, d.equityCurve, d.riskMetrics, d.ticket);
+  renderDashboard(d.portfolio, d.equityCurve, d.riskMetrics, d.ticket, d.health);
   renderPositions(d.positions, d.riskMetrics, d.portfolio, d.forecasts);
   renderTradeLog(d.tradeLog);
   renderForecasts(d.forecasts, d.forecastHistory);
@@ -369,7 +370,7 @@ function renderPipelineStatus(pipeline) {
   el.innerHTML = html;
 }
 
-function renderDashboard(portfolio, equityCurve, riskMetrics, ticket) {
+function renderDashboard(portfolio, equityCurve, riskMetrics, ticket, health) {
   var panel = document.getElementById('panel-dashboard');
   if (!portfolio.length) { showEmptyState('dashboard'); return; }
 
@@ -388,6 +389,18 @@ function renderDashboard(portfolio, equityCurve, riskMetrics, ticket) {
   var pctPerPos = lastRm ? (lastRm.allocation_pct * 100).toFixed(0) + '% per position' : '';
   var regimeHtml = '<span class="regime regime-' + band + '">' + band + '</span>'
                  + ' <span style="font-size:0.85rem;color:var(--text-muted)">' + pctPerPos + '</span>';
+
+  var healthHtml = '';
+  if (health && health.coverage !== null) {
+    var healthCls = health.status === 'diverged'      ? 'banner-red' :
+                    health.status === 'monitor'        ? 'banner-yellow' :
+                    health.status === 'overconfident'  ? 'banner-blue' : 'banner-green';
+    healthHtml = '<div class="banner ' + healthCls + '">' +
+      'P5/P95 band coverage: ' + (health.coverage * 100).toFixed(1) + '% ' +
+      '(target ' + (health.target * 100).toFixed(0) + '%, n=' + health.n_samples + '). ' +
+      health.recommendation +
+      '</div>';
+  }
 
   panel.innerHTML =
     '<div class="cards">' +
@@ -408,6 +421,7 @@ function renderDashboard(portfolio, equityCurve, riskMetrics, ticket) {
       'Backtest 2022-2024: CAGR +31.4%, Sharpe 1.40, Alpha vs. EW +29.9%/yr. ' +
       'Model is trend-following; alpha was lower in the 2023 bull market.' +
     '</p>' +
+    healthHtml +
     '<div id="equity-chart" style="min-height:280px"></div>';
 
   setTimeout(function() { _drawEquityCurve(equityCurve, pf.initial_capital); }, 0);
