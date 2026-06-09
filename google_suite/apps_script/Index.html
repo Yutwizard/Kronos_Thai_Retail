@@ -118,12 +118,12 @@ tr.row-exit  { border-left: 4px solid var(--red); }
 
 <div id="status-banner"></div>
 
-<nav id="tab-bar">
-  <button class="tab-btn active" onclick="switchTab('dashboard')">Dashboard</button>
-  <button class="tab-btn"        onclick="switchTab('positions')">Positions</button>
-  <button class="tab-btn"        onclick="switchTab('tradelog')">Trade Log</button>
-  <button class="tab-btn"        onclick="switchTab('forecasts')">Forecasts</button>
-  <button class="tab-btn"        onclick="switchTab('ticket')">Trade Ticket</button>
+<nav id="tab-bar" role="tablist">
+  <button class="tab-btn active" role="tab" aria-selected="true" onclick="switchTab('dashboard')">Dashboard</button>
+  <button class="tab-btn"        role="tab" aria-selected="false" onclick="switchTab('positions')">Positions</button>
+  <button class="tab-btn"        role="tab" aria-selected="false" onclick="switchTab('tradelog')">Trade Log</button>
+  <button class="tab-btn"        role="tab" aria-selected="false" onclick="switchTab('forecasts')">Forecasts</button>
+  <button class="tab-btn"        role="tab" aria-selected="false" onclick="switchTab('ticket')">Trade Ticket</button>
 </nav>
 
 <main id="content">
@@ -137,9 +137,9 @@ tr.row-exit  { border-left: 4px solid var(--red); }
 <div id="spinner">Loading</div>
 
 <!-- Fill-price confirmation modal -->
-<div id="fill-modal" class="modal-overlay" hidden>
+<div id="fill-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="fill-modal-title" hidden>
   <div class="modal-box">
-    <h3>Enter Actual Fill Prices</h3>
+    <h3 id="fill-modal-title">Enter Actual Fill Prices</h3>
     <p class="modal-note">
       Type the price and number of shares your broker actually executed.
       Leave Shares Filled empty (0) for orders that didn't fill — the next
@@ -150,8 +150,8 @@ tr.row-exit  { border-left: 4px solid var(--red); }
     <div class="table-wrapper">
       <table id="fill-modal-table">
         <thead><tr>
-          <th>Ticker</th><th>Action</th><th>Planned Shares</th>
-          <th>Shares Filled</th><th>Fill Price (฿)</th><th>Fill Time</th>
+          <th scope="col">Ticker</th><th scope="col">Action</th><th scope="col">Planned Shares</th>
+          <th scope="col">Shares Filled</th><th scope="col">Fill Price (฿)</th><th scope="col">Fill Time</th>
         </tr></thead>
         <tbody id="fill-modal-tbody"></tbody>
       </table>
@@ -164,9 +164,9 @@ tr.row-exit  { border-left: 4px solid var(--red); }
 </div>
 
 <!-- Edit-trade modal -->
-<div id="edit-trade-modal" class="modal-overlay" hidden>
+<div id="edit-trade-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="edit-trade-title" hidden>
   <div class="modal-box">
-    <h3>✏️ Edit Trade</h3>
+    <h3 id="edit-trade-title">✏️ Edit Trade</h3>
     <p>Ticker: <strong id="edit-ticker">—</strong></p>
     <p>New shares (multiple of 100): <input class="modal-input" id="edit-shares" type="number" min="100" step="100"></p>
     <p>New price (THB): <input class="modal-input" id="edit-price" type="number" min="0.01" step="0.01"></p>
@@ -187,10 +187,10 @@ tr.row-exit  { border-left: 4px solid var(--red); }
 </div>
 
 <!-- Settings button + modal -->
-<button id="settings-btn" class="btn-secondary" onclick="openSettingsModal()" style="position:fixed;top:12px;right:12px;z-index:50">⚙ Settings</button>
-<div id="settings-modal" class="modal-overlay" hidden>
+<button id="settings-btn" class="btn-secondary" onclick="openSettingsModal()" aria-label="Open settings" style="position:fixed;top:12px;right:12px;z-index:50">⚙ Settings</button>
+<div id="settings-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="settings-title" hidden>
   <div class="modal-box">
-    <h3>⚙ Settings</h3>
+    <h3 id="settings-title">⚙ Settings</h3>
     <p>Current capital: <strong id="settings-current-capital">—</strong></p>
     <p>Total trades: <strong id="settings-trade-count">—</strong></p>
     <hr style="margin:16px 0;border:none;border-top:1px solid var(--border)">
@@ -291,10 +291,16 @@ var MOCK = {
 
 function switchTab(name) {
   document.querySelectorAll('.panel').forEach(function(p) { p.classList.remove('active'); });
-  document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(b) {
+    b.classList.remove('active');
+    b.setAttribute('aria-selected', 'false');
+  });
   document.getElementById('panel-' + name).classList.add('active');
   document.querySelectorAll('.tab-btn').forEach(function(b) {
-    if (b.getAttribute('onclick').indexOf("'" + name + "'") >= 0) b.classList.add('active');
+    if (b.getAttribute('onclick').indexOf("'" + name + "'") >= 0) {
+      b.classList.add('active');
+      b.setAttribute('aria-selected', 'true');
+    }
   });
 }
 
@@ -702,10 +708,10 @@ function renderPositions(positions, riskMetrics, portfolio, forecasts) {
     '<div class="table-wrapper">' +
     '<table id="tbl-positions">' +
     '<thead><tr>' +
-      '<th>Ticker</th><th>Shares</th><th>Avg Cost</th><th>Entry Date</th>' +
-      '<th>Sector</th><th>Current Price</th><th>P&L %</th><th>% to Stop</th>' +
-      '<th title="Today\'s model forecast for this position">Exp Ret</th>' +
-      '<th title="Model confidence: green &lt;10%, yellow 10-30%, red &gt;30% band width">Signal</th>' +
+      '<th scope="col">Ticker</th><th scope="col">Shares</th><th scope="col">Avg Cost</th><th scope="col">Entry Date</th>' +
+      '<th scope="col">Sector</th><th scope="col">Current Price</th><th scope="col">P&L %</th><th scope="col">% to Stop</th>' +
+      '<th scope="col" title="Today\'s model forecast for this position">Exp Ret</th>' +
+      '<th scope="col" title="Model confidence: green &lt;10%, yellow 10-30%, red &gt;30% band width">Confidence</th>' +
     '</tr></thead>' +
     '<tbody>' + rows + '</tbody>' +
     '</table></div>';
@@ -730,8 +736,8 @@ function renderTradeLog(tradeLog) {
     var rowClass = (isCancel || isCancelled) ? ' class="cancelled"' : '';
     var editCell = isCancel || isCancelled
       ? '<td></td>'
-      : '<td><button class="btn-icon" onclick="openEditTradeModal(' + idx + ')" title="Edit">✏️</button>' +
-        ' <button class="btn-icon" onclick="confirmDeleteTrade(' + idx + ')" title="Delete">🗑️</button></td>';
+      : '<td><button class="btn-icon" onclick="openEditTradeModal(' + idx + ')" title="Edit" aria-label="Edit trade">✏️</button>' +
+        ' <button class="btn-icon" onclick="confirmDeleteTrade(' + idx + ')" title="Delete" aria-label="Delete trade">🗑️</button></td>';
     return '<tr' + rowClass + '>' +
       _td(fmt.date(r.timestamp)) +
       _td(r.ticker) +
@@ -747,9 +753,9 @@ function renderTradeLog(tradeLog) {
     '<div class="table-wrapper">' +
     '<table id="tbl-tradelog">' +
     '<thead><tr>' +
-      '<th>Date</th><th>Ticker</th><th>Action</th>' +
-      '<th>Shares</th><th>Price</th><th>Rationale</th>' +
-      '<th>Actions</th>' +
+      '<th scope="col">Date</th><th scope="col">Ticker</th><th scope="col">Action</th>' +
+      '<th scope="col">Shares</th><th scope="col">Price</th><th scope="col">Rationale</th>' +
+      '<th scope="col">Actions</th>' +
     '</tr></thead>' +
     '<tbody>' + rows + '</tbody>' +
     '</table></div>' +
@@ -828,9 +834,11 @@ function renderForecasts(forecasts, forecastHistory) {
   var dateSet = {};
   _forecastHistory.forEach(function(r) { if (r.date) dateSet[r.date] = true; });
   var historyDates = Object.keys(dateSet).sort(function(a, b) { return b.localeCompare(a); });
+  var defaultDate = historyDates.length > 0 ? historyDates[0] : '';
   var dateOptions = '<option value="">📅 All dates</option>' +
     historyDates.map(function(d, i) {
-      return '<option value="' + d + '">' +
+      var selected = d === defaultDate ? ' selected' : '';
+      return '<option value="' + d + '"' + selected + '>' +
         (i === 0 ? '📅 ' + fmt.date(d) + ' (latest)' : '📅 ' + fmt.date(d)) +
         '</option>';
     }).join('');
@@ -845,14 +853,14 @@ function renderForecasts(forecasts, forecastHistory) {
       '<div class="table-wrapper">' +
       '<table id="tbl-forecasts">' +
       '<thead><tr>' +
-        '<th>Ticker</th>' +
-        '<th title="Expected return / uncertainty band — higher = stronger, more confident signal">Rank Score</th>' +
-        '<th title="Expected 20-day return from today\'s close price">Exp Return</th>' +
-        (hasDelta ? '<th title="Change in expected return vs previous pipeline run. ▲ = model more bullish, ▼ = less bullish">Δ Prev</th>' : '') +
-        '<th title="Band width: green &lt;10% (confident), yellow 10-30%, red &gt;30% (uncertain)">Confidence</th>' +
-        '<th title="Expected return minus round-trip friction costs">Net Return</th>' +
-        '<th title="Median (p50) price forecast — what the model thinks the price will be in 20 days">P50 Price</th>' +
-        '<th>Sector</th>' +
+        '<th scope="col">Ticker</th>' +
+        '<th scope="col" title="Expected return / uncertainty band — higher = stronger, more confident signal">Rank Score</th>' +
+        '<th scope="col" title="Expected 20-day return from today\'s close price">Exp Return</th>' +
+        (hasDelta ? '<th scope="col" title="Change in expected return vs previous pipeline run. ▲ = model more bullish, ▼ = less bullish">Δ Prev</th>' : '') +
+        '<th scope="col" title="Band width: green &lt;10% (confident), yellow 10-30%, red &gt;30% (uncertain)">Confidence</th>' +
+        '<th scope="col" title="Expected return minus round-trip friction costs">Net Return</th>' +
+        '<th scope="col" title="Median (p50) price forecast — what the model thinks the price will be in 20 days">P50 Price</th>' +
+        '<th scope="col">Sector</th>' +
       '</tr></thead>' +
       '<tbody>' + fcRows + '</tbody>' +
       '</table></div>' +
@@ -876,6 +884,11 @@ function renderForecasts(forecasts, forecastHistory) {
 
   _makeSortable('tbl-forecasts');
   _makeSortable('tbl-fh');
+
+  // If a default date is set, filter to show only that date
+  if (defaultDate) {
+    filterHistoryByDate(defaultDate);
+  }
 }
 
 function _buildHistoryTable(rows) {
@@ -897,10 +910,10 @@ function _buildHistoryTable(rows) {
       correctCell + '</tr>';
   }).join('');
   return '<table id="tbl-fh"><thead><tr>' +
-    '<th>Date</th><th>Ticker</th><th>Direction</th>' +
-    '<th title="Model\'s predicted 20-day return">Predicted Return</th>' +
-    '<th title="Actual return, resolved on the next pipeline run">Actual Return</th>' +
-    '<th>Result</th>' +
+    '<th scope="col">Date</th><th scope="col">Ticker</th><th scope="col">Direction</th>' +
+    '<th scope="col" title="Model\'s predicted 20-day return">Predicted Return</th>' +
+    '<th scope="col" title="Actual return, resolved on the next pipeline run">Actual Return</th>' +
+    '<th scope="col">Result</th>' +
     '</tr></thead><tbody>' + fhRows + '</tbody></table>';
 }
 
@@ -1000,8 +1013,8 @@ function renderTicket(ticket) {
     'Execute at next market open (Bangkok time). Prices are previous close estimates.</p>' +
     '<div class="table-wrapper">' +
     '<table id="tbl-ticket"><thead><tr>' +
-      '<th>Ticker</th><th>Action</th><th>Shares</th><th>Est. Cost (THB)</th>' +
-      '<th>Sector</th><th>Confidence</th><th>Fill Status</th><th>Rationale</th>' +
+      '<th scope="col">Ticker</th><th scope="col">Action</th><th scope="col">Shares</th><th scope="col">Est. Cost (THB)</th>' +
+      '<th scope="col">Sector</th><th scope="col">Confidence</th><th scope="col">Fill Status</th><th scope="col">Rationale</th>' +
     '</tr></thead><tbody>' + rows + '</tbody></table></div>';
   _makeSortable('tbl-ticket');
 }
