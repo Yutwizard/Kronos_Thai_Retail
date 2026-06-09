@@ -5,6 +5,39 @@ function doGet() {
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
+function _cachePut(key, value, ttl) {
+  try {
+    CacheService.getScriptCache().put(key, value, ttl || 60);
+  } catch (e) {
+    console.error('Cache put failed (quota?): ' + e.message);
+  }
+}
+
+function _cacheRemove(key) {
+  try {
+    CacheService.getScriptCache().remove(key);
+  } catch (e) {
+    console.error('Cache remove failed: ' + e.message);
+  }
+}
+
+function _cacheGet(key) {
+  try {
+    return CacheService.getScriptCache().get(key);
+  } catch (e) {
+    console.error('Cache get failed: ' + e.message);
+    return null;
+  }
+}
+
+function _log(action, detail) {
+  try {
+    console.log(JSON.stringify({ time: new Date().toISOString(), action: action, detail: detail }));
+  } catch (e) {
+    // silent fail
+  }
+}
+
 function _rowToObj(headers, row) {
   var obj = {};
   headers.forEach(function(h, i) {
@@ -50,10 +83,13 @@ function _csvField(v) {
 }
 
 function getAllData() {
-  var ss    = SpreadsheetApp.getActiveSpreadsheet();
-  var cache = CacheService.getScriptCache();
-  var hit   = cache.get('all_data');
-  if (hit) return JSON.parse(hit);
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var hit = _cacheGet('all_data');
+  if (hit) {
+    _log('getAllData', 'cache_hit');
+    return JSON.parse(hit);
+  }
+  _log('getAllData', 'cache_miss');
 
   var pipelineRows = _readSheet(ss, 'Pipeline Status');
   var data = {
@@ -70,12 +106,12 @@ function getAllData() {
   };
 
   var json = JSON.stringify(data);
-  if (json.length < 100000) cache.put('all_data', json, 60);
+  if (json.length < 100000) _cachePut('all_data', json, 60);
   return data;
 }
 
 function refreshAllData() {
-  CacheService.getScriptCache().remove('all_data');
+  _cacheRemove('all_data');
   return getAllData();
 }
 
@@ -113,7 +149,8 @@ function submitFills(fills) {
   });
 
   // Invalidate cache so next getAllData() returns fresh data with fills
-  CacheService.getScriptCache().remove('all_data');
+  _cacheRemove('all_data');
+  _log('submitFills', { updated: updates.length });
   return { ok: true, updated: updates.length };
 }
 
@@ -156,7 +193,8 @@ function submitTradeEdit(index, newShares, newPrice) {
   ]);
 
   // Invalidate cache
-  CacheService.getScriptCache().remove('all_data');
+  _cacheRemove('all_data');
+  _log('submitTradeEdit', { index: index, ticker: ticker, newShares: newShares, newPrice: newPrice });
   return { ok: true, status: 'edit queued — please re-run Colab Cell 9b' };
 }
 
@@ -188,7 +226,8 @@ function submitTradeDelete(index) {
     new Date().toISOString(),
   ]);
 
-  CacheService.getScriptCache().remove('all_data');
+  _cacheRemove('all_data');
+  _log('submitTradeDelete', { index: index, tradeId: tradeId });
   return { ok: true, status: 'delete queued — please re-run Colab Cell 9b' };
 }
 
@@ -229,7 +268,8 @@ function resetCapital(newCapital, confirmText) {
     new Date().toISOString(),
   ]);
 
-  CacheService.getScriptCache().remove('all_data');
+  _cacheRemove('all_data');
+  _log('resetCapital', { newCapital: newCapital, confirmText: confirmText });
   return {
     ok: true,
     status: confirmText === 'RESET'
