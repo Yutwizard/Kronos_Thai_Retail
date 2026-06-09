@@ -22,9 +22,10 @@ STAGING_MAP: dict = {
 }
 
 
-def promote_staging(sh, staging_map: dict = None, sleep_sec: float = 1.0) -> None:
+def promote_staging(sh, staging_map: dict = None, sleep_sec: float = 1.0) -> dict:
     if staging_map is None:
         staging_map = STAGING_MAP
+    failures = {}
     for staging_name, live_name in staging_map.items():
         try:
             staging_ws = sh.worksheet(staging_name)
@@ -35,8 +36,10 @@ def promote_staging(sh, staging_map: dict = None, sleep_sec: float = 1.0) -> Non
                 live_ws.update('A1', data)
             staging_ws.clear()
         except Exception as e:
+            failures[staging_name] = str(e)
             print(f"  Promotion {staging_name} -> {live_name} failed: {e}")
         _time.sleep(sleep_sec)
+    return failures
 
 
 def build_pos_rows(positions: dict, ohlcv_dict: dict, get_sector_fn: Callable[[str], str]) -> list:

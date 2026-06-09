@@ -171,7 +171,10 @@ write_staging(sh.worksheet('Equity Curve_staging'),
     ['date', 'equity', 'cash', 'invested'],
     [[today_str, round(pf_data['initial_capital'], 2), round(pf_data['cash'], 2), 0.0]])
 
-promote_staging(sh, STAGING_MAP)
+failures = promote_staging(sh, STAGING_MAP)
+if failures:
+    msg = f"Staging promotion failed for: {', '.join(failures.keys())}"
+    raise RuntimeError(msg)
 print("Capital reset applied and staging promoted.")
 """)
 
@@ -417,7 +420,10 @@ _ohlcv = globals().get('ohlcv_dict', {})
 pos_rows = build_pos_rows(pos, _ohlcv, get_sector)
 write_staging(sh.worksheet('Positions_staging'), POSITIONS_HEADERS, pos_rows)
 
-promote_staging(sh, STAGING_MAP)
+failures = promote_staging(sh, STAGING_MAP)
+if failures:
+    msg = f"Staging promotion failed for: {', '.join(failures.keys())}"
+    raise RuntimeError(msg)
 print("Trade edits applied and staging promoted.")
 """)
 
@@ -564,7 +570,7 @@ md("""## Cell 13 — Write to Staging Sheets""")
 code(r"""from kth.trading.portfolio import get_positions, init_portfolio
 from kth.trading.trade_gen import load_forecasts
 from kth.data.universe import get_sector, get_ticker_class, FRICTION
-from kth.trading.sheets import write_staging, build_pos_rows, POSITIONS_HEADERS, PORTFOLIO_HEADERS, STAGING_MAP
+from kth.trading.sheets import write_staging, build_pos_rows, POSITIONS_HEADERS, PORTFOLIO_HEADERS
 
 pf_data = init_portfolio('paper')
 write_staging(sh.worksheet('Portfolio_staging'), PORTFOLIO_HEADERS,
@@ -670,7 +676,16 @@ print("Equity Curve staging row appended.")
 md("""## Cell 14 — Promote Staging to Live Sheets""")
 
 code(r"""from kth.trading.sheets import promote_staging
-promote_staging(sh)
+failures = promote_staging(sh)
+if failures:
+    msg = f"Staging promotion failed for: {', '.join(failures.keys())}"
+    _set_pipeline_status(status_ws, 'failed', error_msg=msg)
+    if LINE_TOKEN:
+        import requests
+        requests.post('https://notify-api.line.me/api/notify',
+                      headers={'Authorization': f'Bearer {LINE_TOKEN}'},
+                      data={'message': f'Kronos FAILED: {msg}'})
+    raise RuntimeError(msg)
 print("Staging promoted to live sheets.")
 """)
 
