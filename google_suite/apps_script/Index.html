@@ -109,7 +109,50 @@ tr.row-exit  { border-left: 4px solid var(--red); }
   .cards { flex-direction: column; }
   .card-primary, .card { flex: none; width: 100%; }
   .tab-btn { font-size: 0.75rem; padding: 8px 8px; }
+  #fill-modal-table thead { display: none; }
+  #fill-modal-table tr { display: flex; flex-direction: column; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+  #fill-modal-table td { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border: none; }
+  #fill-modal-table td::before { content: attr(data-label); font-weight: 500; color: var(--text-muted); font-size: 0.8rem; margin-right: 12px; }
+  .modal-input { width: 120px; }
 }
+@media (prefers-color-scheme: dark) {
+  :root {
+    --green:      #66bb6a;
+    --yellow:     #ffca28;
+    --red:        #ef5350;
+    --dark-red:   #e53935;
+    --blue:       #64b5f6;
+    --gray:       #9e9e9e;
+    --pnl-pos-bg: #1b3d1b;
+    --pnl-neg-bg: #3d1b1b;
+    --bg:         #1a1a2e;
+    --card:       #16213e;
+    --border:     #2a2a4a;
+    --text:       #e0e0e0;
+    --text-muted: #9e9e9e;
+  }
+}
+html.dark-mode {
+  --green:      #66bb6a;
+  --yellow:     #ffca28;
+  --red:        #ef5350;
+  --dark-red:   #e53935;
+  --blue:       #64b5f6;
+  --gray:       #9e9e9e;
+  --pnl-pos-bg: #1b3d1b;
+  --pnl-neg-bg: #3d1b1b;
+  --bg:         #1a1a2e;
+  --card:       #16213e;
+  --border:     #2a2a4a;
+  --text:       #e0e0e0;
+  --text-muted: #9e9e9e;
+}
+html.dark-mode img { opacity: 0.8; }
+.compact td, .compact th { padding: 4px 8px; font-size: 0.8rem; }
+.compact .card { padding: 8px; }
+.compact .card-value { font-size: 1.2rem; }
+.compact .card-primary .card-value { font-size: 1.5rem; }
+.compact .card-label { font-size: 0.65rem; }
 </style>
 </head>
 <body>
@@ -349,12 +392,12 @@ function openFillModal(ticket) {
     var existFs = r.filled_shares != null ? r.filled_shares : r.shares;
     var existFt = r.fill_timestamp != null ? r.fill_timestamp : now;
     return '<tr>' +
-      '<td>' + r.ticker + '</td>' +
-      '<td><span class="badge badge-' + (r.action === 'buy' ? 'green' : 'red') + '">' + r.action + '</span></td>' +
-      '<td class="num">' + fmt.shares(r.shares) + '</td>' +
-      '<td><input class="modal-input" id="fs-' + i + '" type="number" min="0" step="100" value="' + existFs + '"></td>' +
-      '<td><input class="modal-input" id="fp-' + i + '" type="number" min="0" step="0.01" value="' + existFp + '"></td>' +
-      '<td><input class="modal-input" id="ft-' + i + '" type="text" value="' + existFt + '" style="width:130px"></td>' +
+      '<td data-label="Ticker">' + r.ticker + '</td>' +
+      '<td data-label="Action"><span class="badge badge-' + (r.action === 'buy' ? 'green' : 'red') + '">' + r.action + '</span></td>' +
+      '<td data-label="Planned" class="num">' + fmt.shares(r.shares) + '</td>' +
+      '<td data-label="Filled"><input class="modal-input" id="fs-' + i + '" type="number" min="0" step="100" value="' + existFs + '"></td>' +
+      '<td data-label="Price"><input class="modal-input" id="fp-' + i + '" type="number" min="0" step="0.01" value="' + existFp + '"></td>' +
+      '<td data-label="Time"><input class="modal-input" id="ft-' + i + '" type="text" value="' + existFt + '" style="width:130px"></td>' +
       '</tr>';
   }).join('');
 
@@ -708,8 +751,14 @@ function renderPositions(positions, riskMetrics, portfolio, forecasts) {
     '<div class="table-wrapper">' +
     '<table id="tbl-positions">' +
     '<thead><tr>' +
-      '<th scope="col">Ticker</th><th scope="col">Shares</th><th scope="col">Avg Cost</th><th scope="col">Entry Date</th>' +
-      '<th scope="col">Sector</th><th scope="col">Current Price</th><th scope="col">P&L %</th><th scope="col">% to Stop</th>' +
+      '<th scope="col" title="Stock ticker symbol">Ticker</th>' +
+      '<th scope="col" title="Number of shares held">Shares</th>' +
+      '<th scope="col" title="Average entry price per share">Avg Cost</th>' +
+      '<th scope="col" title="Date position was opened">Entry Date</th>' +
+      '<th scope="col" title="Stock Exchange of Thailand sector classification">Sector</th>' +
+      '<th scope="col" title="Most recent closing price">Current Price</th>' +
+      '<th scope="col" title="Profit/loss as a percentage of cost">P&L %</th>' +
+      '<th scope="col" title="Distance from stop-loss level (red if &lt; 3%)">% to Stop</th>' +
       '<th scope="col" title="Today\'s model forecast for this position">Exp Ret</th>' +
       '<th scope="col" title="Model confidence: green &lt;10%, yellow 10-30%, red &gt;30% band width">Confidence</th>' +
     '</tr></thead>' +
@@ -753,9 +802,13 @@ function renderTradeLog(tradeLog) {
     '<div class="table-wrapper">' +
     '<table id="tbl-tradelog">' +
     '<thead><tr>' +
-      '<th scope="col">Date</th><th scope="col">Ticker</th><th scope="col">Action</th>' +
-      '<th scope="col">Shares</th><th scope="col">Price</th><th scope="col">Rationale</th>' +
-      '<th scope="col">Actions</th>' +
+      '<th scope="col" title="Trade date">Date</th>' +
+      '<th scope="col" title="Stock ticker symbol">Ticker</th>' +
+      '<th scope="col" title="Buy / Sell / Cancel">Action</th>' +
+      '<th scope="col" title="Number of shares">Shares</th>' +
+      '<th scope="col" title="Price per share">Price</th>' +
+      '<th scope="col" title="Reason for the trade">Rationale</th>' +
+      '<th scope="col" title="Edit or delete this trade (queued until Cell 9b runs)">Actions</th>' +
     '</tr></thead>' +
     '<tbody>' + rows + '</tbody>' +
     '</table></div>' +
@@ -1013,8 +1066,14 @@ function renderTicket(ticket) {
     'Execute at next market open (Bangkok time). Prices are previous close estimates.</p>' +
     '<div class="table-wrapper">' +
     '<table id="tbl-ticket"><thead><tr>' +
-      '<th scope="col">Ticker</th><th scope="col">Action</th><th scope="col">Shares</th><th scope="col">Est. Cost (THB)</th>' +
-      '<th scope="col">Sector</th><th scope="col">Confidence</th><th scope="col">Fill Status</th><th scope="col">Rationale</th>' +
+      '<th scope="col" title="Stock ticker symbol">Ticker</th>' +
+      '<th scope="col" title="Buy or sell">Action</th>' +
+      '<th scope="col" title="Number of shares to trade">Shares</th>' +
+      '<th scope="col" title="Estimated cost including friction (THB)">Est. Cost (THB)</th>' +
+      '<th scope="col" title="Stock Exchange of Thailand sector classification">Sector</th>' +
+      '<th scope="col" title="Model confidence: green &lt;10%, yellow 10-30%, red &gt;30%">Confidence</th>' +
+      '<th scope="col" title="Confirmed fill price from broker">Fill Status</th>' +
+      '<th scope="col" title="Why this trade is recommended">Rationale</th>' +
     '</tr></thead><tbody>' + rows + '</tbody></table></div>';
   _makeSortable('tbl-ticket');
 }
@@ -1102,7 +1161,41 @@ document.addEventListener('keydown', function(e) {
     if (em && !em.hidden) em.hidden = true;
   }
 });
-
+// Dark mode toggle
+(function initDarkMode() {
+  var darkPref = localStorage.getItem('kronos-dark-mode');
+  if (darkPref === 'true') {
+    document.documentElement.classList.add('dark-mode');
+  }
+  var btn = document.createElement('button');
+  btn.id = 'dark-mode-toggle';
+  btn.className = 'btn-secondary';
+  btn.textContent = darkPref === 'true' ? '\u2600\ufe0f Light' : '\uD83C\uDF19 Dark';
+  btn.style.cssText = 'position:fixed;bottom:52px;right:12px;z-index:50';
+  btn.onclick = function() {
+    var isDark = document.documentElement.classList.toggle('dark-mode');
+    btn.textContent = isDark ? '\u2600\ufe0f Light' : '\uD83C\uDF19 Dark';
+    localStorage.setItem('kronos-dark-mode', isDark);
+  };
+  document.getElementById('content').appendChild(btn);
+})();
+// Compact density toggle
+(function initCompactToggle() {
+  if (localStorage.getItem('kronos-compact') === 'true') {
+    document.body.classList.add('compact');
+  }
+  var btn = document.createElement('button');
+  btn.id = 'compact-toggle';
+  btn.className = 'btn-secondary';
+  btn.textContent = localStorage.getItem('kronos-compact') === 'true' ? '\u2630 Normal' : '\u2630 Compact';
+  btn.style.cssText = 'position:fixed;bottom:12px;right:12px;z-index:50';
+  btn.onclick = function() {
+    var isCompact = document.body.classList.toggle('compact');
+    btn.textContent = isCompact ? '\u2630 Normal' : '\u2630 Compact';
+    localStorage.setItem('kronos-compact', isCompact);
+  };
+  document.getElementById('content').appendChild(btn);
+})();
 </script>
 </body>
 </html>
