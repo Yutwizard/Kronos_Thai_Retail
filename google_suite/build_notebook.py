@@ -163,7 +163,7 @@ write_staging(sh.worksheet('Portfolio_staging'), PORTFOLIO_HEADERS,
     [[pf_data['cash'], pf_data['initial_capital'], 'paper', MODEL_VERSION, today_str]])
 
 pos = get_positions('paper')
-_ohlcv = globals().get('ohlcv_dict', {})
+_ohlcv = ohlcv_dict if 'ohlcv_dict' in dir() else {}
 pos_rows = build_pos_rows(pos, _ohlcv, get_sector)
 write_staging(sh.worksheet('Positions_staging'), POSITIONS_HEADERS, pos_rows)
 
@@ -416,7 +416,7 @@ write_staging(sh.worksheet('Portfolio_staging'), PORTFOLIO_HEADERS,
     [[pf_data['cash'], pf_data['initial_capital'], 'paper', MODEL_VERSION, today_str]])
 
 pos = get_positions('paper')
-_ohlcv = globals().get('ohlcv_dict', {})
+_ohlcv = ohlcv_dict if 'ohlcv_dict' in dir() else {}
 pos_rows = build_pos_rows(pos, _ohlcv, get_sector)
 write_staging(sh.worksheet('Positions_staging'), POSITIONS_HEADERS, pos_rows)
 
