@@ -1,6 +1,8 @@
 """Shared Google Sheets staging + promotion utilities for Colab pipeline."""
 import time as _time
-from typing import Any
+from typing import Any, Callable
+
+from kth.trading.sheets_config import PORTFOLIO_HEADERS, POSITIONS_HEADERS
 
 def write_staging(ws, headers: list, rows: list, sleep_sec: float = 1.0) -> None:
     ws.clear()
@@ -37,7 +39,7 @@ def promote_staging(sh, staging_map: dict = None, sleep_sec: float = 1.0) -> Non
         _time.sleep(sleep_sec)
 
 
-def build_pos_rows(positions: dict, ohlcv_dict: dict, get_sector_fn) -> list:
+def build_pos_rows(positions: dict, ohlcv_dict: dict, get_sector_fn: Callable[[str], str]) -> list:
     rows = []
     for p in positions['positions']:
         ohlcv = ohlcv_dict or {}
@@ -50,17 +52,9 @@ def build_pos_rows(positions: dict, ohlcv_dict: dict, get_sector_fn) -> list:
         rows.append([
             p['ticker'], p['shares'], p['avg_cost'], p.get('entry_date', ''),
             get_sector_fn(p['ticker']), round(close, 2),
-            round(pnl, 2), round(pnl_pct, 4), round(pnl_pct + 0.10, 4),
+            round(pnl, 2),             round(pnl_pct, 4), round(pnl_pct + 0.10, 4),  # pct_to_stoploss = P&L% + ~10% stoploss buffer
         ])
     return rows
 
 
-POSITIONS_HEADERS = [
-    'ticker', 'shares', 'avg_cost', 'entry_date', 'sector',
-    'current_price', 'pnl', 'pnl_pct', 'pct_to_stoploss',
-]
 
-
-PORTFOLIO_HEADERS = [
-    'cash', 'initial_capital', 'mode', 'model_version', 'forecast_date',
-]
