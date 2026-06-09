@@ -127,7 +127,21 @@ md("""## Cell 4b — Apply Capital Reset
 **Applies:** Calls `reset_portfolio('paper', newCapital)` from `kth.trading.portfolio`.
 **Writes:** Cleared `Capital Reset` sheet, fresh `paper_portfolio.json`, then re-runs staging writes + promotion.""")
 
-code(r"""from kth.trading.portfolio import reset_portfolio, get_positions, init_portfolio
+code(r"""from datetime import date as _date_cap_reset
+from kth.data.universe import get_sector
+from kth.trading.portfolio import reset_portfolio, get_positions, init_portfolio, MODEL_VERSION
+import time as _time_cap_reset
+
+today_str = str(_date_cap_reset.today())
+
+def _write_staging(ws_name, headers, rows):
+    ws = sh.worksheet(ws_name)
+    ws.clear()
+    ws.append_row(headers)
+    if rows:
+        ws.append_rows(rows)
+    _time_cap_reset.sleep(1)
+
 capital_reset_ws = sh.worksheet('Capital Reset')
 capital_reset_data = capital_reset_ws.get_all_values()
 capital_reset_headers = ['date', 'action', 'capital', 'confirm_text', 'requested_at']
@@ -160,8 +174,12 @@ _write_staging('Portfolio_staging',
 # Clear Positions sheet (capital reset wipes all positions)
 pos = get_positions('paper')
 pos_rows = []
+_ohlcv = globals().get('ohlcv_dict', {})
 for p in pos['positions']:
-    close = float(ohlcv_dict[p['ticker']]['close'].iloc[-1]) if p['ticker'] in ohlcv_dict else p['avg_cost']
+    if p['ticker'] in _ohlcv:
+        close = float(_ohlcv[p['ticker']]['close'].iloc[-1])
+    else:
+        close = p['avg_cost']
     pnl = (close - p['avg_cost']) * p['shares']
     pnl_pct = (close / p['avg_cost'] - 1) if p['avg_cost'] else 0
     pos_rows.append([p['ticker'], p['shares'], p['avg_cost'], p.get('entry_date', ''),
@@ -196,6 +214,7 @@ for staging_name, live_name in STAGING_MAP.items():
         staging_ws.clear()
     except Exception as e:
         print(f"  Promotion {staging_name} -> {live_name} failed: {e}")
+    _time_cap_reset.sleep(1)
 
 print("Capital reset applied and staging promoted.")
 """)
@@ -400,7 +419,18 @@ md("""## Cell 9b — Apply Trade Edits
 **Reads:** `Trade Edits` staging sheet (rows with `action = "edit"` or `"CANCEL"`).
 **Applies:** Calls `edit_trade()` / `delete_trade()` from `kth.trading.portfolio`, then re-runs the staging write + promotion logic (the same as Cells 13/14).""")
 
-code(r"""from kth.trading.portfolio import edit_trade, delete_trade, init_portfolio, get_positions
+code(r"""from kth.data.universe import get_sector
+from kth.trading.portfolio import edit_trade, delete_trade, init_portfolio, get_positions, MODEL_VERSION
+import time as _time_trade_edit
+
+def _write_staging(ws_name, headers, rows):
+    ws = sh.worksheet(ws_name)
+    ws.clear()
+    ws.append_row(headers)
+    if rows:
+        ws.append_rows(rows)
+    _time_trade_edit.sleep(1)
+
 trade_edits_ws = sh.worksheet('Trade Edits')
 trade_edits_data = trade_edits_ws.get_all_values()
 trade_edits_headers = ['date', 'action', 'index', 'ticker', 'shares', 'price', 'ref_id', 'requested_at']
@@ -437,9 +467,12 @@ _write_staging('Portfolio_staging',
 
 pos = get_positions('paper')
 pos_rows = []
+_ohlcv = globals().get('ohlcv_dict', {})
 for p in pos['positions']:
-    close   = float(ohlcv_dict[p['ticker']]['close'].iloc[-1]) \
-              if p['ticker'] in ohlcv_dict else p['avg_cost']
+    if p['ticker'] in _ohlcv:
+        close = float(_ohlcv[p['ticker']]['close'].iloc[-1])
+    else:
+        close = p['avg_cost']
     pnl     = (close - p['avg_cost']) * p['shares']
     pnl_pct = (close / p['avg_cost'] - 1) if p['avg_cost'] else 0
     pos_rows.append([p['ticker'], p['shares'], p['avg_cost'], p.get('entry_date', ''),
@@ -468,6 +501,7 @@ for staging_name, live_name in STAGING_MAP.items():
         staging_ws.clear()
     except Exception as e:
         print(f"  Promotion {staging_name} -> {live_name} failed: {e}")
+    _time_trade_edit.sleep(1)
 print("Trade edits applied and staging promoted.")
 """)
 

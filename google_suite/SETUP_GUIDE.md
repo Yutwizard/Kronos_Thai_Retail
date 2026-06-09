@@ -316,7 +316,7 @@ Google Colab is a website that lets you run Python code (including AI models) in
 4. Find and select `kronos_daily_pipeline.ipynb` on your computer
 5. Click **Open**
 
-The notebook opens with 38 cells (20 code cells + 18 explanation cells). You can scroll through them.
+The notebook opens with 44 cells (23 code cells + 21 explanation cells). You can scroll through them.
 
 ### Step 3.4 — Set runtime to GPU (IMPORTANT)
 
@@ -442,6 +442,15 @@ Change `500_000.0` to however much money you're starting with (in Thai Baht). Ex
 | 17 | Sets status to "completed" | ~2 sec | Prints "Pipeline completed in XXXs." |
 | 18 | Sends LINE notification | ~2 sec | Prints nothing and skips silently if no LINE token was set |
 | 19 | Prints summary table | ~2 sec | Shows a table with all key metrics |
+
+**Optional cells (run only when triggered):**
+
+| Cell | When to run | What it does |
+|------|------------|--------------|
+| **4b** — Apply Capital Reset | Only when the Apps Script shows a "setup/reset queued" banner (first-run or after ⚙ Settings → Reset) | Reads `Capital Reset` sheet, calls `reset_portfolio()`, clears the sheet, re-runs staging writes + promotion. **Run instead of** Cells 5–15 in this single session. |
+| **9b** — Apply Trade Edits | Only when the Apps Script shows a "trade edit(s) pending" banner (after clicking ✏️ or 🗑️ in the Trade Log) | Reads `Trade Edits` sheet, calls `edit_trade()` / `delete_trade()` for each row, clears the sheet, re-runs staging writes + promotion. **Run instead of** Cells 9–15 in this single session. |
+| **11b** — Compute Calibration | Runs automatically in the normal Run-All path (between Cells 11 and 12) | Appends today's P5/P95 band coverage to the `Calibration` sheet for the health banner. |
+| **13b** — Append Equity Curve | Runs automatically in the normal Run-All path (between Cells 13 and 14) | Appends today's equity, cash, and invested values to `Equity Curve_staging` (promoted to live in Cell 14). |
 
 ### Step 4.3 — Check for errors
 

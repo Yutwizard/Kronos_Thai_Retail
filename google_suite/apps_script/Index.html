@@ -142,8 +142,10 @@ tr.row-exit  { border-left: 4px solid var(--red); }
     <h3>Enter Actual Fill Prices</h3>
     <p class="modal-note">
       Type the price and number of shares your broker actually executed.
-      Enter 0 shares for orders that didn't fill. Changes are saved to the
-      Trade Ticket sheet and applied on the next pipeline run.
+      Leave Shares Filled empty (0) for orders that didn't fill — the next
+      pipeline run will fall back to forecast close for any unfilled row.
+      Changes are saved to the Trade Ticket sheet and applied on the next
+      pipeline run.
     </p>
     <div class="table-wrapper">
       <table id="fill-modal-table">
@@ -721,7 +723,7 @@ function renderTradeLog(tradeLog) {
 
   var rows = tradeLog.map(function(r, idx) {
     var isCancel    = (r.action === 'CANCEL');
-    var isCancelled = cancelledIds[r.trade_id];  // Pre-existing bug: was [r.id]; the field is `trade_id`
+    var isCancelled = cancelledIds[r.id];  // CANCEL rows store the original trade's `id` in `ref_id`
     var actionCell  = isCancel
       ? '↩ cancels ' + (r.ref_id || '')
       : r.action;
