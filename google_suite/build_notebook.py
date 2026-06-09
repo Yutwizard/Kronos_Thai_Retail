@@ -130,17 +130,9 @@ md("""## Cell 4b — Apply Capital Reset
 code(r"""from datetime import date as _date_cap_reset
 from kth.data.universe import get_sector
 from kth.trading.portfolio import reset_portfolio, get_positions, init_portfolio, MODEL_VERSION
-import time as _time_cap_reset
+from kth.trading.sheets import write_staging, promote_staging, build_pos_rows, POSITIONS_HEADERS, PORTFOLIO_HEADERS, STAGING_MAP
 
 today_str = str(_date_cap_reset.today())
-
-def _write_staging(ws_name, headers, rows):
-    ws = sh.worksheet(ws_name)
-    ws.clear()
-    ws.append_row(headers)
-    if rows:
-        ws.append_rows(rows)
-    _time_cap_reset.sleep(1)
 
 capital_reset_ws = sh.worksheet('Capital Reset')
 capital_reset_data = capital_reset_ws.get_all_values()
@@ -167,55 +159,19 @@ else:
 
 # Re-run staging writes (mirror Cells 13/14)
 pf_data = init_portfolio('paper')
-_write_staging('Portfolio_staging',
-    ['cash', 'initial_capital', 'mode', 'model_version', 'forecast_date'],
+write_staging(sh.worksheet('Portfolio_staging'), PORTFOLIO_HEADERS,
     [[pf_data['cash'], pf_data['initial_capital'], 'paper', MODEL_VERSION, today_str]])
 
-# Clear Positions sheet (capital reset wipes all positions)
 pos = get_positions('paper')
-pos_rows = []
 _ohlcv = globals().get('ohlcv_dict', {})
-for p in pos['positions']:
-    if p['ticker'] in _ohlcv:
-        close = float(_ohlcv[p['ticker']]['close'].iloc[-1])
-    else:
-        close = p['avg_cost']
-    pnl = (close - p['avg_cost']) * p['shares']
-    pnl_pct = (close / p['avg_cost'] - 1) if p['avg_cost'] else 0
-    pos_rows.append([p['ticker'], p['shares'], p['avg_cost'], p.get('entry_date', ''),
-                     get_sector(p['ticker']), round(close, 2), round(pnl, 2),
-                     round(pnl_pct, 4), round(pnl_pct + 0.10, 4)])
-_write_staging('Positions_staging',
-    ['ticker','shares','avg_cost','entry_date','sector','current_price','pnl','pnl_pct','pct_to_stoploss'],
-    pos_rows)
+pos_rows = build_pos_rows(pos, _ohlcv, get_sector)
+write_staging(sh.worksheet('Positions_staging'), POSITIONS_HEADERS, pos_rows)
 
-# Append new equity curve row (post-reset: equity == initial_capital, invested == 0)
-_write_staging('Equity Curve_staging',
+write_staging(sh.worksheet('Equity Curve_staging'),
     ['date', 'equity', 'cash', 'invested'],
     [[today_str, round(pf_data['initial_capital'], 2), round(pf_data['cash'], 2), 0.0]])
 
-# Promote all staging to live (Cell 14 mirror)
-STAGING_MAP = {
-    'Portfolio_staging': 'Portfolio',
-    'Positions_staging': 'Positions',
-    'Forecasts_staging': 'Forecasts',
-    'Trade Ticket_staging': 'Trade Ticket',
-    'Risk Metrics_staging': 'Risk Metrics',
-    'Equity Curve_staging': 'Equity Curve',
-}
-for staging_name, live_name in STAGING_MAP.items():
-    try:
-        staging_ws = sh.worksheet(staging_name)
-        live_ws = sh.worksheet(live_name)
-        data = staging_ws.get_all_values()
-        if data:
-            live_ws.clear()
-            live_ws.update('A1', data)
-        staging_ws.clear()
-    except Exception as e:
-        print(f"  Promotion {staging_name} -> {live_name} failed: {e}")
-    _time_cap_reset.sleep(1)
-
+promote_staging(sh, STAGING_MAP)
 print("Capital reset applied and staging promoted.")
 """)
 
@@ -421,15 +377,7 @@ md("""## Cell 9b — Apply Trade Edits
 
 code(r"""from kth.data.universe import get_sector
 from kth.trading.portfolio import edit_trade, delete_trade, init_portfolio, get_positions, MODEL_VERSION
-import time as _time_trade_edit
-
-def _write_staging(ws_name, headers, rows):
-    ws = sh.worksheet(ws_name)
-    ws.clear()
-    ws.append_row(headers)
-    if rows:
-        ws.append_rows(rows)
-    _time_trade_edit.sleep(1)
+from kth.trading.sheets import write_staging, promote_staging, build_pos_rows, POSITIONS_HEADERS, PORTFOLIO_HEADERS, STAGING_MAP
 
 trade_edits_ws = sh.worksheet('Trade Edits')
 trade_edits_data = trade_edits_ws.get_all_values()
@@ -461,47 +409,15 @@ else:
 
 # Re-run staging writes + promotion (mirror Cells 13/14)
 pf_data = init_portfolio('paper')
-_write_staging('Portfolio_staging',
-    ['cash', 'initial_capital', 'mode', 'model_version', 'forecast_date'],
+write_staging(sh.worksheet('Portfolio_staging'), PORTFOLIO_HEADERS,
     [[pf_data['cash'], pf_data['initial_capital'], 'paper', MODEL_VERSION, today_str]])
 
 pos = get_positions('paper')
-pos_rows = []
 _ohlcv = globals().get('ohlcv_dict', {})
-for p in pos['positions']:
-    if p['ticker'] in _ohlcv:
-        close = float(_ohlcv[p['ticker']]['close'].iloc[-1])
-    else:
-        close = p['avg_cost']
-    pnl     = (close - p['avg_cost']) * p['shares']
-    pnl_pct = (close / p['avg_cost'] - 1) if p['avg_cost'] else 0
-    pos_rows.append([p['ticker'], p['shares'], p['avg_cost'], p.get('entry_date', ''),
-                     get_sector(p['ticker']), round(close, 2), round(pnl, 2),
-                     round(pnl_pct, 4), round(pnl_pct + 0.10, 4)])
-_write_staging('Positions_staging',
-    ['ticker','shares','avg_cost','entry_date','sector','current_price','pnl','pnl_pct','pct_to_stoploss'],
-    pos_rows)
+pos_rows = build_pos_rows(pos, _ohlcv, get_sector)
+write_staging(sh.worksheet('Positions_staging'), POSITIONS_HEADERS, pos_rows)
 
-STAGING_MAP = {
-    'Portfolio_staging':     'Portfolio',
-    'Positions_staging':     'Positions',
-    'Forecasts_staging':     'Forecasts',
-    'Trade Ticket_staging':  'Trade Ticket',
-    'Risk Metrics_staging':  'Risk Metrics',
-    'Equity Curve_staging':  'Equity Curve',
-}
-for staging_name, live_name in STAGING_MAP.items():
-    try:
-        staging_ws = sh.worksheet(staging_name)
-        live_ws    = sh.worksheet(live_name)
-        data = staging_ws.get_all_values()
-        if data:
-            live_ws.clear()
-            live_ws.update('A1', data)
-        staging_ws.clear()
-    except Exception as e:
-        print(f"  Promotion {staging_name} -> {live_name} failed: {e}")
-    _time_trade_edit.sleep(1)
+promote_staging(sh, STAGING_MAP)
 print("Trade edits applied and staging promoted.")
 """)
 
@@ -648,44 +564,19 @@ md("""## Cell 13 — Write to Staging Sheets""")
 code(r"""from kth.trading.portfolio import get_positions, init_portfolio
 from kth.trading.trade_gen import load_forecasts
 from kth.data.universe import get_sector, get_ticker_class, FRICTION
-
-def _write_staging(ws_name, headers, rows):
-    ws = sh.worksheet(ws_name)
-    ws.clear()
-    ws.append_row(headers)
-    if rows:
-        ws.append_rows(rows)
-    time.sleep(1)
+from kth.trading.sheets import write_staging, build_pos_rows, POSITIONS_HEADERS, PORTFOLIO_HEADERS, STAGING_MAP
 
 pf_data = init_portfolio('paper')
-_write_staging('Portfolio_staging',
-    ['cash', 'initial_capital', 'mode', 'model_version', 'forecast_date'],
+write_staging(sh.worksheet('Portfolio_staging'), PORTFOLIO_HEADERS,
     [[pf_data['cash'], pf_data['initial_capital'], 'paper', MODEL_VERSION, today_str]])
 
 pos = get_positions('paper')
-pos_rows = []
-for p in pos['positions']:
-    close   = float(ohlcv_dict[p['ticker']]['close'].iloc[-1]) \
-              if p['ticker'] in ohlcv_dict else p['avg_cost']
-    pnl     = (close - p['avg_cost']) * p['shares']
-    pnl_pct = (close / p['avg_cost'] - 1) if p['avg_cost'] else 0
-# NOTE: `current_price` and `pct_to_stoploss` are computed locally from
-# `ohlcv_dict[ticker]['close'].iloc[-1]`, NOT from `get_positions()`.
-# `get_positions()` returns `mark` (not `current_price`) and no stop-loss column.
-# Do not refactor to use `get_positions()` here without updating
-# the Positions sheet schema and Index.html renderPositions().
-    pos_rows.append([
-        p['ticker'], p['shares'], p['avg_cost'], p.get('entry_date', ''),
-        get_sector(p['ticker']), round(close, 2),
-        round(pnl, 2), round(pnl_pct, 4), round(pnl_pct + 0.10, 4),
-    ])
-_write_staging('Positions_staging',
-    ['ticker','shares','avg_cost','entry_date','sector','current_price','pnl','pnl_pct','pct_to_stoploss'],
-    pos_rows)
+pos_rows = build_pos_rows(pos, ohlcv_dict, get_sector)
+write_staging(sh.worksheet('Positions_staging'), POSITIONS_HEADERS, pos_rows)
 
 fc_rows      = load_forecasts(today_str)
 fc_by_ticker = {r['ticker']: r for r in fc_rows}
-_write_staging('Forecasts_staging',
+write_staging(sh.worksheet('Forecasts_staging'),
     ['date_updated','ticker','rank_score','exp_ret','band_width','confidence',
      'net_return','p5','p50','p95','sector'],
     [[today_str, r['ticker'], r['rank_score'], r['exp_ret'], r['band_width'],
@@ -711,7 +602,7 @@ for action_type, item in all_items:
         item.get('rationale', ''), get_sector(ticker), conf,
         '', '', '',
     ])
-_write_staging('Trade Ticket_staging',
+write_staging(sh.worksheet('Trade Ticket_staging'),
     ['ticker','action','shares','est_cost_thb','rationale','sector','confidence',
      'filled_price','filled_shares','fill_timestamp'],
     tt_rows)
@@ -735,7 +626,7 @@ equity = pos['total_value']
 #   bootstrap_pvalue ->  bootstrap_p_value
 #   friction_ytd_pct ->  friction_ytd_pct
 #   friction_ytd_thb ->  friction_ytd_thb
-_write_staging('Risk Metrics_staging',
+write_staging(sh.worksheet('Risk Metrics_staging'),
     ['date','equity','cash','deployed_pct','trailing_sharpe_12w','max_drawdown_pct',
      'mtd_pnl_pct','trade_win_rate','calmar_ratio','sortino_ratio','drawdown_velocity',
      'allocation_band','allocation_pct','market_state','is_frozen','bootstrap_p_value',
@@ -766,8 +657,10 @@ md("""## Cell 13b — Append Equity Curve to Staging
 
 **Why a new sheet:** The live `Equity Curve` sheet is read by Cell 9 and rendered by the Apps Script chart, but the Colab pipeline never appended to it. This cell fixes that by writing today's row to a new `Equity Curve_staging` sheet, which Cell 14 promotes.""")
 
-code(r"""equity = pos['total_value']
-_write_staging('Equity Curve_staging',
+code(r"""from kth.trading.sheets import write_staging
+
+equity = pos['total_value']
+write_staging(sh.worksheet('Equity Curve_staging'),
     ['date', 'equity', 'cash', 'invested'],
     [[today_str, round(equity, 2), round(pf_data['cash'], 2),
       round(equity - pf_data['cash'], 2)]])
@@ -776,23 +669,8 @@ print("Equity Curve staging row appended.")
 
 md("""## Cell 14 — Promote Staging to Live Sheets""")
 
-code(r"""STAGING_MAP = {
-    'Portfolio_staging':     'Portfolio',
-    'Positions_staging':     'Positions',
-    'Forecasts_staging':     'Forecasts',
-    'Trade Ticket_staging':  'Trade Ticket',
-    'Risk Metrics_staging':  'Risk Metrics',
-    'Equity Curve_staging':  'Equity Curve',
-}
-for staging_name, live_name in STAGING_MAP.items():
-    staging_ws = sh.worksheet(staging_name)
-    live_ws    = sh.worksheet(live_name)
-    data = staging_ws.get_all_values()
-    if data:
-        live_ws.clear()
-        live_ws.update('A1', data)
-    staging_ws.clear()
-    time.sleep(1)
+code(r"""from kth.trading.sheets import promote_staging
+promote_staging(sh)
 print("Staging promoted to live sheets.")
 """)
 
