@@ -16,3 +16,6 @@ data/live_portfolio.csv
 .superpowers/
 data/positions/
 scripts/run_2023_monthly.py
+
+# Dashboard runtime PID
+.dashboard.pid
