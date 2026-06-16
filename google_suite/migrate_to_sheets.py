@@ -9,6 +9,8 @@ Usage:
 import json, csv, hashlib, argparse
 from pathlib import Path
 
+from kth.trading.sheets_config import PORTFOLIO_HEADERS, EQUITY_CURVE_HEADERS, TRADE_LOG_HEADERS
+
 PORTFOLIO_JSON = Path('data/positions/paper_portfolio.json')
 TRADE_LOG_CSV  = Path('data/positions/trade_log.csv')
 
@@ -24,8 +26,9 @@ def migrate(spreadsheet_id: str):
 
         ws = sh.worksheet('Portfolio')
         from kth.trading.portfolio import MODEL_VERSION
-        ws.update('A1:E2', [
-            ['cash', 'initial_capital', 'mode', 'model_version', 'forecast_date'],
+        end_col = chr(64 + len(PORTFOLIO_HEADERS))
+        ws.update(f'A1:{end_col}2', [
+            PORTFOLIO_HEADERS,
             [pf['cash'], pf['initial_capital'], pf.get('mode', 'paper'),
              pf.get('model_version', MODEL_VERSION),
              str(pf['equity_curve'][-1]['date']) if pf.get('equity_curve') else ''],
@@ -33,7 +36,7 @@ def migrate(spreadsheet_id: str):
 
         eq_ws = sh.worksheet('Equity Curve')
         eq_ws.clear()
-        eq_ws.append_row(['date', 'equity', 'cash', 'invested'])
+        eq_ws.append_row(EQUITY_CURVE_HEADERS)
         rows = [[e['date'], e['value'], '', ''] for e in pf.get('equity_curve', [])]
         if rows:
             eq_ws.append_rows(rows)
@@ -42,10 +45,7 @@ def migrate(spreadsheet_id: str):
     if TRADE_LOG_CSV.exists():
         tl_ws = sh.worksheet('Trade Log')
         tl_ws.clear()
-        tl_ws.append_row([
-            'timestamp','ticker','action','shares','price','rationale',
-            'friction_cost','model_version','id','ref_id',
-        ])
+        tl_ws.append_row(TRADE_LOG_HEADERS)
         new_rows = []
         with open(TRADE_LOG_CSV) as f:
             for trade in csv.DictReader(f):

@@ -395,8 +395,8 @@ function openFillModal(ticket) {
       '<td data-label="Ticker">' + r.ticker + '</td>' +
       '<td data-label="Action"><span class="badge badge-' + (r.action === 'buy' ? 'green' : 'red') + '">' + r.action + '</span></td>' +
       '<td data-label="Planned" class="num">' + fmt.shares(r.shares) + '</td>' +
-      '<td data-label="Filled"><input class="modal-input" id="fs-' + i + '" type="number" min="0" step="100" value="' + existFs + '"></td>' +
-      '<td data-label="Price"><input class="modal-input" id="fp-' + i + '" type="number" min="0" step="0.01" value="' + existFp + '"></td>' +
+      '<td data-label="Filled"><input class="modal-input" id="fs-' + i + '" type="tel" min="0" step="100" value="' + existFs + '"></td>' +
+      '<td data-label="Price"><input class="modal-input" id="fp-' + i + '" type="tel" min="0" step="0.01" value="' + existFp + '"></td>' +
       '<td data-label="Time"><input class="modal-input" id="ft-' + i + '" type="text" value="' + existFt + '" style="width:130px"></td>' +
       '</tr>';
   }).join('');
@@ -1084,7 +1084,8 @@ function _makeSortable(tableId) {
   var headers = table.querySelectorAll('th');
   var sortCol = -1; var sortAsc = true;
   headers.forEach(function(th, colIdx) {
-    th.addEventListener('click', function() {
+    th.setAttribute('tabindex', '0');
+    function doSort() {
       var rows = Array.from(table.querySelectorAll('tbody tr'));
       sortAsc = (sortCol === colIdx) ? !sortAsc : true;
       sortCol = colIdx;
@@ -1099,6 +1100,13 @@ function _makeSortable(tableId) {
       });
       var tbody = table.querySelector('tbody');
       rows.forEach(function(r) { tbody.appendChild(r); });
+    }
+    th.addEventListener('click', doSort);
+    th.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        doSort();
+      }
     });
   });
 }
@@ -1171,7 +1179,7 @@ document.addEventListener('keydown', function(e) {
   btn.id = 'dark-mode-toggle';
   btn.className = 'btn-secondary';
   btn.textContent = darkPref === 'true' ? '\u2600\ufe0f Light' : '\uD83C\uDF19 Dark';
-  btn.style.cssText = 'position:fixed;bottom:52px;right:12px;z-index:50';
+  btn.style.cssText = 'position:fixed;bottom:12px;right:12px;z-index:50';
   btn.onclick = function() {
     var isDark = document.documentElement.classList.toggle('dark-mode');
     btn.textContent = isDark ? '\u2600\ufe0f Light' : '\uD83C\uDF19 Dark';
@@ -1188,7 +1196,7 @@ document.addEventListener('keydown', function(e) {
   btn.id = 'compact-toggle';
   btn.className = 'btn-secondary';
   btn.textContent = localStorage.getItem('kronos-compact') === 'true' ? '\u2630 Normal' : '\u2630 Compact';
-  btn.style.cssText = 'position:fixed;bottom:12px;right:12px;z-index:50';
+  btn.style.cssText = 'position:fixed;bottom:12px;left:12px;z-index:50';
   btn.onclick = function() {
     var isCompact = document.body.classList.toggle('compact');
     btn.textContent = isCompact ? '\u2630 Normal' : '\u2630 Compact';
