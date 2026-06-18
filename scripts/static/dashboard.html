@@ -500,10 +500,12 @@ function updFillStatus(i, plannedShares, frictionRate, actionCls) {
   const price  = parseFloat(priceEl.value) || 0;
   const gross  = filled * price;
   const fric   = gross * (frictionRate || 0.00268);
-  const impact = actionCls === "red"
-    ? gross - fric    // exit: cash IN (proceeds minus friction)
-    : gross + fric;   // buy: cash OUT (cost plus friction)
-  const sign   = actionCls === "red" ? "+" : "−";
+  // exit (red) and reduce (orange) are both sells → cash IN; only buy (green) is cash OUT
+  const isSell = actionCls === "red" || actionCls === "orange";
+  const impact = isSell
+    ? gross - fric    // sell: cash IN (proceeds minus friction)
+    : gross + fric;   // buy:  cash OUT (cost plus friction)
+  const sign   = isSell ? "+" : "−";
 
   const grossEl = document.getElementById(`fe-gross-${i}`);
   const fricEl  = document.getElementById(`fe-fric-${i}`);
@@ -514,7 +516,7 @@ function updFillStatus(i, plannedShares, frictionRate, actionCls) {
     if (grossEl) grossEl.textContent = Math.round(gross).toLocaleString();
     if (fricEl)  fricEl.textContent  = Math.round(fric).toLocaleString();
     if (totalEl) { totalEl.textContent = sign + Math.round(impact).toLocaleString() + " THB";
-                   totalEl.className = "num fw " + (actionCls === "red" ? "green" : "red"); }
+                   totalEl.className = "num fw " + (isSell ? "green" : "red"); }
   } else {
     if (grossEl) grossEl.textContent = "—";
     if (fricEl)  fricEl.textContent  = "—";
