@@ -154,7 +154,7 @@ function submitFills(fills) {
   return { ok: true, updated: updates.length };
 }
 
-function submitTradeEdit(index, newShares, newPrice) {
+function submitTradeEdit(index, newShares, newPrice, newDate) {
   // Validate input
   if (!Number.isInteger(index) || index < 0) {
     return { ok: false, msg: 'Invalid trade index' };
@@ -164,6 +164,15 @@ function submitTradeEdit(index, newShares, newPrice) {
   }
   if (typeof newPrice !== 'number' || newPrice <= 0) {
     return { ok: false, msg: 'Price must be a positive number' };
+  }
+  // newDate is optional (older clients omit it); when present must be YYYY-MM-DD, not future
+  if (newDate != null && newDate !== '') {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(newDate)) {
+      return { ok: false, msg: 'Date must be YYYY-MM-DD' };
+    }
+    if (newDate > new Date().toISOString().slice(0, 10)) {
+      return { ok: false, msg: 'Date cannot be in the future' };
+    }
   }
 
   // Verify the trade exists in the Trade Log sheet
@@ -179,7 +188,7 @@ function submitTradeEdit(index, newShares, newPrice) {
   var editsWs = ss.getSheetByName('Trade Edits');
   var editsData = editsWs.getDataRange().getValues();
   if (editsData.length === 0) {
-    editsWs.appendRow(['date','action','index','ticker','shares','price','ref_id','requested_at']);
+    editsWs.appendRow(['date','action','index','ticker','shares','price','ref_id','requested_at','new_date']);
   }
   editsWs.appendRow([
     new Date().toISOString().slice(0, 10),
@@ -190,11 +199,12 @@ function submitTradeEdit(index, newShares, newPrice) {
     newPrice,
     '',
     new Date().toISOString(),
+    newDate || '',
   ]);
 
   // Invalidate cache
   _cacheRemove('all_data');
-  _log('submitTradeEdit', { index: index, ticker: ticker, newShares: newShares, newPrice: newPrice });
+  _log('submitTradeEdit', { index: index, ticker: ticker, newShares: newShares, newPrice: newPrice, newDate: newDate || '' });
   return { ok: true, status: 'edit queued — please re-run Colab Cell 9b' };
 }
 
@@ -213,7 +223,7 @@ function submitTradeDelete(index) {
   var editsWs = ss.getSheetByName('Trade Edits');
   var editsData = editsWs.getDataRange().getValues();
   if (editsData.length === 0) {
-    editsWs.appendRow(['date','action','index','ticker','shares','price','ref_id','requested_at']);
+    editsWs.appendRow(['date','action','index','ticker','shares','price','ref_id','requested_at','new_date']);
   }
   editsWs.appendRow([
     new Date().toISOString().slice(0, 10),
@@ -224,6 +234,7 @@ function submitTradeDelete(index) {
     '',
     tradeId,
     new Date().toISOString(),
+    '',
   ]);
 
   _cacheRemove('all_data');

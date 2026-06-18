@@ -5,7 +5,7 @@ import json
 import csv
 import os
 from pathlib import Path
-from datetime import date
+from datetime import date, datetime
 
 import numpy as np
 import pandas as pd
@@ -437,8 +437,9 @@ def delete_trade(index: int, mode: str = "paper") -> dict:
 
 
 def edit_trade(index: int, new_price: float | None = None,
-               new_shares: int | None = None, mode: str = "paper") -> dict:
-    """Edit fill price and/or shares of a trade at CSV row index, then rebuild portfolio."""
+               new_shares: int | None = None, mode: str = "paper",
+               new_date: str | None = None) -> dict:
+    """Edit fill price, shares, and/or trade date of a trade at CSV row index, then rebuild portfolio."""
     path = _trade_log_path()
     if not path.exists():
         return {"error": "No trade log found"}
@@ -451,6 +452,7 @@ def edit_trade(index: int, new_price: float | None = None,
 
     old_price = float(rows[index]["price"])
     old_shares = int(rows[index]["shares"])
+    old_date = rows[index]["date"]
 
     if new_price is not None:
         rows[index]["price"] = str(round(new_price, 4))
@@ -458,6 +460,14 @@ def edit_trade(index: int, new_price: float | None = None,
         if new_shares <= 0 or new_shares % 100 != 0:
             return {"error": f"Shares must be a positive multiple of 100, got {new_shares}"}
         rows[index]["shares"] = str(new_shares)
+    if new_date is not None:
+        try:
+            datetime.strptime(new_date, "%Y-%m-%d")
+        except (TypeError, ValueError):
+            return {"error": f"Date must be YYYY-MM-DD, got {new_date!r}"}
+        if new_date > str(date.today()):
+            return {"error": f"Date {new_date} is in the future"}
+        rows[index]["date"] = new_date
 
     price = float(rows[index]["price"])
     shares = int(rows[index]["shares"])
@@ -474,6 +484,7 @@ def edit_trade(index: int, new_price: float | None = None,
         "updated": True,
         "old_price": old_price, "new_price": price,
         "old_shares": old_shares, "new_shares": shares,
+        "old_date": old_date, "new_date": rows[index]["date"],
     }
 
 

@@ -40,7 +40,7 @@ RISK_METRICS_HEADERS = ['date', 'equity', 'cash', 'deployed_pct', 'trailing_shar
 PIPELINE_STATUS_HEADERS = ['last_run_timestamp', 'status', 'duration_seconds',
                            'error_message', 'sheets_updated']
 CALIBRATION_HEADERS = ['date', 'coverage', 'n_samples', 'status']
-TRADE_EDITS_HEADERS = ['date', 'action', 'index', 'ticker', 'shares', 'price', 'ref_id', 'requested_at']
+TRADE_EDITS_HEADERS = ['date', 'action', 'index', 'ticker', 'shares', 'price', 'ref_id', 'requested_at', 'new_date']
 CAPITAL_RESET_HEADERS = ['date', 'action', 'capital', 'confirm_text', 'requested_at']
 
 ALL_HEADERS = {

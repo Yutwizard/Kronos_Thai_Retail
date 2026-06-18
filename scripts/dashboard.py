@@ -400,7 +400,7 @@ def api_delete_trade(index):
 @app.route("/api/trades/history/<int:index>", methods=["PATCH"])
 def api_edit_trade(index):
     data = request.get_json(force=True) or {}
-    new_price = new_shares = None
+    new_price = new_shares = new_date = None
     if "price" in data:
         try:
             new_price = float(data["price"])
@@ -413,8 +413,14 @@ def api_edit_trade(index):
             new_shares = int(data["shares"])
         except (TypeError, ValueError):
             return jsonify({"error": "shares must be an integer"}), 400
-    if new_price is None and new_shares is None:
-        return jsonify({"error": "supply at least one of: price, shares"}), 400
+    if "date" in data:
+        new_date = str(data["date"]).strip()
+        try:
+            datetime.strptime(new_date, "%Y-%m-%d")
+        except ValueError:
+            return jsonify({"error": "date must be YYYY-MM-DD"}), 400
+    if new_price is None and new_shares is None and new_date is None:
+        return jsonify({"error": "supply at least one of: price, shares, date"}), 400
     from kth.trading.portfolio import edit_trade
     result = edit_trade(index, new_price, new_shares, TRADING_MODE)
     if "error" in result:

@@ -211,6 +211,7 @@ html.dark-mode img { opacity: 0.8; }
   <div class="modal-box">
     <h3 id="edit-trade-title">✏️ Edit Trade</h3>
     <p>Ticker: <strong id="edit-ticker">—</strong></p>
+    <p>New date: <input class="modal-input" id="edit-date" type="date"></p>
     <p>New shares (multiple of 100): <input class="modal-input" id="edit-shares" type="number" min="100" step="100"></p>
     <p>New price (THB): <input class="modal-input" id="edit-price" type="number" min="0.01" step="0.01"></p>
     <div class="modal-actions">
@@ -417,6 +418,9 @@ function openEditTradeModal(idx) {
   document.getElementById('edit-ticker').textContent = trade.ticker;
   document.getElementById('edit-shares').value = trade.shares;
   document.getElementById('edit-price').value = trade.price;
+  var dateInput = document.getElementById('edit-date');
+  dateInput.value = String(trade.timestamp || '').slice(0, 10);
+  dateInput.max = new Date().toISOString().slice(0, 10);
   document.getElementById('edit-trade-modal').hidden = false;
 }
 
@@ -428,10 +432,14 @@ function closeEditTradeModal() {
 function submitTradeEdit() {
   var shares = parseInt(document.getElementById('edit-shares').value);
   var price = parseFloat(document.getElementById('edit-price').value);
+  var newDate = document.getElementById('edit-date').value;
   if (!Number.isInteger(shares) || shares <= 0 || shares % 100 !== 0) {
     alert('Shares must be a positive multiple of 100'); return;
   }
   if (!price || price <= 0) { alert('Price must be positive'); return; }
+  if (!newDate || newDate > new Date().toISOString().slice(0, 10)) {
+    alert('Date must be a valid date, not in the future'); return;
+  }
   google.script.run
     .withSuccessHandler(function(result) {
       if (result.ok) {
@@ -442,7 +450,7 @@ function submitTradeEdit() {
       }
     })
     .withFailureHandler(function(err) { alert('Error: ' + String(err)); })
-    .submitTradeEdit(_editTradeIndex, shares, price);
+    .submitTradeEdit(_editTradeIndex, shares, price, newDate);
 }
 
 function confirmDeleteTrade(idx) {

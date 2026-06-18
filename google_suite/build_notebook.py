@@ -384,7 +384,7 @@ from kth.trading.sheets import write_staging, promote_staging, build_pos_rows, P
 
 trade_edits_ws = sh.worksheet('Trade Edits')
 trade_edits_data = trade_edits_ws.get_all_values()
-trade_edits_headers = ['date', 'action', 'index', 'ticker', 'shares', 'price', 'ref_id', 'requested_at']
+trade_edits_headers = ['date', 'action', 'index', 'ticker', 'shares', 'price', 'ref_id', 'requested_at', 'new_date']
 if not trade_edits_data:
     trade_edits_ws.append_row(trade_edits_headers)
 else:
@@ -395,9 +395,11 @@ else:
         action = row[1]
         if action == 'edit':
             try:
-                # edit_trade signature: (index, new_price, new_shares, mode) — kth/trading/portfolio.py:439
-                edit_trade(int(row[2]), new_price=float(row[5]), new_shares=int(float(row[4])), mode='paper')
-                print(f"  Applied edit: {row[3]} -> shares={row[4]} price={row[5]}")
+                # edit_trade signature: (index, new_price, new_shares, mode, new_date) — kth/trading/portfolio.py:439
+                new_date = row[8].strip() if len(row) > 8 and row[8] else None
+                edit_trade(int(row[2]), new_price=float(row[5]), new_shares=int(float(row[4])),
+                           mode='paper', new_date=new_date)
+                print(f"  Applied edit: {row[3]} -> shares={row[4]} price={row[5]} date={new_date or 'unchanged'}")
             except Exception as e:
                 print(f"  Edit failed for row {row[2]}: {e}")
         elif action == 'CANCEL':
