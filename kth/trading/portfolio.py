@@ -299,27 +299,177 @@ def compute_metrics(mode: str = "paper") -> dict:
     }
 
 
+def get_equity_performance(mode: str = "paper") -> dict:
+    """Equity curve + summary stats for the Performance dashboard tab.
+
+    Returns the full equity_curve as plottable points plus inception-to-date
+    stats (total return, max drawdown over the whole curve, peak equity) and
+    re-uses compute_metrics() for Sharpe / win rate / closed trades.
+    """
+    pf = init_portfolio(mode)
+    curve = pf.get("equity_curve", [])
+    initial = float(pf.get("initial_capital", INITIAL_CAPITAL))
+
+    points = [{"date": e["date"], "value": round(float(e["value"]), 2)} for e in curve]
+    values = [p["value"] for p in points]
+    current = values[-1] if values else initial
+    peak = max(values) if values else initial
+
+    # Max drawdown over the entire curve (not just current vs peak).
+    max_dd = 0.0
+    running_peak = float("-inf")
+    for v in values:
+        running_peak = max(running_peak, v)
+        if running_peak > 0:
+            max_dd = min(max_dd, v / running_peak - 1)
+
+    # Inception = first activity across trade log + equity curve (authoritative
+    # start of paper trading). days_tracked = calendar days since then, inclusive —
+    # NOT distinct equity-curve dates (those only exist on trade/rebuild days).
+    trade_dates = [t["date"] for t in get_trade_log(mode) if t.get("date")]
+    all_dates = trade_dates + [p["date"] for p in points]
+    inception = min(all_dates) if all_dates else str(date.today())
+    try:
+        incep_d = datetime.strptime(inception, "%Y-%m-%d").date()
+        days_tracked = (date.today() - incep_d).days + 1
+    except ValueError:
+        days_tracked = len({p["date"] for p in points})
+
+    m = compute_metrics(mode)
+    trades = get_trade_log(mode)
+
+    # --- Realized P&L stats (FIFO, net of friction) ---
+    realized = _compute_fifo_pnl(trades)
+    wins = [r for r in realized if r > 0]
+    losses = [r for r in realized if r < 0]
+    realized_pnl = sum(realized)
+    gross_profit = sum(wins)
+    gross_loss = abs(sum(losses))
+    profit_factor = round(gross_profit / gross_loss, 2) if gross_loss > 0 else None  # None = no losses yet (∞)
+    avg_win = round(gross_profit / len(wins), 2) if wins else 0.0
+    avg_loss = round(gross_loss / len(losses), 2) if losses else 0.0
+    payoff_ratio = round(avg_win / avg_loss, 2) if avg_loss > 0 else None
+    total_friction = round(sum(float(t.get("friction_cost", 0) or 0) for t in trades), 2)
+
+    # --- Unrealized P&L + concentration (from open positions) ---
+    pos_info = get_positions(mode)
+    open_positions = pos_info.get("positions", [])
+    unrealized_pnl = round(sum((p["mark"] - p["avg_cost"]) * p["shares"] for p in open_positions), 2)
+    largest_weight = round(max((p["weight"] for p in open_positions), default=0.0), 4)
+    from kth.data.universe import get_sector
+    sector_weights: dict = {}
+    for p in open_positions:
+        sec = get_sector(p["ticker"]) or "Other"
+        sector_weights[sec] = sector_weights.get(sec, 0.0) + p["weight"]
+    top_sector, top_sector_weight = (max(sector_weights.items(), key=lambda kv: kv[1])
+                                     if sector_weights else ("—", 0.0))
+
+    # --- Drawdown shape over the curve ---
+    from kth.backtest.metrics import compute_drawdown_metrics
+    dd_metrics = compute_drawdown_metrics(pd.Series(values)) if len(values) >= 2 else {
+        "avg_drawdown": 0.0, "ulcer_index": 0.0, "max_drawdown_duration": 0}
+
+    return {
+        "initial_capital": round(initial, 2),
+        "current_equity": round(current, 2),
+        "total_pnl": round(current - initial, 2),
+        "total_return_pct": round(current / initial - 1, 4) if initial > 0 else 0,
+        "peak_equity": round(peak, 2),
+        "max_drawdown": round(max_dd, 4),
+        "current_drawdown": m["drawdown"],
+        "avg_drawdown": round(dd_metrics["avg_drawdown"], 4),
+        "ulcer_index": round(dd_metrics["ulcer_index"], 4),
+        "max_drawdown_duration": dd_metrics["max_drawdown_duration"],
+        "inception_date": inception,
+        "days_tracked": days_tracked,
+        "num_points": len(points),
+        "sharpe": m["sharpe"],
+        "win_rate": m["win_rate"],
+        "closed_trades": m["closed_trades"],
+        "bootstrap_pvalue": m.get("bootstrap_pvalue"),
+        # realized / friction
+        "realized_pnl": round(realized_pnl, 2),
+        "unrealized_pnl": unrealized_pnl,
+        "profit_factor": profit_factor,
+        "payoff_ratio": payoff_ratio,
+        "avg_win": avg_win,
+        "avg_loss": avg_loss,
+        "total_friction": total_friction,
+        # concentration
+        "open_positions": len(open_positions),
+        "largest_weight": largest_weight,
+        "top_sector": top_sector,
+        "top_sector_weight": round(top_sector_weight, 4),
+        "points": points,
+    }
+
+
+def _compute_fifo_pnl(trades: list[dict]) -> list[float]:
+    """FIFO matching → net realized P&L (THB) per matched buy↔sell chunk.
+
+    Matching is PER TICKER (a sell of ticker X matches X's own oldest buys).
+    Net = (sell_price − buy_price) × shares, minus the friction attributable to
+    both the buy lot (pro-rated per share) and the sell (pro-rated per share).
+    """
+    from collections import deque, defaultdict
+    buys: dict = defaultdict(deque)  # ticker -> deque of {shares, price, fps}
+    realized: list[float] = []
+    for t in trades:
+        ticker = t["ticker"]
+        shares = int(t["shares"])
+        price = float(t["price"])
+        fric = float(t.get("friction_cost", 0) or 0)
+        if shares <= 0:
+            continue
+        if t["action"] == "buy":
+            buys[ticker].append({"shares": shares, "price": price, "fps": fric / shares})
+        elif t["action"] in ("exit", "sell", "reduce"):
+            remaining = shares
+            sell_fps = fric / shares
+            q = buys[ticker]
+            while remaining > 0 and q:
+                lot = q.popleft()
+                matched = min(remaining, lot["shares"])
+                gross = (price - lot["price"]) * matched
+                net = gross - matched * lot["fps"] - matched * sell_fps
+                realized.append(net)
+                remaining -= matched
+                if lot["shares"] > matched:
+                    q.appendleft({"shares": lot["shares"] - matched,
+                                  "price": lot["price"], "fps": lot["fps"]})
+    return realized
+
+
 def _compute_fifo_wins(trades: list[dict]) -> tuple[int, int]:
-    """FIFO matching: first-bought shares are first-sold. Returns (closed_round_trips, wins)."""
-    from collections import deque
-    buys = deque()
+    """FIFO matching (PER TICKER): first-bought shares are first-sold.
+
+    Returns (closed_round_trips, wins) where a round-trip = one sell event and a
+    win = a sell event whose aggregate realized gross P&L (across the buy lots it
+    consumes) is positive.
+    """
+    from collections import deque, defaultdict
+    buys: dict = defaultdict(deque)  # ticker -> deque of {shares, price}
     wins = 0
     closed_round_trips = 0
     for t in trades:
+        ticker = t["ticker"]
         if t["action"] == "buy":
-            buys.append({"shares": int(t["shares"]), "price": float(t["price"])})
-        elif t["action"] in ("exit", "sell"):
+            buys[ticker].append({"shares": int(t["shares"]), "price": float(t["price"])})
+        elif t["action"] in ("exit", "sell", "reduce"):
             remaining = int(t["shares"])
             sale_price = float(t["price"])
             closed_round_trips += 1
-            while remaining > 0 and buys:
-                lot = buys.popleft()
+            event_pnl = 0.0
+            q = buys[ticker]
+            while remaining > 0 and q:
+                lot = q.popleft()
                 matched = min(remaining, lot["shares"])
-                if sale_price > lot["price"]:
-                    wins += 1
+                event_pnl += (sale_price - lot["price"]) * matched
                 remaining -= matched
                 if lot["shares"] > matched:
-                    buys.appendleft({"shares": lot["shares"] - matched, "price": lot["price"]})
+                    q.appendleft({"shares": lot["shares"] - matched, "price": lot["price"]})
+            if event_pnl > 0:
+                wins += 1
     return closed_round_trips, wins
 
 

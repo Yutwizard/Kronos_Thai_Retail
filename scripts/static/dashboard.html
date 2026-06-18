@@ -60,7 +60,12 @@
     <span class="setup-note">This cannot be changed after your first trade.</span>
   </div>
 
-  <div id="main-content">
+  <nav id="tab-nav" class="tab-nav">
+    <button class="tab-btn active" data-tab="trading" onclick="switchTab('trading')">📊 Trading</button>
+    <button class="tab-btn" data-tab="performance" onclick="switchTab('performance')">📈 Performance</button>
+  </nav>
+
+  <div id="main-content" class="tab-pane active" data-tab="trading">
     <section id="trade-ticket" class="panel hero">
       <h2>Trade Ticket — <span id="ticket-date"></span></h2>
       <div id="ticket-body"></div>
@@ -101,6 +106,14 @@
           <tbody id="hist-tbody"></tbody>
         </table>
       </div>
+    </section>
+  </div>
+
+  <div id="performance-content" class="tab-pane" data-tab="performance" hidden>
+    <div id="perf-stats" class="perf-stats"></div>
+    <section class="panel">
+      <h2>Equity Curve — Paper Portfolio</h2>
+      <div id="equity-chart" class="equity-chart"></div>
     </section>
   </div>
 
@@ -159,7 +172,105 @@ async function refresh() {
   updateTradeTicket(trades, risk);
   updateMode();
 
+  if (!$("performance-content").hidden) loadPerformance();
   $("header-refresh").textContent = "Last refresh: " + now.toTimeString().slice(0, 8);
+}
+
+// ── Tabs + Performance ───────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.toggle("active", b.dataset.tab === name));
+  document.querySelectorAll(".tab-pane").forEach(p => { p.hidden = (p.dataset.tab !== name); });
+  if (name === "performance") loadPerformance();
+}
+
+async function loadPerformance() {
+  const perf = await fetchJSON("/api/performance");
+  if (!perf) { $("perf-stats").innerHTML = '<p class="empty">Could not load performance data.</p>'; return; }
+  renderPerfStats(perf);
+  renderEquityChart(perf);
+}
+
+function renderPerfStats(p) {
+  const thb = v => "฿" + Math.round(v).toLocaleString();
+  const signThb = v => (v >= 0 ? "+" : "−") + "฿" + Math.round(Math.abs(v)).toLocaleString();
+  const pnlCls = v => v >= 0 ? "green" : "red";
+  const ddCls = p.max_drawdown < -0.07 ? "red" : p.max_drawdown < -0.03 ? "orange" : "green";
+  const shCls = p.sharpe > 1 ? "green" : p.sharpe > 0.5 ? "orange" : "red";
+  // null ratios = no losing trades yet → ∞ (if any closed) else —
+  const ratio = v => v == null ? (p.closed_trades ? "∞" : "—") : v.toFixed(2);
+  const ratioCls = v => v == null ? (p.closed_trades ? "green" : "") : (v >= 1 ? "green" : v >= 0.5 ? "orange" : "red");
+
+  const returns = [
+    ["Current Equity", thb(p.current_equity), ""],
+    ["Total P&L", signThb(p.total_pnl), pnlCls(p.total_pnl)],
+    ["Total Return", (p.total_return_pct * 100).toFixed(2) + "%", pnlCls(p.total_pnl)],
+    ["Realized P&L", signThb(p.realized_pnl), pnlCls(p.realized_pnl)],
+    ["Unrealized P&L", signThb(p.unrealized_pnl), pnlCls(p.unrealized_pnl)],
+    ["Trailing Sharpe", (p.sharpe != null ? p.sharpe.toFixed(2) : "—"), shCls],
+    ["Max Drawdown", (p.max_drawdown * 100).toFixed(1) + "%", ddCls],
+    ["Avg Drawdown", (p.avg_drawdown * 100).toFixed(2) + "%", ""],
+    ["Ulcer Index", (p.ulcer_index * 100).toFixed(2), ""],
+    ["Max DD Duration", p.max_drawdown_duration + '<span class="perf-sub">equity points</span>', ""],
+  ];
+  const trades = [
+    ["Win Rate", p.closed_trades ? (p.win_rate * 100).toFixed(0) + "% (" + p.closed_trades + ")" : "—", ""],
+    ["Profit Factor", ratio(p.profit_factor), ratioCls(p.profit_factor)],
+    ["Payoff Ratio", ratio(p.payoff_ratio), ratioCls(p.payoff_ratio)],
+    ["Avg Win", p.avg_win ? thb(p.avg_win) : "—", p.avg_win ? "green" : ""],
+    ["Avg Loss", p.avg_loss ? "−" + thb(p.avg_loss) : "—", p.avg_loss ? "red" : ""],
+    ["Total Friction", "−" + thb(p.total_friction), "red"],
+    ["Open Positions", p.open_positions, ""],
+    ["Largest Position", (p.largest_weight * 100).toFixed(1) + "%", p.largest_weight > 0.25 ? "orange" : ""],
+    ["Top Sector", p.top_sector + '<span class="perf-sub">' + (p.top_sector_weight * 100).toFixed(1) + "% of portfolio</span>", ""],
+    ["Days Tracked", p.days_tracked + (p.inception_date ? `<span class="perf-sub">since ${p.inception_date}</span>` : ""), ""],
+    ["Initial Capital", thb(p.initial_capital), ""],
+  ];
+  const grid = arr => '<div class="perf-grid">' + arr.map(t =>
+    `<div class="perf-tile"><div class="t-label">${t[0]}</div><div class="t-val ${t[2]}">${t[1]}</div></div>`).join("") + "</div>";
+  $("perf-stats").innerHTML =
+    '<h3 class="perf-group">Returns &amp; Risk</h3>' + grid(returns) +
+    '<h3 class="perf-group">Trades &amp; Positions</h3>' + grid(trades);
+}
+
+function renderEquityChart(p) {
+  const pts = p.points || [];
+  const el = $("equity-chart");
+  if (pts.length < 2) {
+    el.innerHTML = '<p class="empty">Not enough data yet — record at least two equity points (paper trades) to see the curve.</p>';
+    return;
+  }
+  const W = 900, H = 320, padL = 70, padR = 16, padT = 16, padB = 36;
+  const vals = pts.map(d => d.value);
+  const minV = Math.min(...vals, p.initial_capital);
+  const maxV = Math.max(...vals, p.initial_capital);
+  const range = (maxV - minV) || 1;
+  const x = i => padL + i * (W - padL - padR) / (pts.length - 1);
+  const y = v => padT + (1 - (v - minV) / range) * (H - padT - padB);
+
+  const line = pts.map((d, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(d.value).toFixed(1)}`).join(" ");
+  const area = `M${x(0).toFixed(1)},${y(pts[0].value).toFixed(1)} `
+    + pts.map((d, i) => `L${x(i).toFixed(1)},${y(d.value).toFixed(1)}`).join(" ")
+    + ` L${x(pts.length - 1).toFixed(1)},${y(minV).toFixed(1)} L${x(0).toFixed(1)},${y(minV).toFixed(1)} Z`;
+
+  let grid = "";
+  for (let g = 0; g <= 4; g++) {
+    const v = minV + range * g / 4, yy = y(v);
+    grid += `<line x1="${padL}" y1="${yy.toFixed(1)}" x2="${W - padR}" y2="${yy.toFixed(1)}" class="eq-grid"/>`
+         +  `<text x="${padL - 6}" y="${(yy + 3).toFixed(1)}" class="eq-ylab" text-anchor="end">฿${Math.round(v).toLocaleString()}</text>`;
+  }
+  const baseY = y(p.initial_capital);
+  const xi = [0, Math.floor((pts.length - 1) / 2), pts.length - 1];
+  const xlabs = xi.map(i => `<text x="${x(i).toFixed(1)}" y="${H - padB + 18}" class="eq-xlab" text-anchor="middle">${pts[i].date}</text>`).join("");
+  const lineColor = pts[pts.length - 1].value >= p.initial_capital ? "var(--green)" : "var(--red)";
+
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" class="eq-svg" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Equity curve">
+    ${grid}
+    <line x1="${padL}" y1="${baseY.toFixed(1)}" x2="${W - padR}" y2="${baseY.toFixed(1)}" class="eq-baseline"/>
+    <text x="${W - padR}" y="${(baseY - 4).toFixed(1)}" class="eq-baselab" text-anchor="end">initial ฿${Math.round(p.initial_capital).toLocaleString()}</text>
+    <path d="${area}" fill="${lineColor}" opacity="0.08"/>
+    <path d="${line}" fill="none" stroke="${lineColor}" stroke-width="2"/>
+    ${xlabs}
+  </svg>`;
 }
 
 function updateMode() {

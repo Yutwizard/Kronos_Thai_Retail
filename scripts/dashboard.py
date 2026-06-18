@@ -422,10 +422,16 @@ def api_edit_trade(index):
     if new_price is None and new_shares is None and new_date is None:
         return jsonify({"error": "supply at least one of: price, shares, date"}), 400
     from kth.trading.portfolio import edit_trade
-    result = edit_trade(index, new_price, new_shares, TRADING_MODE)
+    result = edit_trade(index, new_price, new_shares, TRADING_MODE, new_date=new_date)
     if "error" in result:
         return jsonify(result), 400
     return jsonify(result)
+
+
+@app.route("/api/performance")
+def api_performance():
+    from kth.trading.portfolio import get_equity_performance
+    return jsonify(get_equity_performance(TRADING_MODE))
 
 
 @app.route("/api/phase2_gate")
