@@ -401,7 +401,7 @@ def test_pipeline_writes_all_tabs(tmp):
     gc = seeded_fake_client()
     run_daily_pipeline(
         gc, "test_id", model=FakeModel(), data_loader=FakeLoader(),
-        today=D, work_dir=tmp,
+        today=D, work_dir=tmp, staging_sleep=0,
     )
     sh = gc.open_by_key("test_id")
     for tab in ["Portfolio", "Forecasts", "Trade Ticket",
@@ -415,12 +415,12 @@ def test_idempotent_preserves_history(tmp):
     gc = seeded_fake_client(equity_history=["2026-06-13", "2026-06-14"])
     run_daily_pipeline(
         gc, "test_id", model=FakeModel(), data_loader=FakeLoader(),
-        today=D, work_dir=tmp,
+        today=D, work_dir=tmp, staging_sleep=0,
     )
     rows1 = gc.open_by_key("test_id").worksheet("Equity Curve").get_all_values()
     run_daily_pipeline(
         gc, "test_id", model=FakeModel(), data_loader=FakeLoader(),
-        today=D, work_dir=tmp,
+        today=D, work_dir=tmp, staging_sleep=0,
     )
     rows2 = gc.open_by_key("test_id").worksheet("Equity Curve").get_all_values()
     dates = [r[0] for r in rows2[1:]]
@@ -436,7 +436,7 @@ def test_capital_reset_applied_before_forecasts(tmp):
     gc = client_with_pending_setup(capital=300000)
     run_daily_pipeline(
         gc, "test_id", model=FakeModel(), data_loader=FakeLoader(),
-        today=D, work_dir=tmp,
+        today=D, work_dir=tmp, staging_sleep=0,
     )
     assert portfolio_initial_capital(gc) == 300000, \
         f"Expected 300000, got {portfolio_initial_capital(gc)}"
@@ -458,7 +458,7 @@ def test_trade_edit_applied(tmp):
                      'paper', 'test', '0', 'v1', '2026-06-17'])
     run_daily_pipeline(
         gc, "test_id", model=FakeModel(), data_loader=FakeLoader(),
-        today=D, work_dir=tmp,
+        today=D, work_dir=tmp, staging_sleep=0,
     )
     # Must chdir back to tmp because run_daily_pipeline restores CWD on exit
     # and init_portfolio resolves relative to CWD
@@ -479,7 +479,7 @@ def test_uses_injected_today_not_utc(tmp):
     gc = seeded_fake_client()
     run_daily_pipeline(
         gc, "test_id", model=FakeModel(), data_loader=FakeLoader(),
-        today=date(2026, 6, 15), work_dir=tmp,
+        today=date(2026, 6, 15), work_dir=tmp, staging_sleep=0,
     )
     assert last_equity_date(gc) == "2026-06-15", \
         f"Expected 2026-06-15, got {last_equity_date(gc)}"
@@ -493,7 +493,7 @@ def test_failure_writes_status_and_notifies(tmp):
     try:
         run_daily_pipeline(
             gc, "test_id", model=boom, data_loader=FakeLoader(),
-            today=D, work_dir=tmp,
+            today=D, work_dir=tmp, staging_sleep=0,
             notifier=lambda lvl, msg: calls.append(lvl),
         )
     except Exception:
@@ -503,6 +503,48 @@ def test_failure_writes_status_and_notifies(tmp):
     assert "error" in calls, \
         f"Expected notifier to be called with 'error', got {calls}"
     print("PASS test_failure_writes_status_and_notifies")
+
+
+def test_forecast_history_idempotent(tmp):
+    """Same-day re-run must not duplicate today's Forecast History rows (R3)."""
+    gc = seeded_fake_client()
+    run_daily_pipeline(gc, "test_id", model=FakeModel(), data_loader=FakeLoader(),
+                       today=D, work_dir=tmp, staging_sleep=0)
+    fh1 = gc.open_by_key("test_id").worksheet("Forecast History").get_all_values()
+    run_daily_pipeline(gc, "test_id", model=FakeModel(), data_loader=FakeLoader(),
+                       today=D, work_dir=tmp, staging_sleep=0)
+    fh2 = gc.open_by_key("test_id").worksheet("Forecast History").get_all_values()
+    today1 = [r for r in fh1[1:] if r and r[0] == str(D)]
+    today2 = [r for r in fh2[1:] if r and r[0] == str(D)]
+    assert len(today1) > 0, "first run wrote no forecast-history rows"
+    assert len(today1) == len(today2), \
+        f"Forecast History duplicated on re-run: {len(today1)} -> {len(today2)}"
+    print("PASS test_forecast_history_idempotent")
+
+
+def test_trade_edit_correct_row_with_same_day_fill(tmp):
+    """Edit must apply BEFORE fills create trade_log.csv, else the sheet-based edit
+    index targets the wrong row in the (fills-only) local CSV (C3 regression)."""
+    gc = client_with_pending_edit(index=0, new_shares=200, ticker='AOT.BK')
+    sh = gc.open_by_key("test_id")
+    # A confirmed fill for a DIFFERENT ticker forces trade_log.csv creation during fills.
+    sh.worksheet('Trade Ticket')._data = [
+        ['ticker', 'action', 'shares', 'est_cost_thb', 'rationale', 'sector',
+         'confidence', 'filled_price', 'filled_shares', 'fill_timestamp'],
+        ['PTT.BK', 'buy', '100', '3500', 'test', 'Energy', 'green',
+         '35.0', '100', '2026-06-18T09:30'],
+    ]
+    # NOTE: do NOT pre-create trade_log.csv — the pipeline must sync it from the sheet.
+    run_daily_pipeline(gc, "test_id", model=FakeModel(), data_loader=FakeLoader(),
+                       today=D, work_dir=tmp, staging_sleep=0)
+    orig = os.getcwd()
+    os.chdir(tmp)
+    from kth.trading.portfolio import init_portfolio
+    pos = init_portfolio('paper').get('positions', {})
+    os.chdir(orig)
+    assert pos.get('AOT.BK', {}).get('shares') == 200, \
+        f"Edit hit the wrong row; AOT.BK = {pos.get('AOT.BK')}"
+    print("PASS test_trade_edit_correct_row_with_same_day_fill")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -520,5 +562,5 @@ if __name__ == "__main__":
                 fn(tmp)
         else:
             fn()
-        print("PASS", fn.__name__)
-    print("ALL PASSED")
+        # each test self-reports PASS on its last line; the runner only re-raises on failure
+    print(f"ALL {len(fns)} PASSED")

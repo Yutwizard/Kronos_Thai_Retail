@@ -358,11 +358,19 @@ def _write_forecast_history(sh, ohlcv_dict: dict, fc_rows: list,
     if updates:
         fh_ws.batch_update(updates)
         print(f"Forecast History: resolved {len(updates)} prior-day rows.")
+    # Idempotent append: skip (date,ticker) pairs already present for today so a
+    # same-day re-run or scheduler retry doesn't duplicate the day's predictions.
+    already_today = {
+        row[col.get('ticker', 1)]
+        for row in fh_data[1:]
+        if row and len(row) > 1 and row[col.get('date', 0)] == today_str
+    }
     today_rows = [
         [today_str, r['ticker'],
          'up' if r['exp_ret'] > 0 else 'down',
          round(r['exp_ret'], 4), round(r['close'], 2), '', '']
-        for r in fc_rows if r['ticker'] not in failed_tickers
+        for r in fc_rows
+        if r['ticker'] not in failed_tickers and r['ticker'] not in already_today
     ]
     if today_rows:
         fh_ws.append_rows(today_rows)
@@ -400,7 +408,8 @@ def _write_staging_for_equity_curve(sh, pf_data: dict, today_str: str):
 
 
 def run_daily_pipeline(gc, spreadsheet_id, *, model, data_loader,
-                       today: date, work_dir: str = ".", notifier=None) -> dict:
+                       today: date, work_dir: str = ".", notifier=None,
+                       staging_sleep: float = 1.0) -> dict:
     cwd = os.getcwd()
     os.chdir(work_dir)
     pipeline_start = time.time()
@@ -422,6 +431,13 @@ def run_daily_pipeline(gc, spreadsheet_id, *, model, data_loader,
 
         _apply_capital_reset(sh, 'paper')
 
+        # Trade edits BEFORE fills. _apply_trade_edits syncs the full Trade Log from
+        # the sheet into trade_log.csv, but only if that CSV does not exist yet. Fills
+        # (execute_trade) create the CSV with only today's trades, so if edits ran after
+        # fills the sync would be skipped and edit_trade(index=N) — where N is the sheet
+        # row — would target the wrong row in the fills-only CSV.
+        _apply_trade_edits(sh, 'paper')
+
         fills = _read_fills(sh)
 
         tickers = get_all_tickers()
@@ -431,11 +447,8 @@ def run_daily_pipeline(gc, spreadsheet_id, *, model, data_loader,
 
         model.forecast(tickers, today_str)
 
-        pf_data = init_portfolio('paper')
         _apply_fills(fills, ohlcv_dict, 'paper')
         pf_data = init_portfolio('paper')
-
-        _apply_trade_edits(sh, 'paper')
 
         ticket_data = generate_trade_ticket(report_date=today_str)
         if 'error' in ticket_data:
@@ -452,11 +465,11 @@ def run_daily_pipeline(gc, spreadsheet_id, *, model, data_loader,
         fc_rows = load_forecasts(today_str)
 
         _write_all_staging(sh, ohlcv_dict, ticket_data, metrics, fc_rows,
-                           pf_data, today_str)
+                           pf_data, today_str, staging_sleep=staging_sleep)
 
         _append_trade_log(sh, 'paper')
 
-        failures = promote_staging(sh, STAGING_MAP)
+        failures = promote_staging(sh, STAGING_MAP, sleep_sec=staging_sleep)
         if failures:
             msg = f"Staging promotion failed for: {', '.join(failures.keys())}"
             raise RuntimeError(msg)
@@ -537,16 +550,18 @@ def _compute_all_metrics(pf_data: dict, today_str: str, today: date) -> dict:
 
 def _write_all_staging(sh, ohlcv_dict: dict, ticket_data: dict,
                        metrics: dict, fc_rows: list, pf_data: dict,
-                       today_str: str):
+                       today_str: str, staging_sleep: float = 1.0):
     from kth.trading.sheets import POSITIONS_HEADERS, PORTFOLIO_HEADERS
 
     pf = init_portfolio('paper')
     write_staging(sh.worksheet('Portfolio_staging'), PORTFOLIO_HEADERS,
-                  [[pf['cash'], pf['initial_capital'], 'paper', MODEL_VERSION, today_str]])
+                  [[pf['cash'], pf['initial_capital'], 'paper', MODEL_VERSION, today_str]],
+                  sleep_sec=staging_sleep)
 
     pos = get_positions('paper')
     pos_rows = build_pos_rows(pos, ohlcv_dict, get_sector)
-    write_staging(sh.worksheet('Positions_staging'), POSITIONS_HEADERS, pos_rows)
+    write_staging(sh.worksheet('Positions_staging'), POSITIONS_HEADERS, pos_rows,
+                  sleep_sec=staging_sleep)
 
     fc_by_ticker = {r['ticker']: r for r in fc_rows}
     write_staging(sh.worksheet('Forecasts_staging'),
@@ -554,7 +569,8 @@ def _write_all_staging(sh, ohlcv_dict: dict, ticket_data: dict,
                   [[today_str, r['ticker'], r['rank_score'], r['exp_ret'],
                     r['band_width'], r['confidence'], r['net_ret'],
                     r['p5_close'], r['p50_close'], r['p95_close'],
-                    get_sector(r['ticker'])] for r in fc_rows])
+                    get_sector(r['ticker'])] for r in fc_rows],
+                  sleep_sec=staging_sleep)
 
     tt_rows = []
     all_items = (
@@ -576,11 +592,11 @@ def _write_all_staging(sh, ohlcv_dict: dict, ticket_data: dict,
             '', '', '',
         ])
     write_staging(sh.worksheet('Trade Ticket_staging'),
-                  TRADE_TICKET_HEADERS, tt_rows)
+                  TRADE_TICKET_HEADERS, tt_rows, sleep_sec=staging_sleep)
 
     risk_row = _write_risk_metrics_row(metrics, pf_data, today_str)
     write_staging(sh.worksheet('Risk Metrics_staging'),
-                  RISK_METRICS_HEADERS, risk_row)
+                  RISK_METRICS_HEADERS, risk_row, sleep_sec=staging_sleep)
 
     _write_staging_for_equity_curve(sh, pf_data, today_str)
 
