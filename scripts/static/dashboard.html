@@ -575,18 +575,18 @@ async function executeTrades() {
   for (const e of (_pendingResp.exits||[])) {
     const def = (e.last_close || (e.estimated_thb/e.shares)).toFixed(2);
     const fr = (e.friction_rt||0.00536)/2;
-    makeRow("EXIT","red",e.ticker,e.shares,def,"market order","market",fr);
+    makeRow("EXIT","red",e.ticker,e.shares,def,`last: ${def} market order`,"market",fr);
   }
   for (const r of (_pendingResp.reduces||[])) {
     const def = (r.last_close||r.limit_price||0).toFixed(2);
     const fr = (r.friction_rt||0.00536)/2;
-    makeRow("REDUCE","orange",r.ticker,r.shares,def,"","limit",fr);
+    makeRow("REDUCE","orange",r.ticker,r.shares,def,`last: ${def}`,"limit",fr);
   }
   for (const b of (_pendingResp.buys||[])) {
     const def = (b.last_close||b.limit_price||0).toFixed(2);
-    const hint = b.limit_price ? `ceiling: ${b.limit_price.toFixed(2)}` : "";
+    const ceiling = b.limit_price ? ` ceiling: ${b.limit_price.toFixed(2)}` : "";
     const fr = (b.friction_rt||0.00536)/2;
-    makeRow("BUY","green",b.ticker,b.shares,def,hint,"limit",fr);
+    makeRow("BUY","green",b.ticker,b.shares,def,`last: ${def}${ceiling}`,"limit",fr);
   }
 
   $("modal-tbody").innerHTML = rows;
