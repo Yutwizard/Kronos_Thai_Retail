@@ -191,6 +191,12 @@ def download_universe(
         print(f"OK {rpt['rows']} rows {rpt['start']}..{rpt['end']}")
         time.sleep(pause_between)
 
+    from kth.data.versioning import write_manifest
+    try:
+        write_manifest(cache_path, list(tickers))
+    except Exception as e:
+        print(f"[versioning] manifest write failed: {e}")
+
     return pd.DataFrame(reports)
 
 
