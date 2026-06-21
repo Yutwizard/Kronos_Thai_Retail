@@ -73,6 +73,7 @@ Click the key icon in the Colab left sidebar → Add new secret:
 | **Trade Log** | Append-only audit trail; cancelled rows shown with strikethrough; `↩ cancels {ref_id}` for CANCEL entries |
 | **Forecasts** | **Δ Prev column** (▲▼ change vs previous pipeline run); **📅 data date badge**; confidence badges (green/yellow/red); Forecast History sub-tab with accuracy % |
 | **Trade Ticket** | Today's recommendations; **Export CSV** button; **Enter Fills** button (modal to record actual broker fills without leaving the dashboard); T+2 warning when exits + buys co-exist |
+| **➕ Manual Trade** | Fixed button (top-right) to log an ad-hoc buy/sell — useful on days with no ticket or for off-signal trades. Queues to the **Manual Trades** sheet (auto-created) and is applied on the next pipeline run via `kth.pipeline.daily._apply_manual_trades`. |
 
 ## Daily Routine
 
@@ -82,6 +83,11 @@ Click the key icon in the Colab left sidebar → Add new secret:
 4. After orders fill: click **Enter Fills** in the Trade Ticket tab → enter actual prices in the modal → Save Fills
    - Alternatively: open the Trade Ticket sheet → columns H-J → enter `filled_price`, `filled_shares`, `fill_timestamp`
 5. Next pipeline run picks up fills automatically
+
+**Off-ticket trade?** Click **➕ Manual Trade** (top-right) and enter ticker, action, shares,
+and fill price. It queues to the **Manual Trades** sheet and is executed on the next pipeline
+run (so it appears in the dashboard after that run — not instantly, unlike the local Flask
+dashboard which records immediately).
 
 ## CANCEL Convention
 

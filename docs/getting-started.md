@@ -240,7 +240,8 @@ After opening http://localhost:5555, you should see:
 │ Trade Ticket                                 │
 │  ▼ EXIT: KBANK.BK  3,500 shares   market    │
 │  ▲ BUY:  CPALL.BK    800 shares   limit     │
-│  [Record Paper Trade]  [Export for Broker]   │
+│  [Record Paper Trade] [➕ Add Manual Trade]  │
+│  [Export for Broker]                         │
 ├─────────────────────┬────────────────────────┤
 │ Current Positions   │ Morning Brief (Top 10) │
 └─────────────────────┴────────────────────────┘
@@ -339,6 +340,7 @@ The backtest says the strategy makes +31.44% per year, but:
 2. **Morning:** Open http://localhost:5555 — Trade Ticket is ready. Check the Risk Bar (Market State = Normal?).
 3. **Look at:** The Trade Ticket. Are there any buy or exit signals? If yes — great. If no — also great. "No signals today" is normal.
 4. **Click:** "Record Paper Trade" if you want to simulate the trades. Enter the actual fill price from your broker.
+   - **No ticket today, or a trade not in it?** Click **"➕ Add Manual Trade"** to log any buy/sell yourself (ticker, action, shares, fill price).
 5. **End of day:** Run pipeline again to update forecasts with today's close data.
 
 ### Tuesday — Getting Comfortable

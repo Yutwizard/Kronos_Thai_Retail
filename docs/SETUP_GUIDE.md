@@ -84,7 +84,8 @@ You should see these 5 words in cells A1 through E1.
 ### Step 1.4 — Create 17 more tabs
 
 At the bottom left, click the **+** (plus) button to add a new tab (sheet).
-Rename it immediately by right-clicking. Repeat until you have exactly 18 tabs:
+Rename it immediately by right-clicking. Repeat until you have the 18 core tabs
+(a 19th, `Manual Trades`, is optional — it's auto-created on first use):
 
 | # | Tab name | What to put in A1 |
 |---|----------|-------------------|
@@ -106,6 +107,7 @@ Rename it immediately by right-clicking. Repeat until you have exactly 18 tabs:
 | 16 | `Equity Curve_staging` | `date,equity,cash,invested` |
 | 17 | `Trade Edits` | Leave empty (populated by dashboard) |
 | 18 | `Capital Reset` | Leave empty (populated by dashboard) |
+| 19 | `Manual Trades` | **Optional** — auto-created the first time you use the **➕ Manual Trade** button. Create it now with header `date,action,ticker,shares,price,requested_at` only if you want it visible upfront. |
 
 > ⚠️ **The headers MUST match exactly.** The longest ones (Risk Metrics headers)
 > are sensitive to ordering. If a header is mis-typed, that column will show blank
@@ -122,8 +124,9 @@ own column.
 
 ### Step 1.5 — Verify
 
-Count your tabs (bottom of screen): exactly 18 tabs visible. Verify the names
-match the table above, especially the `_staging` suffix.
+Count your tabs (bottom of screen): at least the 18 core tabs visible (a 19th,
+`Manual Trades`, is created automatically the first time you use ➕ Manual Trade).
+Verify the names match the table above, especially the `_staging` suffix.
 
 > ⚠️ **Missing a tab?** Add it now. The pipeline will crash if it tries to read
 > a tab that doesn't exist. Better to check now than debug later.

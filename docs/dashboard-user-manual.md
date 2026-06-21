@@ -206,6 +206,12 @@ Click the **"Record Paper Trade"** button. This records all exits and buys in to
 
 After clicking, you'll see a confirmation: "3 trades recorded. Portfolio value: 512,300 THB."
 
+**Recording a trade that isn't in the ticket (manual entry):** click **"➕ Add Manual Trade"**
+to record an ad-hoc buy/sell — handy on days the pipeline didn't run (no ticket) or when you
+traded something off-signal. Enter ticker, action (buy / exit / reduce), shares (multiple of
+100), and your fill price. It's recorded immediately and appears in Trade History; the
+portfolio recalculates. A buy needs enough cash; an exit/reduce needs an existing position.
+
 ### Step 4: Review Positions (2 minutes)
 
 Scroll to **Current Positions**. Check:
@@ -254,7 +260,7 @@ Allocation: NEUTRAL 10%
 │ TRADE TICKET (hero, full width)                             │
 │  ▼ EXIT: KBANK.BK 3,500 market                              │
 │  ▲ BUY:  CPALL.BK 800 limit 56.70                           │
-│  [Record Paper Trade] [Export for Broker]                   │
+│  [Record Paper Trade] [➕ Add Manual Trade] [Export]        │
 ├──────────────────────────┬──────────────────────────────────┤
 │ CURRENT POSITIONS        │ MORNING BRIEF — Top 10          │
 │  PTT.BK  +2.2%  HOLD     │  1. PTT.BK    +2.31%  🟢       │
@@ -519,7 +525,7 @@ The dashboard header changes from **📋 PAPER** (blue) to **💰 LIVE** (red). 
 | Dashboard shows "No forecasts" | Cron didn't run or GPU was busy | Run `venv/bin/python scripts/dashboard.py --generate` manually |
 | "⚠ Forecasts from yesterday — stale" | Cron failed | Check `data/logs/cron_{date}.log` for errors. Re-run --generate. |
 | No buy signals appear | Market is uncertain or net returns are below friction | Check Full Ranking — if >30 tickers are 🔴, it's a high-uncertainty day. Stay cash. |
-| "Record Paper Trade" does nothing | No trade ticket exists | First run `--generate` to produce forecasts, then refresh the dashboard |
+| "Record Paper Trade" does nothing | No trade ticket exists | First run `--generate` to produce forecasts, then refresh the dashboard — or use **➕ Add Manual Trade** to log a buy/sell without a ticket |
 | Dashboard won't start (port 5555 in use) | Another instance is running | `kill $(lsof -t -i:5555)` then restart |
 | All signals are 🟡 or 🔴 | Typical on volatile days | The model produces 🟢 on ~30% of days. Accept it. |
 | Friction cost seems high | Thai broker fees + SET fees add up | 0.27% one-way is the hardcoded estimate. If your broker is cheaper, update `FRICTION` in `kth/data/universe.py`. |

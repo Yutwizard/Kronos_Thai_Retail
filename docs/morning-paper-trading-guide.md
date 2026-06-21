@@ -237,7 +237,12 @@ Set limit order at: close × (1 + exp_ret / 2)
 2. Confirm the modal showing: ticker, shares, estimated THB, friction cost
 3. Click **"Confirm"**
 
-**Option B — Manual POST (if button doesn't work):**
+**Option B — Add Manual Trade button (no ticket, or an off-signal trade):**
+1. Click **"➕ Add Manual Trade"** in the Trade Ticket panel
+2. Enter ticker, action (buy / exit / reduce), shares (multiple of 100), and your fill price
+3. Click **"✓ Record trade"** — it posts to `/api/trades`, the same as Option A
+
+**Option C — Manual POST (scripting / if the UI is unavailable):**
 ```bash
 curl -X POST http://localhost:5555/api/trades \
   -H "Content-Type: application/json" \
