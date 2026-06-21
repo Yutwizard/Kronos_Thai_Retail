@@ -132,6 +132,34 @@ def test_column_to_letter():
     print("PASS test_column_to_letter")
 
 
+# ---- Task 9: Calibration idempotency ----
+def test_calibration_idempotent_on_rerun(tmp):
+    """Same-day re-run must not append duplicate Calibration rows.
+    Monkeypatches _compute_calibration_data so the append path is exercised."""
+    from kth.pipeline.daily import run_daily_pipeline
+    from verify_kaggle_runtime import FakeModel, FakeLoader, seeded_fake_client
+    import kth.pipeline.daily as daily_mod
+    from datetime import date
+    orig_cal = daily_mod._compute_calibration_data
+    daily_mod._compute_calibration_data = lambda ohlcv, today_str: {
+        'date': today_str, 'coverage': 0.88, 'n_samples': 15, 'status': 'on_track'
+    }
+    try:
+        gc = seeded_fake_client()
+        run_daily_pipeline(gc, "test_id", model=FakeModel(), data_loader=FakeLoader(),
+                           today=date(2026,6,18), work_dir=tmp, staging_sleep=0)
+        rows1 = gc.open_by_key("test_id").worksheet("Calibration").get_all_values()
+        run_daily_pipeline(gc, "test_id", model=FakeModel(), data_loader=FakeLoader(),
+                           today=date(2026,6,18), work_dir=tmp, staging_sleep=0)
+        rows2 = gc.open_by_key("test_id").worksheet("Calibration").get_all_values()
+        today1 = [r for r in rows1[1:] if r and r[0] == "2026-06-18"]
+        today2 = [r for r in rows2[1:] if r and r[0] == "2026-06-18"]
+        assert len(today1) == len(today2), f"Calibration duplicated: {len(today1)} -> {len(today2)}"
+        print("PASS test_calibration_idempotent_on_rerun")
+    finally:
+        daily_mod._compute_calibration_data = orig_cal
+
+
 if __name__ == "__main__":
     import inspect
     import tempfile

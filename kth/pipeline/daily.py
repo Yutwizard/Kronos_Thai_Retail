@@ -616,12 +616,20 @@ def _write_all_staging(sh, ohlcv_dict: dict, ticket_data: dict,
         cal_existing = cal_ws.get_all_values()
         if not cal_existing:
             cal_ws.append_row(CALIBRATION_HEADERS)
-        cal_ws.append_row([
-            cal_data['date'], cal_data['coverage'],
-            cal_data['n_samples'], cal_data['status'],
-        ])
-        print(f"Calibration: n={cal_data['n_samples']} "
-              f"coverage={cal_data['coverage']:.2%} status={cal_data['status']}")
+            cal_existing = [CALIBRATION_HEADERS]
+        already_today = any(
+            row and row[0] == today_str
+            for row in cal_existing[1:]
+        )
+        if not already_today:
+            cal_ws.append_row([
+                cal_data['date'], cal_data['coverage'],
+                cal_data['n_samples'], cal_data['status'],
+            ])
+            print(f"Calibration: n={cal_data['n_samples']} "
+                  f"coverage={cal_data['coverage']:.2%} status={cal_data['status']}")
+        else:
+            print(f"Calibration: today already logged — skip")
 
     _write_forecast_history(sh, ohlcv_dict, fc_rows, set(), today_str)
 
