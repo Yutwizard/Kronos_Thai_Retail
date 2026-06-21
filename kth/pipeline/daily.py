@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from kth.data.universe import get_all_tickers_including_features, get_sector, get_ticker_class, FRICTION
+from kth.data.universe import get_all_tickers_including_features, get_sector, get_friction
 from kth.trading.portfolio import (
     init_portfolio, get_positions, get_trade_log, compute_metrics, MODEL_VERSION,
     reset_portfolio, execute_trade, edit_trade, delete_trade,
@@ -634,8 +634,7 @@ def _write_all_staging(sh, ohlcv_dict: dict, ticket_data: dict,
     for action_type, item in all_items:
         ticker = item['ticker']
         close = item.get('last_close', 0)
-        cls = get_ticker_class(ticker)
-        fric = FRICTION.get(cls, {'commission_oneway': 0.002, 'slippage_oneway': 0.001})
+        fric = get_friction(ticker)
         fric_rt = fric['commission_oneway'] * 2 + fric['slippage_oneway'] * 2
         est_cost = round(item['shares'] * close * (1 + fric_rt), 2)
         conf = fc_by_ticker.get(ticker, {}).get('confidence', '')

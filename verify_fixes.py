@@ -296,7 +296,7 @@ def test_get_friction_fallback_unknown():
 def test_no_inline_friction_fallbacks_remain():
     """H3: no module should have inline friction dict-literal fallbacks."""
     from pathlib import Path
-    for f in ["kth/backtest/walkforward.py", "kth/trading/portfolio.py", "kth/trading/trade_gen.py"]:
+    for f in ["kth/backtest/walkforward.py", "kth/trading/portfolio.py", "kth/trading/trade_gen.py", "kth/pipeline/daily.py"]:
         text = Path(f).read_text()
         assert '{"commission_oneway":' not in text, \
             f"{f} still has inline friction fallback — use universe.get_friction()"

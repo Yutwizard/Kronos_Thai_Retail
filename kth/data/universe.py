@@ -263,7 +263,7 @@ def get_friction(ticker: str) -> dict[str, float]:
     cls = get_ticker_class(ticker)
     if cls is None:
         return dict(_DEFAULT_FRICTION)
-    return FRICTION.get(cls, dict(_DEFAULT_FRICTION))
+    return dict(FRICTION.get(cls, _DEFAULT_FRICTION))
 
 
 def get_one_way_friction_rate(ticker: str) -> float:
