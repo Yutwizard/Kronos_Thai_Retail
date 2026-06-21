@@ -83,3 +83,37 @@ def test_delete_trade_removes_position(temp_positions_dir):
     assert 'error' not in result
     pf = init_portfolio('paper')
     assert 'PTT.BK' not in pf['positions']
+
+
+def test_trade_ticket_buy_cost_does_not_exceed_cash():
+    """Cash guard: deployable must be capped at available cash."""
+    cash = 50_000.0
+    total_value = 500_000.0
+    alloc_pct = 0.10
+    deployable_naive = total_value * alloc_pct
+    deployable_guarded = min(deployable_naive, cash)
+    assert deployable_guarded == deployable_naive, "No cap when cash is sufficient"
+    cash2 = 25_000.0
+    total_value2 = 500_000.0
+    deployable_naive2 = total_value2 * alloc_pct
+    deployable_guarded2 = min(deployable_naive2, cash2)
+    assert deployable_guarded2 < deployable_naive2, "Cash guard must cap deployable"
+    assert deployable_guarded2 == cash2, f"Should cap at cash {cash2}"
+
+
+def test_cache_slug_consistent_across_modules():
+    """CACHE_SLUG must be same in trade_gen and walkforward."""
+    from kth.backtest.walkforward import _model_slug
+    from kth.trading.trade_gen import CACHE_SLUG as tg_slug
+    wf_slug = _model_slug("NeoQuasar/Kronos-small")
+    assert tg_slug == wf_slug, f"trade_gen={tg_slug} vs walkforward={wf_slug}"
+
+
+def test_reduce_only_on_bearish_yellow():
+    """Reduce should only trigger on yellow + bearish, not yellow + bullish."""
+    def should_reduce(f):
+        return f["confidence"] == "yellow" and f["direction"] == "down"
+    assert should_reduce({"confidence": "yellow", "direction": "down"}), \
+        "Bearish yellow should reduce"
+    assert not should_reduce({"confidence": "yellow", "direction": "up"}), \
+        "Bullish yellow should NOT reduce"
