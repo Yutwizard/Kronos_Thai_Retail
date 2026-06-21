@@ -20,6 +20,7 @@
 5. [Quarterly Performance Review](#5-quarterly-performance-review-30-minutes)
 6. [Example Scenarios](#6-example-scenarios)
 7. [Troubleshooting](#7-troubleshooting)
+8. [Extended Cash Regime — Interpretation & Override Criteria](#8-extended-cash-regime--interpretation--override-criteria)
 
 ---
 
@@ -577,6 +578,26 @@ NEW ALERTS TO KNOW:
   p=0.05 ✅  Bootstrap p-value: live alpha is statistically real
   p=0.30 ❌  Bootstrap p-value: no confirmed edge yet (keep going)
 ```
+
+---
+
+## 8. Extended Cash Regime — Interpretation & Override Criteria
+
+If the dashboard shows "STAY CASH" or BEAR allocation for 30+ consecutive days:
+
+1. **This is expected in a bull market.** The strategy structurally holds cash
+   when the SET is in a strong uptrend. See README caveat #4 (regime-conditional).
+2. **Do not override the risk band manually.** The 12-week trailing Sharpe is
+   the signal. If it rises above 0.5, the band auto-promotes to NEUTRAL.
+3. **Verify the regime.** Check SET Index 60-day return. If SET is up >10% over
+   60 days, BEAR allocation is the correct response, not a malfunction.
+4. **Override criteria (rare):** Only override if (a) the model forecasts are
+   loading correctly (check `/api/health`), AND (b) you have a documented
+   thesis for why the regime is about to shift. Document the override in the
+   trade log rationale field.
+5. **Accumulate paper trades.** The bootstrap p-value needs ≥20 days and the
+   allocation band needs ≥20 closed trades to promote from NEUTRAL bootstrap.
+   Patience is the strategy.
 
 ---
 

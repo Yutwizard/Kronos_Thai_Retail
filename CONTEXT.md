@@ -55,6 +55,7 @@ _Avoid_: Lower threshold, exit threshold
 **Risk Band**:
 A dynamic position-sizing rule that adjusts capital deployment based on trailing performance. Three bands: BULL (15% allocation, 12-week Sharpe > 1.0), NEUTRAL (10%, Sharpe 0.5–1.0), BEAR (5%, Sharpe 0.0–0.5), EXIT (0%, Sharpe < 0). Checked weekly (Friday) and executed the next trading day.
 _Avoid_: Allocation band, position size rule
+**Decision:** See `docs/adr/0001-equal-weight-position-sizing.md`.
 
 **Circuit Breaker**:
 A hard safety cut-off that liquidates all Positions when the Portfolio Value drops 10% from its all-time peak. Overrides the Risk Band. Re-enters when the Portfolio Value recovers 3% above the stop level. Implemented as the `−10% trail stop + 3% re-entry` rule.
@@ -98,6 +99,7 @@ A statistical measure of whether the **live paper trading** strategy's alpha is 
 1. `compute_bootstrap_pvalue()` — live dashboard only, centered resampling, grows as paper trading history accumulates (needs ≥20 days; shows `null` before that).
 2. Historical backtest p-values (p=0.015/0.257/0.353 in AGENTS.md) — computed via t-test in `kth/backtest/metrics.compute_metrics()`, stored in `data/backtest_results/`. Never recalculated by the dashboard.
 _Avoid_: p-value (use full term); confusing live bootstrap p-value with historical t-test p-value
+**Decision context:** Statistical methodology decisions documented in `docs/adr/`.
 
 **Sector Concentration**:
 A portfolio-level risk flag triggered when the buy loop would place more than 2 positions in the same SET sector (e.g., Banking, Energy, Property). Enforced by a hard filter in `trade_gen.py` using the `SECTOR` dict in `universe.py`. Not a warning — it silently skips over-concentrated picks and continues to the next ranked ticker.
