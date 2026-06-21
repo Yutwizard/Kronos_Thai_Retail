@@ -40,6 +40,14 @@ Defined in `kth/data/universe.py`. 100 tickers across 9 asset classes:
 
 ## Project state
 
+> **⚠️ STALE NUMBERS:** Backtest results below were computed before the
+> 2026-06-21 bug fixes (PSR formula, equity curve alignment, open_trades
+> blending, FIFO lot ledger). A GPU re-run is required. Do NOT cite these
+> numbers until the re-run completes. See `data/backtest_results/MANIFEST.md`.
+>
+> **Survivorship bias:** Cited CAGRs are overstated by ~1-3pp/yr. Adjust
+> mentally: "31.4% gross → ~28-30% survivorship-adjusted."
+
 - ✅ **Data layer** (`kth/data/`): universe (100 tickers, 9 classes), yfinance loader, Kronos-format conversion, caching, quality checks.
 - ✅ **Kronos model** (`kth/models/`): wrapper, bridge, finetune with SGDR training, checkpoint loader.
 - ✅ **Backtest engine** (`kth/backtest/`): walk-forward with 4 benchmarks, friction costs, full metrics. PSR, equity curve alignment, and open_trades bugs fixed 2026-06-21 (stored numbers stale pending GPU re-run).
@@ -123,8 +131,13 @@ kronos-th/
 1. **Kronos is a forecasting model, not an alpha machine.** The Kronos authors state explicitly: raw signals aren't a strategy. We add strategy + risk layers on top.
 2. **Thai stocks may be out-of-distribution.** Kronos was pre-trained on 45 global exchanges. It probably saw some Thai data, but mid-cap SET stocks are less represented than US mega-caps. Fine-tuning on the Thai universe (notebook 04) is meant to close this gap.
 3. **Backtests lie.** Even with realistic frictions baked in, survivorship bias, look-ahead, and regime shifts are everywhere. Treat backtest numbers as a sanity floor, not a forecast of future returns.
-4. **Free data has limits.** yfinance is wonderful and free but rate-limited; intraday is restricted to last 60 days (which is why this project is daily-only — see earlier conversation). For production-grade Thai equity data you'd need a paid source like SET SMART or EOD Historical.
-5. **Stored backtest numbers are stale.** The 2026-06-21 code review found critical statistical bugs (PSR formula, equity curve alignment, open_trades blending). Fixes are applied but stored `data/backtest_results/*/metrics.json` files were computed before these fixes. A GPU re-run is required. See `data/backtest_results/MANIFEST.md`.
+4. **Alpha is regime-conditional, not year-round.** This is a defensive tilt,
+   not a stock-selection edge. The strategy structurally holds cash, so it
+   outperforms in bear/flat SET regimes (2024, 2025) but underperforms in broad
+   bull markets (2023, 2026-to-date). In a bull regime, expect BEAR allocation
+   (5% deployed) until the regime shifts. Do not expect it to beat a bull market.
+5. **Free data has limits.** yfinance is wonderful and free but rate-limited; intraday is restricted to last 60 days (which is why this project is daily-only — see earlier conversation). For production-grade Thai equity data you'd need a paid source like SET SMART or EOD Historical.
+6. **Stored backtest numbers are stale.** The 2026-06-21 code review found critical statistical bugs (PSR formula, equity curve alignment, open_trades blending, FIFO lot ledger). Fixes are applied but stored `data/backtest_results/*/metrics.json` files were computed before these fixes. A GPU re-run is required. See `data/backtest_results/MANIFEST.md`.
 
 ## License
 
