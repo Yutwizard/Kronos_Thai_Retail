@@ -242,6 +242,43 @@ function submitTradeDelete(index) {
   return { ok: true, status: 'delete queued — please re-run Colab Cell 9b' };
 }
 
+function submitManualTrade(ticker, action, shares, price) {
+  if (!ticker || typeof ticker !== 'string') {
+    return { ok: false, msg: 'Ticker is required' };
+  }
+  if (['buy', 'sell', 'exit', 'reduce'].indexOf(action) < 0) {
+    return { ok: false, msg: 'Action must be buy, sell, exit, or reduce' };
+  }
+  if (!Number.isInteger(shares) || shares <= 0 || shares % 100 !== 0) {
+    return { ok: false, msg: 'Shares must be a positive multiple of 100' };
+  }
+  if (typeof price !== 'number' || price <= 0) {
+    return { ok: false, msg: 'Price must be a positive number' };
+  }
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ws = ss.getSheetByName('Manual Trades');
+  if (!ws) ws = ss.insertSheet('Manual Trades');
+  var headers = ['date', 'action', 'ticker', 'shares', 'price', 'requested_at'];
+  var data = ws.getDataRange().getValues();
+  if (data.length === 0 || !data[0][0]) {
+    ws.clear();
+    ws.appendRow(headers);
+  }
+  ws.appendRow([
+    new Date().toISOString().slice(0, 10),
+    action,
+    ticker.toUpperCase(),
+    shares,
+    price,
+    new Date().toISOString(),
+  ]);
+
+  _cacheRemove('all_data');
+  _log('submitManualTrade', { ticker: ticker, action: action, shares: shares, price: price });
+  return { ok: true, status: 'manual trade queued — applied on next pipeline run' };
+}
+
 function getPendingEdits() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var ws = ss.getSheetByName('Trade Edits');

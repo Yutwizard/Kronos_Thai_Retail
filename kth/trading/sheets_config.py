@@ -18,6 +18,7 @@ CALIBRATION = 'Calibration'
 STAGING_SUFFIX = '_staging'
 TRADE_EDITS = 'Trade Edits'
 CAPITAL_RESET = 'Capital Reset'
+MANUAL_TRADES = 'Manual Trades'
 
 # --- Header schemas ---
 PORTFOLIO_HEADERS = ['cash', 'initial_capital', 'mode', 'model_version', 'forecast_date']
@@ -42,6 +43,7 @@ PIPELINE_STATUS_HEADERS = ['last_run_timestamp', 'status', 'duration_seconds',
 CALIBRATION_HEADERS = ['date', 'coverage', 'n_samples', 'status']
 TRADE_EDITS_HEADERS = ['date', 'action', 'index', 'ticker', 'shares', 'price', 'ref_id', 'requested_at', 'new_date']
 CAPITAL_RESET_HEADERS = ['date', 'action', 'capital', 'confirm_text', 'requested_at']
+MANUAL_TRADES_HEADERS = ['date', 'action', 'ticker', 'shares', 'price', 'requested_at']
 
 ALL_HEADERS = {
     PORTFOLIO: PORTFOLIO_HEADERS,
@@ -56,6 +58,7 @@ ALL_HEADERS = {
     CALIBRATION: CALIBRATION_HEADERS,
     TRADE_EDITS: TRADE_EDITS_HEADERS,
     CAPITAL_RESET: CAPITAL_RESET_HEADERS,
+    MANUAL_TRADES: MANUAL_TRADES_HEADERS,
 }
 
 ALL_SHEETS = list(ALL_HEADERS.keys()) + [s + STAGING_SUFFIX for s in [

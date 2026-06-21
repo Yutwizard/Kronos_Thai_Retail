@@ -71,6 +71,7 @@
       <div id="ticket-body"></div>
       <div id="ticket-actions">
         <button id="btn-execute" class="btn primary" onclick="executeTrades()">Record Paper Trade</button>
+        <button id="btn-manual" class="btn secondary" onclick="openManualTrade()">➕ Add Manual Trade</button>
         <button id="btn-export" class="btn secondary" onclick="exportCSV()">Export for Broker</button>
       </div>
     </section>
@@ -135,6 +136,34 @@
     <div class="modal-actions">
       <button class="btn secondary" onclick="closeModal()">Cancel</button>
       <button class="btn primary" onclick="confirmTrades()">✓ Record at these prices</button>
+    </div>
+  </div>
+</div>
+
+<!-- Manual trade-entry modal -->
+<div id="manual-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeManualTrade()">
+  <div class="modal-box">
+    <h3>➕ Add Manual Trade</h3>
+    <p class="modal-note">Record a paper buy/sell you made — useful on days the pipeline didn't run. A <b>buy</b> needs enough cash; a <b>sell/exit</b> needs an existing position. Shares must be a multiple of 100.</p>
+    <table class="modal-table">
+      <tbody>
+        <tr><td><label class="edit-lbl">Ticker</label></td>
+            <td><input class="hist-edit-input" id="mt-ticker" type="text" placeholder="e.g. PTT.BK" style="text-transform:uppercase"></td></tr>
+        <tr><td><label class="edit-lbl">Action</label></td>
+            <td><select class="hist-edit-input" id="mt-action">
+                  <option value="buy">buy</option>
+                  <option value="exit">exit (sell all/part)</option>
+                  <option value="reduce">reduce</option>
+                </select></td></tr>
+        <tr><td><label class="edit-lbl">Shares</label></td>
+            <td><input class="hist-edit-input" id="mt-shares" type="number" step="100" min="100" value="100"></td></tr>
+        <tr><td><label class="edit-lbl">Fill Price (THB)</label></td>
+            <td><input class="hist-edit-input" id="mt-price" type="number" step="0.01" min="0.01"></td></tr>
+      </tbody>
+    </table>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="closeManualTrade()">Cancel</button>
+      <button class="btn primary" onclick="submitManualTrade()">✓ Record trade</button>
     </div>
   </div>
 </div>
@@ -671,6 +700,46 @@ function _updModalTotalBar() {
 }
 
 function closeModal() { $("trade-modal").classList.add("hidden"); }
+
+// ── Manual trade entry ───────────────────────────────────────
+function openManualTrade() {
+  $("mt-ticker").value = "";
+  $("mt-action").value = "buy";
+  $("mt-shares").value = 100;
+  $("mt-price").value = "";
+  $("manual-modal").classList.remove("hidden");
+  $("mt-ticker").focus();
+}
+function closeManualTrade() { $("manual-modal").classList.add("hidden"); }
+
+async function submitManualTrade() {
+  const ticker = $("mt-ticker").value.trim().toUpperCase();
+  const action = $("mt-action").value;
+  const shares = parseInt($("mt-shares").value);
+  const price  = parseFloat($("mt-price").value);
+
+  if (!ticker) { alert("Enter a ticker (e.g. PTT.BK)."); return; }
+  if (!shares || shares <= 0 || shares % 100 !== 0) {
+    alert("Shares must be a positive multiple of 100 (SET board lot)."); return;
+  }
+  if (!price || price <= 0) { alert("Fill price must be a positive number."); return; }
+
+  const r = await fetch("/api/trades", {
+    method: "POST", headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({trades: [{ticker, action, shares, fill_price: price}]})
+  });
+  const res = await r.json();
+  if (!r.ok) {
+    alert("Error: " + (res.error || "") + (res.details ? "\n" + res.details.join("\n") : ""));
+    return;
+  }
+  const rec = res.results && res.results[0];
+  if (rec && rec.error) { alert("Trade rejected: " + rec.error); return; }
+  alert(`Recorded ${action.toUpperCase()} ${shares.toLocaleString()} ${ticker} @ ${price.toFixed(2)}.`);
+  closeManualTrade();
+  loadHistory();
+  refresh();
+}
 
 async function confirmTrades() {
   const actions = [

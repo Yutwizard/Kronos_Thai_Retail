@@ -138,6 +138,7 @@ def _default_sheet_data() -> dict[str, list[list]]:
         'Capital Reset': [['date', 'action', 'capital', 'confirm_text', 'requested_at']],
         'Trade Edits': [['date', 'action', 'index', 'ticker', 'shares', 'price',
                          'ref_id', 'requested_at', 'new_date']],
+        'Manual Trades': [['date', 'action', 'ticker', 'shares', 'price', 'requested_at']],
     }
 
 
@@ -545,6 +546,29 @@ def test_trade_edit_correct_row_with_same_day_fill(tmp):
     assert pos.get('AOT.BK', {}).get('shares') == 200, \
         f"Edit hit the wrong row; AOT.BK = {pos.get('AOT.BK')}"
     print("PASS test_trade_edit_correct_row_with_same_day_fill")
+
+
+def test_manual_trade_applied(tmp):
+    """A queued manual buy is executed by the pipeline and ends up in positions."""
+    gc = seeded_fake_client()
+    sh = gc.open_by_key("test_id")
+    sh.worksheet('Manual Trades')._data = [
+        ['date', 'action', 'ticker', 'shares', 'price', 'requested_at'],
+        [str(D), 'buy', 'AOT.BK', '100', '50.0', '2026-06-18T09:30'],
+    ]
+    run_daily_pipeline(gc, "test_id", model=FakeModel(), data_loader=FakeLoader(),
+                       today=D, work_dir=tmp, staging_sleep=0)
+    orig = os.getcwd()
+    os.chdir(tmp)
+    from kth.trading.portfolio import init_portfolio
+    pos = init_portfolio('paper').get('positions', {})
+    os.chdir(orig)
+    assert pos.get('AOT.BK', {}).get('shares') == 100, \
+        f"Manual buy not applied; AOT.BK = {pos.get('AOT.BK')}"
+    # sheet cleared back to header after applying
+    assert len(sh.worksheet('Manual Trades').get_all_values()) == 1, \
+        "Manual Trades sheet should be cleared after apply"
+    print("PASS test_manual_trade_applied")
 
 
 # ═══════════════════════════════════════════════════════════════════════════

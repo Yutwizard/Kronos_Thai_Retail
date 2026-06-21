@@ -135,6 +135,47 @@ def _apply_trade_edits(sh, mode: str):
     print("Trade Edits cleared.")
 
 
+def _apply_manual_trades(sh, mode: str):
+    """Execute trades queued from the dashboard's 'Add Manual Trade' modal.
+
+    Reads the 'Manual Trades' staging sheet (date, action, ticker, shares, price,
+    requested_at), calls execute_trade for each, then clears the sheet. The tab is
+    optional — older spreadsheets without it are skipped silently.
+    """
+    headers = ['date', 'action', 'ticker', 'shares', 'price', 'requested_at']
+    try:
+        ws = sh.worksheet('Manual Trades')
+    except Exception:
+        return  # tab not present in this spreadsheet
+    data = ws.get_all_values()
+    if not data:
+        ws.append_row(headers)
+        return
+    applied = 0
+    for row in data[1:]:
+        if not row or not row[0]:
+            continue
+        try:
+            action = row[1]
+            ticker = row[2]
+            shares = int(float(row[3]))
+            price = float(row[4])
+        except (IndexError, ValueError) as e:
+            print(f"  Manual trade skipped (bad row {row}): {e}")
+            continue
+        result = execute_trade(ticker, action, shares, price, mode,
+                               order_type='market', rationale='manual entry')
+        if result.get('error'):
+            print(f"  Manual trade failed: {action} {shares} {ticker} — {result['error']}")
+        else:
+            applied += 1
+            print(f"  Applied manual trade: {action} {shares} {ticker} @ {price}")
+    ws.clear()
+    ws.append_row(headers)
+    if applied:
+        print(f"Manual Trades: applied {applied}, sheet cleared.")
+
+
 def _read_fills(sh) -> dict:
     ticket_ws = sh.worksheet('Trade Ticket')
     rows = ticket_ws.get_all_values()
@@ -447,6 +488,8 @@ def run_daily_pipeline(gc, spreadsheet_id, *, model, data_loader,
         # fills the sync would be skipped and edit_trade(index=N) — where N is the sheet
         # row — would target the wrong row in the fills-only CSV.
         _apply_trade_edits(sh, 'paper')
+
+        _apply_manual_trades(sh, 'paper')
 
         fills = _read_fills(sh)
 
