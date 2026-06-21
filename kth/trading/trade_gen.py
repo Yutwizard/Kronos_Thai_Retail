@@ -117,11 +117,13 @@ def generate_trade_ticket(report_date: str = None, positions: dict = None) -> di
     if positions is None:
         pos_data = get_positions("paper")
         held_tickers = {p["ticker"]: p for p in pos_data["positions"]}
+        available_cash = pos_data.get("cash", INITIAL_CAPITAL)
     else:
         held_tickers = positions
+        available_cash = INITIAL_CAPITAL
 
     capital = pos_data.get("total_value", INITIAL_CAPITAL) if positions is None else INITIAL_CAPITAL
-    deployable = capital * alloc_pct
+    deployable = min(capital * alloc_pct, available_cash)
 
     market_state = metrics.get("market_state", "Normal")
     if market_state == "Turmoil" or frozen or alloc_band == "EXIT":

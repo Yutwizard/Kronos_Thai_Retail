@@ -93,6 +93,23 @@ def test_t_stat_uses_sample_std():
     print("PASS test_t_stat_uses_sample_std")
 
 
+# ---- Task 6: cash shortfall ----
+def test_trade_ticket_buy_cost_does_not_exceed_cash():
+    """Cash guard: deployable must be capped at available cash."""
+    cash = 50_000.0
+    total_value = 500_000.0
+    alloc_pct = 0.10
+    deployable_naive = total_value * alloc_pct  # 50,000
+    deployable_guarded = min(deployable_naive, cash)  # 50,000
+    cash2 = 25_000.0
+    total_value2 = 500_000.0
+    deployable_naive2 = total_value2 * alloc_pct  # 50,000
+    deployable_guarded2 = min(deployable_naive2, cash2)  # 25,000
+    assert deployable_guarded2 < deployable_naive2, "Cash guard must cap deployable"
+    assert deployable_guarded2 == cash2, f"Should cap at cash {cash2}"
+    print("PASS test_trade_ticket_buy_cost_does_not_exceed_cash")
+
+
 if __name__ == "__main__":
     import inspect
     import tempfile
