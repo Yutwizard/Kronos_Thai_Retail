@@ -50,7 +50,7 @@ Kronos-TH is an **AI-powered daily report** for Thai stock investors. It:
 | Requirement | How to Check | If You Don't Have It |
 |-------------|-------------|----------------------|
 | **A computer** | You're reading this, so yes | Any Windows/Mac/Linux computer works |
-| **NVIDIA GPU** | See step 2.1 below | Use Google Colab (free, in-browser) — slower but works |
+| **NVIDIA GPU** | See step 2.1 below | Use Google Colab or Kaggle (both free, T4 GPU) — slower but works |
 | **Python 3.10+** | See step 2.2 below | Download from python.org (free) |
 | **Internet** | You're reading this, so yes | Need ~1 GB for initial download, then ~5 MB/day |
 
@@ -93,7 +93,7 @@ Open a terminal (Command Prompt on Windows, Terminal on Mac/Linux) and type:
 cd ~
 git clone https://github.com/shiyu-coder/Kronos.git kronos_repo
 # Then clone Kronos-TH (replace with the actual repo URL):
-git clone https://github.com/your-repo/kronos-th.git kronos-th
+git clone https://github.com/Yutwizard/Kronos_Thai_Retail.git kronos-th
 cd kronos-th
 ```
 
@@ -217,6 +217,15 @@ If you don't need a dashboard UI and just want a notebook workflow:
 Colab gives you a **free T4 GPU**. Forecasts take ~3 minutes instead of 12.
 
 > **If you're on Colab:** Follow the [Operations Manual](operations-manual.md) daily routine instead of the dashboard steps below. The decision rules are the same, but the interface is different.
+
+### Option D: Kaggle Scheduled Pipeline (Unattended, Recommended)
+
+If you want fully automated daily runs at $0 (no manual steps, no local machine):
+
+1. See `docs/kaggle-setup.md` — full step-by-step for service account, Kaggle secrets, and schedule
+2. See `google_suite/SETUP_GUIDE.md` Phases 1–2 for the spreadsheet and Apps Script setup
+3. The pipeline runs each evening BKK time and updates the Google Suite dashboard automatically
+4. To verify offline: `python run_pipeline.py --dry-run`
 
 ### What You Should See
 
@@ -476,7 +485,7 @@ Visit http://localhost:5555/api/phase2_gate — it shows which checks pass/fail.
 | Understand the decision rules | [Operations Manual](operations-manual.md) |
 | See the technical architecture | [Design Spec](superpowers/specs/2026-06-02-real-market-dashboard-design.md) |
 | Understand how the backtest works | [User Manual & Methodology](user-manual.md) |
-| Get help or report a bug | Open a GitHub issue at https://github.com/your-repo/kronos-th/issues |
+| Get help or report a bug | Open a GitHub issue at https://github.com/Yutwizard/Kronos_Thai_Retail/issues |
 
 ---
 

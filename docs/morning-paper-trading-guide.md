@@ -5,7 +5,7 @@
 > dashboard and trade — no waiting 12 minutes before market opens.
 > Environment: Local GTX 1060, cron NOT configured → manual run required
 >
-> **Using the Google Suite dashboard instead?** See [`google_suite/SETUP_GUIDE.md`](../google_suite/SETUP_GUIDE.md) for the Colab-based equivalent. The decision rules are identical; only the compute environment differs.
+> **Using the Google Suite dashboard instead?** See [`google_suite/SETUP_GUIDE.md`](../google_suite/SETUP_GUIDE.md) for the Colab-based setup, or [`docs/kaggle-setup.md`](../docs/kaggle-setup.md) for the automated Kaggle pipeline (recommended). The decision rules are identical; only the compute environment differs.
 
 ---
 

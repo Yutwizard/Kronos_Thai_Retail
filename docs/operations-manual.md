@@ -25,7 +25,7 @@
 
 ## 1. Daily Morning Routine (12-15 minutes)
 
-> **Note:** This describes the original notebook workflow (100 tickers, all asset classes). The dashboard (see [Dashboard User Manual](dashboard-user-manual.md)) automates this for Thai equity only (49 tickers, 500K THB). The signal interpretation rules below apply to both.
+> **Note:** This describes the original notebook workflow (100 tickers, all asset classes). The daily pipeline (`kth/pipeline/daily.py`, automated via Kaggle or Flask) handles this automatically. The signal interpretation rules below apply to all approaches. See [Dashboard User Manual](dashboard-user-manual.md) for the Thai equity dashboard (49 tickers, 500K THB).
 
 ### Objective
 Generate fresh forecasts for all 100 tickers and identify actionable signals for the day ahead.

@@ -593,6 +593,18 @@ All returns in native currency unless noted. For THB-equivalent, apply USDTHB ad
 | `kth/models/_kronos_bridge.py` | Import bridge for non-pip-installable Kronos |
 | `kth/backtest/walkforward.py` | precompute_forecasts, run_walkforward |
 | `kth/backtest/metrics.py` | Sharpe, Sortino, Max DD, trade metrics |
+| `kth/trading/portfolio.py` | Paper/live position tracking, trade log, metrics |
+| `kth/trading/trade_gen.py` | Trade ticket generation, 3-filter rule, rank scores |
+| `kth/trading/sheets.py` | Google Sheets staging + promotion utilities |
+| `kth/pipeline/daily.py` | `run_daily_pipeline()` — Kaggle unattended orchestration |
+| `kth/io/kaggle_runtime.py` | SA auth, RuntimeConfig, injectable secrets getter |
+| `kth/testing/synthetic.py` | Shared synthetic OHLCV generator for offline tests |
+| `kaggle/build_kaggle_notebook.py` | Generates ≤5-cell Kaggle scheduled pipeline notebook |
+| `run_pipeline.py` | Thin entrypoint; `--dry-run` for offline smoke tests |
+| `verify_data_layer.py` | 5 offline tests for data layer (synthetic data) |
+| `verify_fixes.py` | 17 regression tests for stats + pipeline fixes |
+| `verify_kaggle_runtime.py` | 19 tests for Kaggle auth + orchestration |
+| `data/backtest_results/MANIFEST.md` | Marks authoritative (n50) vs stale (pre-n50) runs |
 | `scripts/train_per_market.py` | SGDR training for per-market fine-tuning |
 | `scripts/compare_finetune.py` | FT vs ZS backtest comparison |
 | `scripts/eval_holdout.py` | 2025 holdout direction-accuracy evaluation |
@@ -604,4 +616,4 @@ All returns in native currency unless noted. For THB-equivalent, apply USDTHB ad
 
 ---
 
-*Document version: 2026-05-24. For questions or issues, open a ticket on GitHub.*
+*Document version: 2026-06-21. For questions or issues, open a ticket on GitHub.*

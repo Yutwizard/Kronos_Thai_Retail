@@ -532,6 +532,8 @@ OLS regression of strategy daily returns (2022–2024 v2 equity curve) against S
 
 8. **Expanded backtest (2020-2024) confirms cross-regime alpha.** An expanded 5-year run (see `docs/user-manual.md` §6.1) tested the model across COVID crash, recovery, and rate hikes. Alpha vs equal-weight was positive in ALL 3 regimes. The full-period CAGR was +35.16% (Sharpe 1.29), demonstrating the model adds value across market cycles — not just the 2022-2024 rate-hike regime. Caveat: full-period p=0.174 (not significant at 5%) due to higher variance from the crash period.
 
+9. **Stored backtest numbers are stale (2026-06-21).** A code review found and fixed 3 critical statistical bugs after these backtest results were computed: (i) the PSR formula used annualized Sharpe in the per-period Bailey formula → NaN for SR>2.0, (ii) the equity curve was indexed by signal-day instead of mark-day, causing alpha/beta/IR to be computed on misaligned returns, (iii) `open_trades` entry price was overwritten on rebalance, corrupting trade-level P&L. All fixes are committed but a full GPU re-run is required to refresh the stored `data/backtest_results/*/metrics.json` files. Do NOT cite the current numbers for alpha, beta, IR, or PSR. See `data/backtest_results/MANIFEST.md` for which runs are authoritative.
+
 ---
 
 *Document generated 2026-05-18. Source: `docs/backtest-methodology.md`*

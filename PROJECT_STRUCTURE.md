@@ -33,7 +33,7 @@
 
 ## 1. Project goal
 
-Build a **research-first, Colab-based forecasting and decision-support system** for a Thai retail investor, using the [Kronos](https://github.com/shiyu-coder/Kronos) foundation model.
+Build a **research-first, Kaggle/Colab-based forecasting and decision-support system** for a Thai retail investor, using the [Kronos](https://github.com/shiyu-coder/Kronos) foundation model.
 
 The output is not orders. The output is a daily report answering: *"Given everything Kronos has learned about global financial K-lines, and given a fine-tune on the assets I can actually buy in Thailand, what does the model expect over the next 5–20 trading days, and how confident is it?"*
 

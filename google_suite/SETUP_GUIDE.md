@@ -1,9 +1,11 @@
 # Kronos-TH Google Suite — Step-by-Step Setup Guide
 
-> **For absolute beginners to Google Sheets, Apps Script, and Colab.**
+> **For absolute beginners to Google Sheets, Apps Script, and Colab/Kaggle.**
 > No prior experience needed. Each step tells you exactly what to click and what to type.
 >
 > **Note:** This is one of two dashboard options. The Google Suite dashboard is zero-cost, browser-based, and requires no local GPU. The Flask dashboard (`docs/dashboard-user-manual.md`) is the alternative for users with a local Python + GPU setup. Both are fully functional; choose based on your environment.
+>
+> **Kaggle (recommended):** The pipeline runs unattended on Kaggle's free T4 GPU each evening. See `docs/kaggle-setup.md` for the Kaggle-specific setup. If using Kaggle, skip Phases 3–6 of this guide — the daily run is automated.
 
 ---
 
@@ -123,7 +125,7 @@ Now add the rest of the sheet tabs. For each one:
 
 **Staging tabs (8):** `Portfolio_staging`, `Positions_staging`, `Forecasts_staging`, `Trade Ticket_staging`, `Risk Metrics_staging`, `Equity Curve_staging`, `Trade Edits`, `Capital Reset`
 
-> **Note:** `Trade Edits` and `Capital Reset` are written by the Apps Script dashboard (not by the Colab notebook) and read by Colab Cells 9b and 4b respectively. Leave their A1 cells empty — the dashboard populates them.
+> **Note:** `Trade Edits` and `Capital Reset` are written by the Apps Script dashboard (not by the Colab/Kaggle pipeline) and read by the pipeline's Cells 9b and 4b respectively. Leave their A1 cells empty — the dashboard populates them.
 
 **Now create tabs 11 through 18** — these are "staging" copies used by the pipeline. For each one, you will **copy the headers from the matching tab above**:
 
@@ -292,7 +294,7 @@ If you see the page with the gray banner and five tabs, **congratulations — th
 
 ---
 
-## Phase 3 — Set Up Google Colab
+## Phase 3 — Set Up Colab (if using Kaggle, skip to `docs/kaggle-setup.md`)
 
 Google Colab is a website that lets you run Python code (including AI models) in your browser using Google's computers.
 
@@ -409,7 +411,7 @@ Change `500_000.0` to however much money you're starting with (in Thai Baht). Ex
 
 ---
 
-## Phase 4 — First Run
+## Phase 4 — First Run (Colab; automated on Kaggle)
 
 ### Step 4.1 — Run the entire notebook
 
@@ -556,7 +558,7 @@ The dashboard is already set up to load real data from your spreadsheet. No chan
 
 ---
 
-## Phase 6 — Daily Routine
+## Phase 6 — Daily Routine (Colab manual; automated on Kaggle)
 
 Every trading morning (Bangkok time, 7:00-8:30):
 

@@ -18,7 +18,7 @@ notebook:
 notebook-gpu:
 	docker compose up notebook-gpu
 
-## Download the full 51-ticker universe (requires network / Yahoo Finance access)
+## Download the full 100-ticker universe (requires network / Yahoo Finance access)
 download:
 	docker compose run --rm notebook python -c "\
 from kth.data.loader import download_universe; \
