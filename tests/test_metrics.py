@@ -121,3 +121,11 @@ def test_avg_holding_period_empty_trades():
     from kth.backtest.metrics import _compute_avg_holding_period
     trades = pd.DataFrame(columns=["ticker", "direction", "date"])
     assert _compute_avg_holding_period(trades) == 0.0
+
+
+def test_calibration_no_cache_returns_insufficient(tmp_path):
+    """L6: compute_calibration returns insufficient_data when no cache exists."""
+    from kth.backtest.metrics import compute_calibration
+    r = compute_calibration(str(tmp_path / "nope"), str(tmp_path), ["AAPL"])
+    assert r["status"] == "insufficient_data"
+    assert r["n_samples"] == 0

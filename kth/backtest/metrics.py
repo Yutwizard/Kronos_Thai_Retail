@@ -425,41 +425,53 @@ def compute_calibration(
     pred_len: int = 20,
     lookback_days: int = 60,
 ) -> dict:
-    """
-    P5/P95 coverage: fraction of actual prices that fell within the forecast band.
-    Looks back `lookback_days` forecast dates, checks outcome `pred_len` days later.
+    """P5/P95 coverage: fraction of actual prices that fell within the forecast band.
+    Iterates over actual cached forecast directories (keyed by trading day, not
+    calendar day) and checks the outcome pred_len trading days later.
     Returns {'coverage': float|None, 'n_samples': int, 'status': str}
-    status: 'ok' | 'overconfident' (>95%) | 'insufficient_data' (<10 samples)
     """
     from pathlib import Path as _P
-    from datetime import date as _d, timedelta
     from kth.data.loader import load_cached
 
+    cache_root = _P(forecast_cache_dir)
+    if not cache_root.exists():
+        return {"coverage": None, "n_samples": 0, "status": "insufficient_data"}
+
+    date_dirs = sorted(
+        (d for d in cache_root.iterdir() if d.is_dir() and d.name[:4].isdigit()),
+        key=lambda d: d.name,
+        reverse=True,
+    )[:lookback_days]
+
     hits, total = 0, 0
-    today = _d.today()
-
-    for ticker in tickers:
-        safe = ticker.replace("^", "_").replace("=", "_")
+    for dd in date_dirs:
         try:
-            price_df = load_cached(ticker, cache_dir=str(raw_data_dir))
-            price_df.index = pd.to_datetime(price_df.index)
-        except Exception:
+            fc_date = pd.Timestamp(dd.name)
+        except ValueError:
             continue
+        actual_date = fc_date + pd.Timedelta(days=pred_len)
 
-        for days_ago in range(pred_len + 1, lookback_days + pred_len + 1):
-            fc_path = _P(forecast_cache_dir) / str(today - timedelta(days=days_ago)) / f"{safe}.parquet"
-            actual_date = (today - timedelta(days=days_ago - pred_len))
+        for ticker in tickers:
+            safe = ticker.replace("^", "_").replace("=", "_")
+            fc_path = dd / f"{safe}.parquet"
             if not fc_path.exists():
                 continue
             try:
                 fc = pd.read_parquet(fc_path)
                 p5 = float(fc["p5"].iloc[-1])
                 p95 = float(fc["p95"].iloc[-1])
-                rows = price_df[price_df.index.date == actual_date]
-                if rows.empty:
-                    continue
+                price_df = load_cached(ticker, cache_dir=str(raw_data_dir))
+                price_df = price_df.set_index("timestamps")
+                price_df.index = pd.to_datetime(price_df.index)
+                if actual_date not in price_df.index:
+                    idx = price_df.index.get_indexer([actual_date], method="ffill")[0]
+                    if idx < 0:
+                        continue
+                else:
+                    idx = price_df.index.get_loc(actual_date)
+                actual_close = float(price_df.iloc[idx]["close"])
                 total += 1
-                if p5 <= float(rows["close"].iloc[0]) <= p95:
+                if p5 <= actual_close <= p95:
                     hits += 1
             except Exception:
                 continue
