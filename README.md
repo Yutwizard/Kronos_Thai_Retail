@@ -92,7 +92,6 @@ kronos-th/
 │   ├── build_kaggle_notebook.py  # Generates ≤5-cell notebook
 │   └── kronos_kaggle_pipeline.ipynb  # Generated thin wrapper
 ├── google_suite/            # Google Suite dashboard (zero-cost, browser-based)
-│   ├── SETUP_GUIDE.md       # step-by-step setup guide (legacy Colab, superseded)
 │   ├── kronos_daily_pipeline.ipynb  # Colab notebook (backup runtime)
 │   ├── migrate_to_sheets.py # one-time data migration
 │   └── apps_script/
@@ -110,7 +109,6 @@ kronos-th/
 ├── docs/
 │   ├── SETUP_GUIDE.md       # ✅ complete zero-to-dashboard setup (primary)
 │   ├── getting-started.md   # Quick-start + manual options
-│   ├── kaggle-setup.md      # Kaggle-specific section (deprecated — use SETUP_GUIDE)
 │   ├── superpowers/specs/   # approved design specs
 │   └── superpowers/plans/   # implementation plans
 ├── verify_data_layer.py     # offline tests (5)

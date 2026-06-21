@@ -490,7 +490,108 @@ To check:
 
 ---
 
-## Phase 6 — Daily Life
+## Phase 6 — Using Your Dashboard
+
+### What each tab shows
+
+**Dashboard tab:**
+- Big number at top: your total portfolio value (profits/losses included)
+- Four cards: P&L this month, 12-week Sharpe ratio, Maximum drawdown, Friction YTD
+- Regime badge (BULL/NEUTRAL/BEAR/EXIT) showing your current allocation band
+- Equity curve chart (blue = your portfolio, grey dashed = initial capital)
+- Fill confirmation status for today's trades
+
+**Positions tab:**
+- Table of all open positions — ticker, shares, avg cost, entry date, sector, current price, P&L %
+- Click any column header to sort (click again to reverse)
+- Red background on % to Stop if it's below 3% (close to stop-loss level)
+- "Portfolio frozen" red banner if your drawdown limit was triggered
+
+**Trade Log tab:**
+- Complete history of all trades — sortable by date, ticker, action
+- Edit (✏️) and delete (🗑️) buttons on each row
+- Canceled entries show with strikethrough
+
+**Forecasts tab:**
+- Two sub-tabs: "Forecasts" and "Accuracy History"
+- Forecasts: expected returns, confidence badges (green/yellow/red), P50/P5/P95 price bands
+- Accuracy History: past predictions vs actual outcomes, hit-rate percentage
+
+**Trade Ticket tab:**
+- Today's recommended trades (buys, sells, reduces)
+- **Export CSV** button — downloads a file you can send to your broker
+- **Refresh** button — manually reloads data from Google Sheets
+- T+2 warning if you're both buying and selling (SET settlement is T+2, use existing cash only)
+
+### How to record trades (fills)
+
+1. Execute the trades from the Trade Ticket at your broker.
+2. Open your **Google Sheets spreadsheet** (not the dashboard).
+3. Click the **Trade Ticket** tab.
+4. For each trade you executed, fill in these 3 columns:
+   - **Column H (filled_price):** Actual price you got (e.g. `33.50`)
+   - **Column I (filled_shares):** Actual shares filled (e.g. `1000`)
+   - **Column J (fill_timestamp):** Date and time (e.g. `2026-06-21 09:15`)
+5. Next pipeline run applies these fills to your portfolio.
+
+### How to reset capital
+
+1. In the dashboard, click the **⚙ Reset Portfolio** button (top-right of Dashboard).
+2. Enter a new total capital amount and your broker PIN (for safety).
+3. Click **Reset**. This is queued — on the next pipeline run, your portfolio
+   is reset to the new capital (all positions sold, equity curve restarted).
+
+### How to edit or cancel a trade
+
+1. Go to the **Trade Log** tab on the dashboard.
+2. Click ✏️ to edit a trade's shares, price, or date.
+3. Click 🗑️ to cancel (undo) a trade entirely.
+4. Both are queued — applied on the next pipeline run.
+
+---
+
+## Phase 7 — Test Locally + Backup + Migration
+
+### Test the pipeline offline (no Kaggle/GPU needed)
+
+From your computer's terminal (with Python installed):
+```bash
+cd /path/to/Kronos_Thai_Retail
+pip install -e .
+python verify_data_layer.py       # 5 data-layer checks — all should PASS
+python verify_fixes.py            # 17 statistical fix checks — all should PASS
+python verify_kaggle_runtime.py   # 19 pipeline checks — all should PASS
+python run_pipeline.py --dry-run  # full pipeline smoke test with fake data
+```
+
+> These use **synthetic** (fake) data — no internet needed. If any fail, your
+> local Python environment is missing a dependency.
+
+### Colab fallback (if Kaggle is down)
+
+If Kaggle is unavailable, the original Colab notebook still works as a backup:
+1. Go to https://colab.research.google.com
+2. Upload `google_suite/kronos_daily_pipeline.ipynb`
+3. Set Runtime → GPU T4
+4. Configure Colab secrets (Key icon in left sidebar): `KRONOS_SPREADSHEET_ID`
+5. Mount your Google Drive and set `KTH_REPO` path
+6. Click **Runtime → Run all**
+
+See `google_suite/SETUP_GUIDE.md` (LEGACY) for the full Colab setup. The Kaggle
+pipeline is the primary runtime — this is the backup only.
+
+### Migrating existing trade data from Flask
+
+If you used the Flask dashboard before and have trades in `data/positions/`:
+```bash
+pip install -e .
+python google_suite/migrate_to_sheets.py --id YOUR_SPREADSHEET_ID
+```
+This ports your portfolio JSON, equity curve, and trade log CSV into Sheets.
+
+---
+
+## Phase 8 — Daily Life
 
 ### What happens each day (you do nothing)
 
@@ -533,16 +634,20 @@ evening). There is no instant "Run Now" — this is by design to keep costs at $
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
-| Dashboard blank white page | V8 runtime not enabled | Phase 2 Step 2.5 |
-| "Missing secret: GCP_SA_JSON" | Secret not attached | Phase 4 Step 4.5 — toggle ON |
-| "No data yet" after successful pipeline | Web app cache | Ctrl+Shift+R to force-refresh |
-| App error on dashboard | Execute-as wrong user | Redeploy as "Me" — Phase 2 Step 2.6 |
-| CUDA available: False | GPU not configured for scheduled run | Phase 5 Step 5.3 |
-| yfinance returns 0 data | Yahoo rate-limiting Kaggle IPs | Wait 1-2 hours, re-run |
-| Pipeline status: failed | Check error_message column | Open the sheet, check Pipeline Status column D |
-| Forecasts tab shows fewer than 49 tickers | Some tickers had data issues | Check Kaggle logs for SKIP/FAIL messages |
-| Spreadsheet "Loading..." forever | Script quota exceeded | Wait a few minutes — auto-throttled |
-| "Out of memory" during forecast | Model + data exceeds 16GB VRAM | Ensure GPU T4/P100 is selected |
+| Dashboard blank white page | V8 runtime not enabled | Phase 2 Step 2.5 — enable Chrome V8 |
+| "Missing secret: GCP_SA_JSON" | Secret not attached | Phase 4 Step 4.5 — toggle ON for all 4 secrets |
+| "No data yet" after successful pipeline | Web app cache | Ctrl+Shift+R to force-refresh the dashboard |
+| "App error: TypeError: Cannot read property..." | Missing sheet data or headers | Verify all 18 tabs exist with correct headers (Phase 1 Step 1.4); re-deploy web app |
+| CUDA available: False | GPU not configured for scheduled run | Phase 5 Step 5.3 — enable GPU in the schedule panel |
+| yfinance returns 0 data | Yahoo rate-limiting Kaggle IPs | Wait 1-2 hours, re-run; if persistent, switch to pre-cached dataset |
+| Pipeline Status: failed | Check error_message column D | Open the sheet → Pipeline Status tab → column D for the exact error |
+| Forecasts tab shows < 49 tickers | Some tickers had data quality issues | Check Kaggle logs for SKIP/FAIL messages |
+| "Out of memory" during forecast | Model exceeds GPU VRAM | Ensure GPU P100/T4 is selected (not CPU) |
+| Sheet "Loading..." forever | Apps Script quota exceeded | Wait a few minutes — Google auto-throttles; reduce refresh rate |
+| Spreadsheet shows old data after pipeline | Web app caching (60s TTL) | Click **Refresh** button on Trade Ticket tab, or wait 60s |
+| Kaggle schedule never runs | Schedule not saved or GPU/Internet not enabled | Re-open the schedule panel, verify all toggles are ON, re-save |
+| GCP_SA_JSON secret too large | Kaggle secret size limit | Base64-encode the JSON key file: `certutil -encode key.json key.txt` (Windows) or `base64 -w0 key.json` (Mac/Linux); paste the output |
+| Auth/permission denied | SA not shared as Editor | Phase 3 Step 3.6 — re-check client_email, re-share as Editor |
 
 ---
 

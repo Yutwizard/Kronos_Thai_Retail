@@ -8,7 +8,7 @@
 >
 > Thai equity only. 500,000 THB starting capital. Not financial advice.
 >
-> **Alternative dashboard available:** A second dashboard option exists — the **Google Suite dashboard** (`google_suite/SETUP_GUIDE.md`), which is zero-cost, browser-based, and requires no local GPU. Both dashboards reached feature parity on 2026-06-06. Choose based on your environment:
+> **Alternative dashboard available:** A second dashboard option exists — the **Google Suite dashboard** (`docs/SETUP_GUIDE.md`), which is zero-cost, browser-based, and requires no local GPU. Both dashboards reached feature parity on 2026-06-06. Choose based on your environment:
 > - **This Flask dashboard** — local Python + GPU, run via `scripts/dashboard.py`, requires cron or manual start
 > - **Google Suite dashboard** — Kaggle (primary) / Colab (backup) + Sheets + Apps Script, runs in any browser, no local install
 >
@@ -108,7 +108,7 @@ Go to `http://localhost:5555`. You should see the dashboard with today's forecas
 
 **Recommended: run at 17:30 BKK (after market close)** so tomorrow's forecast uses today's close prices.
 
-> **If using Kaggle (Google Suite dashboard):** scheduling is handled on the Kaggle platform — no cron needed. See `docs/kaggle-setup.md`.
+> **If using Kaggle (Google Suite dashboard):** scheduling is handled on the Kaggle platform — no cron needed. See `docs/SETUP_GUIDE.md`.
 
 ```bash
 crontab -e
