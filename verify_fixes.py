@@ -110,6 +110,16 @@ def test_trade_ticket_buy_cost_does_not_exceed_cash():
     print("PASS test_trade_ticket_buy_cost_does_not_exceed_cash")
 
 
+# ---- Task 7: CACHE_SLUG ----
+def test_cache_slug_consistent_across_modules():
+    """CACHE_SLUG must be same in trade_gen and walkforward."""
+    from kth.trading.trade_gen import CACHE_SLUG as tg_slug
+    from kth.backtest.walkforward import _model_slug
+    wf_slug = _model_slug("NeoQuasar/Kronos-small")
+    assert tg_slug == wf_slug, f"trade_gen={tg_slug} vs walkforward={wf_slug}"
+    print("PASS test_cache_slug_consistent_across_modules")
+
+
 if __name__ == "__main__":
     import inspect
     import tempfile

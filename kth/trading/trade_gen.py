@@ -11,7 +11,8 @@ import pandas as pd
 
 from kth.data.universe import UNIVERSE, FRICTION, get_ticker_class, get_display_name, get_sector
 
-CACHE_SLUG = "NeoQuasar_Kronos-small"
+from kth.backtest.walkforward import _model_slug
+CACHE_SLUG = _model_slug("NeoQuasar/Kronos-small")
 CACHE_DIR = Path("data/forecast_cache") / CACHE_SLUG
 POSITIONS_DIR = Path("data/positions")
 MAX_POSITIONS = 5
