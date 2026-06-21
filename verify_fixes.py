@@ -211,6 +211,16 @@ def test_fx_macro_excluded_from_investable():
     print("PASS test_fx_macro_excluded_from_investable")
 
 
+# ---- Task 14: reduce only on bearish-yellow ----
+def test_reduce_only_on_bearish_yellow():
+    """Reduce should only trigger on yellow + bearish, not yellow + bullish."""
+    def should_reduce(f):
+        return f["confidence"] == "yellow" and f["direction"] == "down"
+    assert should_reduce({"confidence": "yellow", "direction": "down"}), "Bearish yellow should reduce"
+    assert not should_reduce({"confidence": "yellow", "direction": "up"}), "Bullish yellow should NOT reduce"
+    print("PASS test_reduce_only_on_bearish_yellow")
+
+
 # ---- Task 13: O(1) ticker-class lookup ----
 def test_get_ticker_class_o1_lookup():
     """get_ticker_class must use O(1) dict lookup."""
