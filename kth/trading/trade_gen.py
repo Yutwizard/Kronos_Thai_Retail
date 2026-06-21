@@ -9,7 +9,7 @@ from typing import Optional
 
 import pandas as pd
 
-from kth.data.universe import UNIVERSE, FRICTION, get_ticker_class, get_display_name, get_sector
+from kth.data.universe import UNIVERSE, FRICTION, get_ticker_class, get_display_name, get_sector, get_friction, get_one_way_friction_rate
 
 from kth.backtest.walkforward import _model_slug
 CACHE_SLUG = _model_slug("NeoQuasar/Kronos-small")
@@ -55,7 +55,7 @@ def load_forecasts(report_date: str = None) -> list[dict]:
             band_width = (p95 - p5) / current_close
 
             cls = get_ticker_class(ticker)
-            fric = FRICTION.get(cls, {"commission_oneway": 0.002, "slippage_oneway": 0.001})
+            fric = get_friction(ticker)
             friction_rt = fric["commission_oneway"] * 2 + fric["slippage_oneway"] * 2
 
             conf = "green" if band_width <= 0.10 else ("yellow" if band_width <= 0.30 else "red")
@@ -97,10 +97,8 @@ def _next_business_day(d: date) -> date:
 
 
 def _one_way_friction(ticker: str) -> float:
-    """One-way friction rate for a ticker (commission + slippage) from the FRICTION dict."""
-    cls = get_ticker_class(ticker)
-    fric = FRICTION.get(cls, {"commission_oneway": 0.002, "slippage_oneway": 0.001})
-    return fric["commission_oneway"] + fric["slippage_oneway"]
+    """One-way friction rate for a ticker (commission + slippage)."""
+    return get_one_way_friction_rate(ticker)
 
 
 def generate_trade_ticket(report_date: str = None, positions: dict = None) -> dict:

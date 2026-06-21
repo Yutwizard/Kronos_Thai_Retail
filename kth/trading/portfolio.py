@@ -513,10 +513,8 @@ def reset_portfolio(mode: str = "paper", initial_capital: float = None) -> dict:
 
 
 def _one_way_friction_rate(ticker: str) -> float:
-    from kth.data.universe import FRICTION, get_ticker_class
-    cls = get_ticker_class(ticker) or "thai_equity"
-    fric = FRICTION.get(cls, {"commission_oneway": 0.002, "slippage_oneway": 0.001})
-    return fric["commission_oneway"] + fric["slippage_oneway"]
+    from kth.data.universe import get_one_way_friction_rate
+    return get_one_way_friction_rate(ticker)
 
 
 def rebuild_from_trades(mode: str = "paper") -> dict:

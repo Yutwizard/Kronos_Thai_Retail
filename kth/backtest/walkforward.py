@@ -214,7 +214,7 @@ def run_walkforward(
     Run precompute_forecasts() first with the same kronos_th instance.
     """
     from kth.data.loader import load_cached
-    from kth.data.universe import get_ticker_class, FRICTION
+    from kth.data.universe import get_ticker_class, FRICTION, get_friction
     from kth.backtest.strategy import compute_signals, select_positions, compute_weights
 
     slug = _model_slug(kronos_th.model_name)
@@ -347,8 +347,7 @@ def run_walkforward(
                     continue
                 units = holdings_units[t]
                 trade_value = units * exec_price
-                cls = get_ticker_class(t) or "us_equity"
-                frict = FRICTION.get(cls, {"commission_oneway": 0.003, "slippage_oneway": 0.001})
+                frict = get_friction(t)
                 friction_cost = trade_value * (frict["commission_oneway"] + frict["slippage_oneway"])
 
                 cash += trade_value - friction_cost
@@ -391,8 +390,7 @@ def run_walkforward(
                 continue
 
             units_delta = trade_value / exec_price
-            cls = get_ticker_class(t) or "us_equity"
-            frict = FRICTION.get(cls, {"commission_oneway": 0.003, "slippage_oneway": 0.001})
+            frict = get_friction(t)
             friction_cost = abs(trade_value) * (frict["commission_oneway"] + frict["slippage_oneway"])
 
             direction = "buy" if trade_value > 0 else "sell"

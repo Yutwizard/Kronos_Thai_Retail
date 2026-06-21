@@ -255,6 +255,23 @@ def get_sector(ticker: str) -> str:
     return SECTOR.get(ticker, "Other")
 
 
+_DEFAULT_FRICTION = {"commission_oneway": 0.003, "slippage_oneway": 0.001}
+
+
+def get_friction(ticker: str) -> dict[str, float]:
+    """Return the FRICTION dict for a ticker's asset class. Single source of truth."""
+    cls = get_ticker_class(ticker)
+    if cls is None:
+        return dict(_DEFAULT_FRICTION)
+    return FRICTION.get(cls, dict(_DEFAULT_FRICTION))
+
+
+def get_one_way_friction_rate(ticker: str) -> float:
+    """One-way friction rate (commission + slippage) for a ticker."""
+    f = get_friction(ticker)
+    return f["commission_oneway"] + f["slippage_oneway"]
+
+
 if __name__ == "__main__":
     print(f"Total asset classes: {len(UNIVERSE)}")
     print(f"Total tickers (investable):     {len(get_all_tickers())}")

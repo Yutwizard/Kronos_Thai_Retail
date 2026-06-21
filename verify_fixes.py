@@ -273,6 +273,36 @@ def test_psr_high_sharpe_finite_after_scipy_fix():
     print("PASS test_psr_high_sharpe_finite_after_scipy_fix")
 
 
+# ---- Task 2: centralized friction ----
+def test_get_friction_known_ticker():
+    """H3: get_friction returns the right dict for a known Thai equity ticker."""
+    from kth.data.universe import get_friction, get_one_way_friction_rate
+    f = get_friction("PTT.BK")
+    assert f["commission_oneway"] == 0.00168
+    assert f["slippage_oneway"] == 0.0010
+    assert get_one_way_friction_rate("PTT.BK") == 0.00268
+    print("PASS test_get_friction_known_ticker")
+
+
+def test_get_friction_fallback_unknown():
+    """H3: get_friction returns conservative default for unknown ticker."""
+    from kth.data.universe import get_friction
+    f = get_friction("UNKNOWN.TICKER")
+    assert f["commission_oneway"] == 0.003
+    assert f["slippage_oneway"] == 0.001
+    print("PASS test_get_friction_fallback_unknown")
+
+
+def test_no_inline_friction_fallbacks_remain():
+    """H3: no module should have inline friction dict-literal fallbacks."""
+    from pathlib import Path
+    for f in ["kth/backtest/walkforward.py", "kth/trading/portfolio.py", "kth/trading/trade_gen.py"]:
+        text = Path(f).read_text()
+        assert '{"commission_oneway":' not in text, \
+            f"{f} still has inline friction fallback — use universe.get_friction()"
+    print("PASS test_no_inline_friction_fallbacks_remain")
+
+
 if __name__ == "__main__":
     import inspect
     import tempfile
