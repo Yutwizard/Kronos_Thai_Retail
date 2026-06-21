@@ -207,7 +207,6 @@ def render_backtest_html(
       <span class="label">Long Threshold</span><span>{config.long_threshold}</span>
       <span class="label">Min Holding Days</span><span>{config.min_holding_days}</span>
       <span class="label">Entry Buffer</span><span>{config.entry_buffer}</span>
-      <span class="label">Trading Calendar</span><span>{config.trading_calendar}</span>
     </div>
   </div>
 

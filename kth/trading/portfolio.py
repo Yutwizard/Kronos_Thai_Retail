@@ -474,24 +474,27 @@ def _compute_fifo_wins(trades: list[dict]) -> tuple[int, int]:
 
 
 def _compute_market_state() -> str:
-    """Determine market state from today's forecast data."""
+    """Determine market state from today's forecast data.
+    Returns 'Normal' | 'Elevated' | 'Turmoil' | 'Unknown' (no data)."""
     try:
         from kth.trading.trade_gen import load_forecasts
         forecasts = load_forecasts()
         if not forecasts:
-            return "Normal"
+            return "Unknown"
         bands = [f["band_width"] for f in forecasts if f.get("band_width")]
         red_count = sum(1 for f in forecasts if f.get("confidence") == "red")
         if not bands:
-            return "Normal"
+            return "Unknown"
         median_band = float(pd.Series(bands).median())
         if median_band > 0.30 or red_count > 30:
             return "Turmoil"
         if median_band > 0.20 or red_count > 15:
             return "Elevated"
         return "Normal"
-    except Exception:
-        return "Normal"
+    except Exception as e:
+        import logging
+        logging.warning(f"_compute_market_state failed: {e}")
+        return "Unknown"
 
 
 def reset_portfolio(mode: str = "paper", initial_capital: float = None) -> dict:
@@ -662,7 +665,7 @@ def check_phase2_gate() -> dict:
         return {"ready": False, "reason": "Need at least 2 paper trades" if len(trades) < 2 else "Not ready"}
 
     unique_dates = sorted(set(t["date"] for t in trades))
-    weeks_active = len(unique_dates)
+    distinct_trade_dates = len(unique_dates)
     round_trips = sum(1 for t in trades if t["action"] in ("exit", "sell"))
 
     metrics = compute_metrics("paper")
@@ -673,19 +676,19 @@ def check_phase2_gate() -> dict:
     # Count monthly rebalances (proxy: trades on last-Friday-like dates)
     rebalance_count = _count_rebalances(trades)
 
-    all_ok = (weeks_active >= 20 and round_trips >= 10 and win_rate_ok
+    all_ok = (distinct_trade_dates >= 20 and round_trips >= 10 and win_rate_ok
               and sharpe_ok and dd_ok and rebalance_count >= 3)
 
     return {
         "ready": all_ok,
-        "weeks_active": weeks_active,
+        "distinct_trade_dates": distinct_trade_dates,
         "round_trips": round_trips,
         "win_rate": round(metrics["win_rate"], 2),
         "sharpe": metrics["sharpe"],
         "drawdown": round(metrics["drawdown"], 4),
         "rebalances": rebalance_count,
         "checks": {
-            "20_days": weeks_active >= 20,
+            "20_distinct_dates": distinct_trade_dates >= 20,
             "10_trades": round_trips >= 10,
             "win_rate_50": win_rate_ok,
             "sharpe_90": sharpe_ok,

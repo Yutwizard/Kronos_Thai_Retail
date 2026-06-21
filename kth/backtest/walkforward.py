@@ -39,7 +39,6 @@ class BacktestConfig:
     max_positions: int = 5
     position_sizing: str = "equal"
     inv_vol_window: int = 20
-    trading_calendar: str = "NYSE"
     min_ticker_history: int = 252
     forecast_cache_dir: str = "./data/forecast_cache"
     cache_dir: str = "./data/raw"

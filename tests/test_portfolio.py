@@ -117,3 +117,10 @@ def test_reduce_only_on_bearish_yellow():
         "Bearish yellow should reduce"
     assert not should_reduce({"confidence": "yellow", "direction": "up"}), \
         "Bullish yellow should NOT reduce"
+
+
+def test_market_state_unknown_when_no_forecasts(monkeypatch):
+    """L11: market state returns 'Unknown' (not 'Normal') when no forecast data."""
+    monkeypatch.setattr("kth.trading.trade_gen.load_forecasts", lambda: [])
+    from kth.trading.portfolio import _compute_market_state
+    assert _compute_market_state() == "Unknown"
