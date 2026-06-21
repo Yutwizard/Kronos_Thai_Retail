@@ -35,6 +35,7 @@ def load_forecasts(report_date: str = None) -> list[dict]:
     if not day_dir.exists():
         return []
 
+    from kth.data.loader import load_cached
     rows = []
     for ticker in THAI_TICKERS:
         parquet = day_dir / f"{_safe_ticker(ticker)}.parquet"
@@ -42,7 +43,6 @@ def load_forecasts(report_date: str = None) -> list[dict]:
             continue
         try:
             fc = pd.read_parquet(parquet)
-            from kth.data.loader import load_cached
             price_data = load_cached(ticker)
             current_close = float(price_data["close"].iloc[-1])
 
