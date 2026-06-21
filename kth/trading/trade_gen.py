@@ -156,7 +156,7 @@ def generate_trade_ticket(report_date: str = None, positions: dict = None) -> di
                 "estimated_thb": round(held_tickers[ticker]["shares"] * f["close"]),
                 "rationale": f"🟢↓ bearish net_ret={f['net_ret']:+.2%}",
             })
-        elif f["confidence"] == "yellow":
+        elif f["confidence"] == "yellow" and f["direction"] == "down":
             reduce_shares = held_tickers[ticker]["shares"] // 2
             if reduce_shares < 100:
                 continue
