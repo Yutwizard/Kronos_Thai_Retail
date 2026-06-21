@@ -188,6 +188,40 @@ def test_risk_metrics_history_preserved_on_rerun(tmp):
     print("PASS test_risk_metrics_history_preserved_on_rerun")
 
 
+# ---- Task 11: MEGA.BK sector classification ----
+def test_mega_bk_sector_is_healthcare():
+    """MEGA.BK (Mega Lifesciences) is a healthcare company, not Retail."""
+    from kth.data.universe import get_sector
+    assert get_sector("MEGA.BK") == "Healthcare", \
+        f"MEGA.BK should be Healthcare, got {get_sector('MEGA.BK')}"
+    print("PASS test_mega_bk_sector_is_healthcare")
+
+
+# ---- Task 12: fx_macro exclusion ----
+def test_fx_macro_excluded_from_investable():
+    """fx_macro tickers must not appear in get_all_tickers()."""
+    from kth.data.universe import get_all_tickers, get_ticker_class
+    tickers = get_all_tickers()
+    fx = [t for t in tickers if get_ticker_class(t) == "fx_macro"]
+    assert len(fx) == 0, f"fx_macro leaked into investable: {fx}"
+    from kth.data.universe import get_all_tickers_including_features
+    all_t = get_all_tickers_including_features()
+    assert len(all_t) == 100, f"get_all_tickers_including_features should return 100, got {len(all_t)}"
+    assert "THB=X" in all_t, "THB=X should be in including_features"
+    print("PASS test_fx_macro_excluded_from_investable")
+
+
+# ---- Task 13: O(1) ticker-class lookup ----
+def test_get_ticker_class_o1_lookup():
+    """get_ticker_class must use O(1) dict lookup."""
+    from kth.data.universe import get_ticker_class, _TICKER_CLASS_MAP
+    assert "AOT.BK" in _TICKER_CLASS_MAP, "Reverse-lookup map not built"
+    assert _TICKER_CLASS_MAP["AOT.BK"] == "thai_equity"
+    assert get_ticker_class("BTC-USD") == "crypto"
+    assert get_ticker_class("NONEXISTENT") is None
+    print("PASS test_get_ticker_class_o1_lookup")
+
+
 if __name__ == "__main__":
     import inspect
     import tempfile
