@@ -13,10 +13,13 @@ def test_equity_curve_index_is_mark_day_not_signal_day():
     assert 'mark_index' in source, "Equity curve must use mark_index"
 
 
-def test_open_trades_blends_on_rebalance():
-    """Regression guard: walkforward must blend entry price on rebalance."""
+def test_lots_ledger_used_in_walkforward():
+    """M6: walkforward must use a lots ledger, not the old open_trades blend dict."""
+    import inspect
+    from kth.backtest import walkforward
     source = inspect.getsource(walkforward.run_walkforward)
-    assert 'blended' in source.lower(), "open_trades must blend entry price on rebalance"
+    assert "lots" in source, "walkforward must use a lots ledger"
+    assert "entry_price" in source, "lots must track entry_price"
 
 
 def test_open_trades_blend_logic_correct():

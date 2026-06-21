@@ -275,7 +275,7 @@ def run_walkforward(
     gross_portfolio_values: list[float] = []
     mark_days: list = []
     trades_list: list[dict] = []
-    open_trades: dict[str, dict] = {}
+    lots: dict[str, list[dict]] = {}
 
     for day_idx, day in enumerate(trading_days):
         day_str = day.strftime("%Y-%m-%d")
@@ -356,9 +356,21 @@ def run_walkforward(
 
                 cash += trade_value - friction_cost
                 gross_cash += trade_value
-                if t in open_trades:
-                    entry_price = open_trades[t]["entry_price"]
-                    gross_return = (exec_price / entry_price - 1) * open_trades[t]["trade_value"]
+                ticker_lots = lots.get(t, [])
+                if ticker_lots:
+                    remaining = units
+                    gross_return = 0.0
+                    while remaining > 0 and ticker_lots:
+                        lot = ticker_lots[0]
+                        matched = min(remaining, lot["units"])
+                        gross_return += (exec_price / lot["entry_price"] - 1) * (matched * lot["entry_price"])
+                        remaining -= matched
+                        if lot["units"] > matched:
+                            lot["units"] -= matched
+                        else:
+                            ticker_lots.pop(0)
+                    if not ticker_lots:
+                        lots.pop(t, None)
                 else:
                     gross_return = 0.0
 
@@ -369,7 +381,6 @@ def run_walkforward(
                 })
                 del holdings_units[t]
                 holding_days.pop(t, None)
-                open_trades.pop(t, None)
 
         # Open/adjust positions
         for t, tw in target_weights.items():
@@ -411,25 +422,23 @@ def run_walkforward(
                 "size_pct": abs(trade_value), "friction_cost": friction_cost,
                 "gross_return": 0.0,
             })
-            # Blend entry price on rebalance; don't overwrite.
-            current_units = holdings_units.get(t, 0)
-            if t in open_trades and direction == "buy":
-                old = open_trades[t]
-                total_units = old["units"] + units_delta
-                if total_units > 0:
-                    blended = (old["units"] * old["entry_price"] + units_delta * exec_price) / total_units
-                    open_trades[t] = {"entry_price": blended, "units": total_units,
-                                       "trade_value": total_units * blended, "entry_date": old["entry_date"]}
-            elif t in open_trades and direction == "sell":
-                remaining = holdings_units.get(t, 0)
-                if remaining > 1e-10:
-                    open_trades[t]["units"] = remaining
-                    open_trades[t]["trade_value"] = remaining * open_trades[t]["entry_price"]
-                else:
-                    open_trades.pop(t, None)
-            else:
-                open_trades[t] = {"entry_price": exec_price, "units": current_units,
-                                   "trade_value": abs(trade_value), "entry_date": day}
+            if direction == "buy":
+                lots.setdefault(t, []).append({
+                    "entry_date": day,
+                    "units": units_delta,
+                    "entry_price": exec_price,
+                })
+            elif direction == "sell" and t in lots:
+                remaining = abs(units_delta)
+                while remaining > 0 and lots[t]:
+                    lot = lots[t][0]
+                    matched = min(remaining, lot["units"])
+                    lot["units"] -= matched
+                    remaining -= matched
+                    if lot["units"] <= 0:
+                        lots[t].pop(0)
+                if not lots[t]:
+                    lots.pop(t)
 
         # Update holding days
         for t in list(holdings_units.keys()):
