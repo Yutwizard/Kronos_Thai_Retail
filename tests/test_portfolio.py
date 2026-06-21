@@ -124,3 +124,20 @@ def test_market_state_unknown_when_no_forecasts(monkeypatch):
     monkeypatch.setattr("kth.trading.trade_gen.load_forecasts", lambda: [])
     from kth.trading.portfolio import _compute_market_state
     assert _compute_market_state() == "Unknown"
+
+
+def test_count_rebalances_ignores_single_trade_days():
+    """L9: rebalance count only includes dates with >=2 trade events."""
+    from kth.trading.portfolio import _count_rebalances
+    trades = [
+        {"date": "2024-01-05", "action": "exit"},
+        {"date": "2024-02-01", "action": "exit"}, {"date": "2024-02-01", "action": "buy"},
+        {"date": "2024-03-10", "action": "buy"}, {"date": "2024-03-10", "action": "buy"},
+    ]
+    assert _count_rebalances(trades) == 2  # Feb 1 + Mar 10; Jan 5 has only 1
+
+
+def test_count_rebalances_empty_trades():
+    """L9: returns 0 for empty trade list."""
+    from kth.trading.portfolio import _count_rebalances
+    assert _count_rebalances([]) == 0

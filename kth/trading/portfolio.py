@@ -100,12 +100,17 @@ def get_positions(mode: str = "paper") -> dict:
 
 
 def _get_current_price(ticker: str) -> float | None:
-    """Get latest close price from cached data."""
+    """Get latest close price from cached data. Logs errors instead of swallowing."""
+    import logging
     try:
         from kth.data.loader import load_cached
         df = load_cached(ticker)
         return float(df["close"].iloc[-1])
-    except Exception:
+    except FileNotFoundError:
+        logging.warning(f"_get_current_price: no cache for {ticker}")
+        return None
+    except Exception as e:
+        logging.error(f"_get_current_price: corrupt cache for {ticker}: {e}")
         return None
 
 
@@ -699,9 +704,11 @@ def check_phase2_gate() -> dict:
 
 
 def _count_rebalances(trades: list[dict]) -> int:
-    """Count distinct months with exits (proxy for rebalance events)."""
-    months = set()
-    for t in trades:
-        if t["action"] in ("exit", "sell", "reduce"):
-            months.add(t["date"][:7])
-    return len(months)
+    """Count distinct dates with >=2 trade events (proxy for rebalance days).
+    A single tax-loss harvest on one date does not count."""
+    from collections import Counter
+    date_counts = Counter(
+        t["date"] for t in trades
+        if t["action"] in ("exit", "sell", "reduce", "buy")
+    )
+    return sum(1 for c in date_counts.values() if c >= 2)
