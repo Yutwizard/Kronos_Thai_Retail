@@ -409,8 +409,25 @@ def run_walkforward(
                 "size_pct": abs(trade_value), "friction_cost": friction_cost,
                 "gross_return": 0.0,
             })
-            open_trades[t] = {"entry_price": exec_price, "units": holdings_units.get(t, 0),
-                              "trade_value": abs(trade_value), "entry_date": day}
+            # Blend entry price on rebalance; don't overwrite.
+            current_units = holdings_units.get(t, 0)
+            if t in open_trades and direction == "buy":
+                old = open_trades[t]
+                total_units = old["units"] + units_delta
+                if total_units > 0:
+                    blended = (old["units"] * old["entry_price"] + units_delta * exec_price) / total_units
+                    open_trades[t] = {"entry_price": blended, "units": total_units,
+                                       "trade_value": total_units * blended, "entry_date": old["entry_date"]}
+            elif t in open_trades and direction == "sell":
+                remaining = holdings_units.get(t, 0)
+                if remaining > 1e-10:
+                    open_trades[t]["units"] = remaining
+                    open_trades[t]["trade_value"] = remaining * open_trades[t]["entry_price"]
+                else:
+                    open_trades.pop(t, None)
+            else:
+                open_trades[t] = {"entry_price": exec_price, "units": current_units,
+                                   "trade_value": abs(trade_value), "entry_date": day}
 
         # Update holding days
         for t in list(holdings_units.keys()):
