@@ -260,6 +260,7 @@ def run_walkforward(
     holding_days: dict[str, int] = {}
     portfolio_values: list[float] = []
     gross_portfolio_values: list[float] = []
+    mark_days: list = []
     trades_list: list[dict] = []
     open_trades: dict[str, dict] = {}
 
@@ -432,10 +433,12 @@ def run_walkforward(
 
         portfolio_values.append(mtm_value)
         gross_portfolio_values.append(mtm_gross)
+        mark_days.append(mark_day)
 
-    # Build result DataFrames
-    equity_curve = pd.Series(portfolio_values, index=trading_days[:len(portfolio_values)])
-    gross_equity_curve = pd.Series(gross_portfolio_values, index=trading_days[:len(gross_portfolio_values)])
+    # Build result DataFrames — index by mark_day so strategy returns align with benchmark
+    mark_index = pd.DatetimeIndex(mark_days[:len(portfolio_values)])
+    equity_curve = pd.Series(portfolio_values, index=mark_index)
+    gross_equity_curve = pd.Series(gross_portfolio_values, index=mark_index)
     daily_returns = equity_curve.pct_change().dropna()
     trades_df = pd.DataFrame(trades_list)
 
