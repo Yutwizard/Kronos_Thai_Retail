@@ -25,6 +25,16 @@ from kth.trading.sheets_config import (
 CACHE_SLUG = "NeoQuasar_Kronos-small"
 
 
+def _col_to_letter(col_index: int) -> str:
+    """Convert 0-based column index to A1 letter notation (A, B, ..., Z, AA, AB, ...)."""
+    result = ""
+    col = col_index + 1
+    while col > 0:
+        col, rem = divmod(col - 1, 26)
+        result = chr(65 + rem) + result
+    return result
+
+
 def _set_pipeline_status(ws, status: str, error_msg: str = "",
                          sheets_updated: str = "", duration: str = ""):
     ws.update('A1:E2', [
@@ -347,10 +357,10 @@ def _write_forecast_history(sh, ohlcv_dict: dict, fc_rows: list,
             today_close = float(ohlcv_dict[ticker]['close'].iloc[-1])
             act_ret = (today_close - entry_close) / entry_close
             correct = 1 if (act_ret > 0) == (pred_return > 0) else 0
-            ar_col = col['actual_return'] + 1
-            wc_col = col['was_correct'] + 1
+            ar_col_letter = _col_to_letter(col['actual_return'])
+            wc_col_letter = _col_to_letter(col['was_correct'])
             updates.append({
-                'range': f'{chr(64 + ar_col)}{list_idx}:{chr(64 + wc_col)}{list_idx}',
+                'range': f'{ar_col_letter}{list_idx}:{wc_col_letter}{list_idx}',
                 'values': [[round(act_ret, 4), correct]],
             })
         except (ValueError, KeyError, IndexError, ZeroDivisionError):

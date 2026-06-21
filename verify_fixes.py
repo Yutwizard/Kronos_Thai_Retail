@@ -120,6 +120,18 @@ def test_cache_slug_consistent_across_modules():
     print("PASS test_cache_slug_consistent_across_modules")
 
 
+# ---- Task 10: Column to letter converter ----
+def test_column_to_letter():
+    """Column index to A1 notation must work for columns > 26."""
+    from kth.pipeline.daily import _col_to_letter
+    assert _col_to_letter(0) == "A"
+    assert _col_to_letter(25) == "Z"
+    assert _col_to_letter(26) == "AA"
+    assert _col_to_letter(27) == "AB"
+    assert _col_to_letter(51) == "AZ"
+    print("PASS test_column_to_letter")
+
+
 if __name__ == "__main__":
     import inspect
     import tempfile
