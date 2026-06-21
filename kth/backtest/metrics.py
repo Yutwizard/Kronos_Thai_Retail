@@ -135,21 +135,26 @@ def compute_psr(
 
     PSR = Φ( (SR - SR*) × √(T-1) / √(1 − γ₃·SR + (γ₄−1)/4·SR²) )
 
-    where SR is the observed annualized Sharpe, SR* is the benchmark (default 0),
+    where SR is the observed per-period (daily) Sharpe, SR* is the benchmark (default 0),
     T is the number of observations, γ₃ is skewness, and γ₄ is kurtosis.
     """
     from scipy.stats import norm
     returns = daily_returns.dropna().values
     if len(returns) < 2:
         return 0.0
-    sr = float(daily_returns.mean() / daily_returns.std() * np.sqrt(periods_per_year)) if daily_returns.std() > 0 else 0.0
+    std = daily_returns.std()
+    if std == 0 or pd.isna(std):
+        return 0.0
+    sr_daily = float(daily_returns.mean() / std)
+    benchmark_daily = benchmark_sr / np.sqrt(periods_per_year)
     T = len(returns)
     skew = float(np.mean((returns - returns.mean()) ** 3) / returns.std() ** 3) if returns.std() > 0 else 0.0
     kurt = float(np.mean((returns - returns.mean()) ** 4) / returns.std() ** 4 - 3) if returns.std() > 0 else 0.0
-    denominator = np.sqrt(1 - skew * sr + (kurt - 1) / 4 * sr ** 2)
-    if denominator == 0:
-        return 0.5 if sr > benchmark_sr else 0.0
-    z = (sr - benchmark_sr) * np.sqrt(T - 1) / denominator
+    denom_sq = 1 - skew * sr_daily + (kurt - 1) / 4 * sr_daily ** 2
+    if denom_sq <= 0:
+        return 0.5 if sr_daily > benchmark_daily else 0.0
+    denominator = np.sqrt(denom_sq)
+    z = (sr_daily - benchmark_daily) * np.sqrt(T - 1) / denominator
     return float(norm.cdf(z))
 
 
