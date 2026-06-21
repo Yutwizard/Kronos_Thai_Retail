@@ -605,8 +605,12 @@ def _write_all_staging(sh, ohlcv_dict: dict, ticket_data: dict,
                   TRADE_TICKET_HEADERS, tt_rows, sleep_sec=staging_sleep)
 
     risk_row = _write_risk_metrics_row(metrics, pf_data, today_str)
-    write_staging(sh.worksheet('Risk Metrics_staging'),
-                  RISK_METRICS_HEADERS, risk_row, sleep_sec=staging_sleep)
+    rm_live = sh.worksheet('Risk Metrics').get_all_values()
+    rm_header = RISK_METRICS_HEADERS
+    all_rm = upsert_by_date(rm_live if rm_live else [], rm_header, risk_row[0])
+    write_staging(sh.worksheet('Risk Metrics_staging'), rm_header,
+                  all_rm[1:] if len(all_rm) > 1 else [],
+                  sleep_sec=staging_sleep)
 
     _write_staging_for_equity_curve(sh, pf_data, today_str)
 

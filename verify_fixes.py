@@ -160,6 +160,34 @@ def test_calibration_idempotent_on_rerun(tmp):
         daily_mod._compute_calibration_data = orig_cal
 
 
+# ---- Task 8: Risk Metrics upsert ----
+def test_risk_metrics_history_preserved_on_rerun(tmp):
+    """Same-day re-run must not wipe Risk Metrics history."""
+    from kth.pipeline.daily import run_daily_pipeline
+    from verify_kaggle_runtime import FakeModel, FakeLoader, seeded_fake_client
+    from datetime import date
+    gc = seeded_fake_client()
+    sh = gc.open_by_key("test_id")
+    sh.worksheet("Risk Metrics")._data = [
+        ["date","equity","cash","deployed_pct","trailing_sharpe_12w","max_drawdown_pct",
+         "mtd_pnl_pct","trade_win_rate","calmar_ratio","sortino_ratio","drawdown_velocity",
+         "allocation_band","allocation_pct","market_state","is_frozen","bootstrap_p_value",
+         "friction_ytd_pct","friction_ytd_thb"],
+        ["2026-06-16","500000","500000","0","0","0","0","0","0","0","0",
+         "NEUTRAL","0.1","Normal","0","1","0","0"],
+        ["2026-06-17","500000","500000","0","0","0","0","0","0","0","0",
+         "NEUTRAL","0.1","Normal","0","1","0","0"],
+    ]
+    run_daily_pipeline(gc, "test_id", model=FakeModel(), data_loader=FakeLoader(),
+                       today=date(2026,6,18), work_dir=tmp, staging_sleep=0)
+    rows = gc.open_by_key("test_id").worksheet("Risk Metrics").get_all_values()
+    dates = [r[0] for r in rows[1:]]
+    assert "2026-06-16" in dates, f"Prior day wiped! dates={dates}"
+    assert "2026-06-17" in dates, f"Prior day wiped! dates={dates}"
+    assert dates.count("2026-06-18") == 1, f"Today duplicated: {dates}"
+    print("PASS test_risk_metrics_history_preserved_on_rerun")
+
+
 if __name__ == "__main__":
     import inspect
     import tempfile
