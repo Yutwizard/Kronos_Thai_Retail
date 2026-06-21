@@ -26,6 +26,21 @@ def _get_calendar_for_tickers(tickers: list[str]) -> str:
     return "B"
 
 
+def _validate_single_calendar(tickers: list[str]) -> None:
+    """Reject mixed crypto + non-crypto ticker lists.
+    Crypto uses a 7-day calendar; equities use 5-day. Mixing forces the 7-day
+    calendar onto equities, misaligning signals. Run asset classes separately."""
+    from kth.data.universe import get_ticker_class
+    classes = {get_ticker_class(t) for t in tickers}
+    if "crypto" in classes and classes - {"crypto"}:
+        non_crypto = classes - {"crypto"}
+        raise ValueError(
+            f"Refusing to run mixed-asset-class backtest: crypto + {non_crypto}. "
+            f"Run separate backtests per asset class to keep calendars aligned. "
+            f"See _get_calendar_for_tickers for details."
+        )
+
+
 @dataclass
 class BacktestConfig:
     start_date: str = "2022-01-01"
@@ -83,6 +98,8 @@ def precompute_forecasts(
     if len(viable) < len(tickers):
         print(f"[precompute] Skipped {len(tickers) - len(viable)} tickers (insufficient history)")
     tickers = viable
+
+    _validate_single_calendar(tickers)
 
     freq = _get_calendar_for_tickers(tickers)
     print(f"[precompute] Calendar: {'7-day (crypto)' if freq == 'D' else '5-day (business)'}")
@@ -231,6 +248,8 @@ def run_walkforward(
         except FileNotFoundError:
             continue
     print(f"Eligible tickers: {len(eligible)} / {len(tickers)}")
+
+    _validate_single_calendar(eligible)
 
     freq = _get_calendar_for_tickers(eligible)
     print(f"Calendar: {'7-day (crypto)' if freq == 'D' else '5-day (business)'}")

@@ -1,6 +1,8 @@
 """Tests for kth.backtest.walkforward — equity curve alignment and open_trades blend."""
 import inspect
 
+import pytest
+
 from kth.backtest import walkforward
 
 
@@ -61,3 +63,22 @@ def test_hysteresis_new_position_needs_buffer_above_threshold():
     raw = {"Y": 0.012}  # above threshold (0.01) but below threshold+buffer (0.015)
     sigs, _ = apply_hysteresis(raw, {}, {}, 0.01, 0.005, 5)
     assert "Y" not in sigs
+
+
+def test_mixed_class_rejected():
+    """L2: mixed crypto + equity ticker lists must raise ValueError."""
+    from kth.backtest.walkforward import _validate_single_calendar
+    with pytest.raises(ValueError, match="mixed-asset-class"):
+        _validate_single_calendar(["BTC-USD", "AAPL"])
+
+
+def test_single_crypto_ok():
+    """L2: crypto-only list passes validation."""
+    from kth.backtest.walkforward import _validate_single_calendar
+    _validate_single_calendar(["BTC-USD", "ETH-USD"])
+
+
+def test_single_equity_ok():
+    """L2: equity-only list (including Thai + US) passes validation."""
+    from kth.backtest.walkforward import _validate_single_calendar
+    _validate_single_calendar(["AAPL", "PTT.BK"])
