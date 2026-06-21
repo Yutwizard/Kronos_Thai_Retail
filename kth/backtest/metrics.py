@@ -99,7 +99,7 @@ def compute_trade_metrics(trades: pd.DataFrame) -> dict:
     payoff = avg_win / avg_loss if avg_loss > 0 else 0.0
     gross_profit = wins["gross_return"].sum() if len(wins) > 0 else 0.0
     gross_loss = abs(losses["gross_return"].sum()) if len(losses) > 0 else 0.0
-    profit_factor = gross_profit / gross_loss if gross_loss > 0 else None
+    profit_factor = gross_profit / gross_loss if gross_loss > 0 else float("inf")
 
     # Win/loss streaks
     outcomes = (trades["gross_return"] > 0).astype(int)
@@ -116,7 +116,7 @@ def compute_trade_metrics(trades: pd.DataFrame) -> dict:
         "trade_win_rate": hit_rate,
         "payoff_ratio": payoff,
         "profit_factor": profit_factor,
-        "avg_holding_period": 0.0,  # filled by walkforward loop
+        "avg_holding_period": 0.0,  # TODO Task 6: compute from FIFO-matched trades
         "avg_trade_return_gross": float(trades["gross_return"].mean()) if len(trades) > 0 else 0.0,
         "avg_trade_return_net": float((trades["gross_return"] - trades["friction_cost"]).mean()) if len(trades) > 0 else 0.0,
         "max_win_streak": max_win,
@@ -138,7 +138,7 @@ def compute_psr(
     where SR is the observed per-period (daily) Sharpe, SR* is the benchmark (default 0),
     T is the number of observations, γ₃ is skewness, and γ₄ is kurtosis.
     """
-    from scipy.stats import norm
+    from scipy.stats import norm, skew, kurtosis
     returns = daily_returns.dropna().values
     if len(returns) < 2:
         return 0.0
@@ -148,9 +148,9 @@ def compute_psr(
     sr_daily = float(daily_returns.mean() / std)
     benchmark_daily = benchmark_sr / np.sqrt(periods_per_year)
     T = len(returns)
-    skew = float(np.mean((returns - returns.mean()) ** 3) / returns.std() ** 3) if returns.std() > 0 else 0.0
-    kurt = float(np.mean((returns - returns.mean()) ** 4) / returns.std() ** 4 - 3) if returns.std() > 0 else 0.0
-    denom_sq = 1 - skew * sr_daily + (kurt - 1) / 4 * sr_daily ** 2
+    skew_val = float(skew(returns, bias=False))
+    kurt_val = float(kurtosis(returns, bias=False))
+    denom_sq = 1 - skew_val * sr_daily + (kurt_val - 1) / 4 * sr_daily ** 2
     if denom_sq <= 0:
         return 0.5 if sr_daily > benchmark_daily else 0.0
     denominator = np.sqrt(denom_sq)
@@ -329,9 +329,10 @@ def compute_bootstrap_pvalue(
     seed: int = 42,
 ) -> dict:
     """
-    Bootstrap p-value: fraction of n_bootstrap shuffles of strategy_returns that
-    beat benchmark_returns by >= the observed active return margin.
-    Lower p = stronger evidence of genuine edge.
+    Centered bootstrap p-value for live paper-trading alpha.
+    Under H0 (active mean = 0), center the active returns by subtracting the
+    observed mean, resample with replacement n_bootstrap times, and count the
+    fraction of resampled means >= observed mean. Lower p = stronger edge.
     Returns {'pvalue': float|None, 'n_bootstrap': int, 'n_obs': int, 'significant': bool}
     """
     if len(strategy_returns) < 20:

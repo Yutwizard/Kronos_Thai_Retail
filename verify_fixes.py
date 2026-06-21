@@ -232,6 +232,47 @@ def test_get_ticker_class_o1_lookup():
     print("PASS test_get_ticker_class_o1_lookup")
 
 
+# ---- Task 1 fixes ----
+def test_psr_uses_scipy_skew_kurtosis():
+    """L13: compute_psr must use scipy.stats skew/kurtosis with bias=False."""
+    import inspect
+    from kth.backtest import metrics as m
+    src = inspect.getsource(m.compute_psr)
+    assert "from scipy.stats import" in src, "compute_psr must import scipy.stats"
+    assert "bias=False" in src, "compute_psr must use bias=False for consistency"
+    print("PASS test_psr_uses_scipy_skew_kurtosis")
+
+
+def test_profit_factor_inf_when_no_losses():
+    """L8: profit_factor returns inf (not None) when no losses."""
+    import pandas as pd
+    trades = pd.DataFrame({"gross_return": [0.1, 0.2, 0.05], "friction_cost": [0, 0, 0]})
+    from kth.backtest.metrics import compute_trade_metrics
+    m = compute_trade_metrics(trades)
+    assert m["profit_factor"] == float("inf"), f"Expected inf, got {m['profit_factor']}"
+    print("PASS test_profit_factor_inf_when_no_losses")
+
+
+def test_bootstrap_docstring_says_centered():
+    """L7: docstring must say 'centered bootstrap', not 'shuffles'."""
+    from kth.backtest.metrics import compute_bootstrap_pvalue
+    doc = compute_bootstrap_pvalue.__doc__ or ""
+    assert "centered" in doc.lower(), "docstring must mention 'centered'"
+    assert "shuffles" not in doc.lower(), "docstring must not say 'shuffles'"
+    print("PASS test_bootstrap_docstring_says_centered")
+
+
+def test_psr_high_sharpe_finite_after_scipy_fix():
+    """L13 regression: PSR must be finite for high-Sharpe series."""
+    rng = np.random.default_rng(99)
+    returns = pd.Series(rng.normal(0.003, 0.008, 300))
+    from kth.backtest.metrics import compute_psr
+    psr = compute_psr(returns, benchmark_sr=1.0)
+    assert np.isfinite(psr), f"PSR not finite: {psr}"
+    assert 0.0 <= psr <= 1.0, f"PSR out of [0,1]: {psr}"
+    print("PASS test_psr_high_sharpe_finite_after_scipy_fix")
+
+
 if __name__ == "__main__":
     import inspect
     import tempfile
