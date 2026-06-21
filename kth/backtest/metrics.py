@@ -76,6 +76,28 @@ def compute_var_cvar(daily_returns: pd.Series) -> dict:
     return {"var_95": var_95, "var_99": var_99, "cvar_95": cvar_95}
 
 
+def _compute_avg_holding_period(trades: pd.DataFrame) -> float:
+    """FIFO-match buy->sell per ticker, return mean holding period in days.
+    Returns 0.0 if no round-trips can be formed."""
+    from collections import deque, defaultdict
+    if trades.empty or "date" not in trades.columns:
+        return 0.0
+    buys: dict = defaultdict(deque)
+    holding_days: list[float] = []
+    for _, t in trades.iterrows():
+        ticker = t["ticker"]
+        direction = str(t.get("direction", "")).lower()
+        if direction == "buy":
+            buys[ticker].append(pd.Timestamp(t["date"]))
+        elif direction in ("sell", "exit"):
+            if buys[ticker]:
+                buy_date = buys[ticker].popleft()
+                holding_days.append((pd.Timestamp(t["date"]) - buy_date).days)
+    if not holding_days:
+        return 0.0
+    return float(np.mean(holding_days))
+
+
 def compute_trade_metrics(trades: pd.DataFrame) -> dict:
     """
     NOTE: 'trade_win_rate' is the proportion of trades with gross_return > 0.
@@ -116,7 +138,7 @@ def compute_trade_metrics(trades: pd.DataFrame) -> dict:
         "trade_win_rate": hit_rate,
         "payoff_ratio": payoff,
         "profit_factor": profit_factor,
-        "avg_holding_period": 0.0,  # TODO Task 6: compute from FIFO-matched trades
+        "avg_holding_period": _compute_avg_holding_period(trades),
         "avg_trade_return_gross": float(trades["gross_return"].mean()) if len(trades) > 0 else 0.0,
         "avg_trade_return_net": float((trades["gross_return"] - trades["friction_cost"]).mean()) if len(trades) > 0 else 0.0,
         "max_win_streak": max_win,

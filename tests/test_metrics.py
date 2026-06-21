@@ -88,3 +88,36 @@ def test_psr_high_sharpe_finite_after_scipy_fix():
     psr = compute_psr(returns, benchmark_sr=1.0)
     assert np.isfinite(psr), f"PSR not finite: {psr}"
     assert 0.0 <= psr <= 1.0, f"PSR out of [0,1]: {psr}"
+
+
+def test_avg_holding_period_fifo():
+    """L1: avg holding period computed from FIFO-matched buy->sell pairs."""
+    import pandas as pd
+    from kth.backtest.metrics import _compute_avg_holding_period
+    trades = pd.DataFrame({
+        "ticker": ["A", "A", "A", "B", "B"],
+        "direction": ["buy", "buy", "sell", "buy", "sell"],
+        "date": ["2024-01-01", "2024-01-10", "2024-01-15", "2024-01-05", "2024-01-20"],
+        "size_pct": [1.0]*5, "friction_cost": [0]*5, "gross_return": [0]*5,
+    })
+    avg = _compute_avg_holding_period(trades)
+    assert abs(avg - 14.5) < 0.1, f"Expected 14.5, got {avg}"
+
+
+def test_avg_holding_period_no_round_trips():
+    """L1: returns 0.0 when there are buys but no sells."""
+    import pandas as pd
+    from kth.backtest.metrics import _compute_avg_holding_period
+    trades = pd.DataFrame({
+        "ticker": ["A"], "direction": ["buy"], "date": ["2024-01-01"],
+        "size_pct": [1.0], "friction_cost": [0], "gross_return": [0],
+    })
+    assert _compute_avg_holding_period(trades) == 0.0
+
+
+def test_avg_holding_period_empty_trades():
+    """L1: returns 0.0 for empty trades DataFrame."""
+    import pandas as pd
+    from kth.backtest.metrics import _compute_avg_holding_period
+    trades = pd.DataFrame(columns=["ticker", "direction", "date"])
+    assert _compute_avg_holding_period(trades) == 0.0
