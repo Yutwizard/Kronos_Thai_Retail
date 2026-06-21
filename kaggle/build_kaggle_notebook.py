@@ -39,9 +39,9 @@ from pathlib import Path
 # ── Pin the repo to a specific commit ──────────────────────────────────
 # To bump: update PINNED_COMMIT and rebuild this notebook.
 PINNED_COMMIT = "main"  # ← TODO: replace with actual commit hash after Phase 0
-REPO_URL = "https://github.com/anomalyco/Kronos_Thai_Retail.git"
+REPO_URL = "https://github.com/Yutwizard/Kronos_Thai_Retail.git"
 # If using a PAT for a private repo, uncomment the next line:
-# REPO_URL = f"https://{os.environ.get('GITHUB_PAT')}@github.com/anomalyco/Kronos_Thai_Retail.git"
+# REPO_URL = f"https://{os.environ.get('GITHUB_PAT')}@github.com/Yutwizard/Kronos_Thai_Retail.git"
 
 REPO_DIR = "/kaggle/working/Kronos_Thai_Retail"
 
