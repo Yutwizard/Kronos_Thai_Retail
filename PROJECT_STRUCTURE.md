@@ -3,9 +3,11 @@
 > **Single-document review of the Kronos-TH project.**
 > Read this top-to-bottom before writing any more code. The goal is to confirm scope, design choices, and tradeoffs so we don't build the wrong thing.
 
-> **Layer 5: Two dashboards available** — Google Suite (Colab + Sheets + Apps Script, zero-cost, no local GPU required) and Flask (`scripts/dashboard.py`, requires local GPU). Google Suite reached feature parity with Flask on 2026-06-06. Both are fully functional; users can choose based on environment.
+> **Layer 5: Two dashboards available** — Google Suite (Kaggle primary / Colab backup + Sheets + Apps Script, zero-cost, no local GPU required) and Flask (`scripts/dashboard.py`, requires local GPU). Kaggle scheduled pipeline (`kth/pipeline/daily.py`, `kaggle/`) is the primary unattended runtime. Google Suite reached feature parity with Flask on 2026-06-06. Both are fully functional; users can choose based on environment.
 > See [Google Suite spec](docs/superpowers/specs/2026-06-04-google-suite-dashboard-design.md) +
 > [parity fix spec](docs/superpowers/specs/2026-06-06-google-suite-dashboard-parity-fixes-design.md) +
+> [Kaggle pipeline spec](docs/superpowers/specs/2026-06-18-kaggle-scheduled-pipeline-design.md) +
+> [Kaggle pipeline plan](docs/superpowers/plans/2026-06-18-kaggle-scheduled-pipeline.md) +
 > [Flask spec](docs/superpowers/specs/2026-06-02-real-market-dashboard-design.md).
 
 ---
@@ -169,12 +171,16 @@ These were debated and chosen earlier:
 ```
 
 LAYER 5: Dashboard / Report   google_suite/                          ✅ built (Google Suite dashboard)
-                                scripts/dashboard.py                    ✅ built (Flask dashboard — local GPU option)
-                                scripts/start_dashboard.sh              ✅ built (one-command launcher: venv + data + pipeline + serve)
-                                kth/trading/portfolio.py                ✅ built
-                                kth/trading/trade_gen.py                ✅ built
-                                scripts/cron_pipeline.sh                ✅ built
-                                notebooks/05_decision_report.ipynb      ✅ built (Colab version)
+                                 scripts/dashboard.py                    ✅ built (Flask dashboard — local GPU option)
+                                 scripts/start_dashboard.sh              ✅ built (one-command launcher: venv + data + pipeline + serve)
+                                 kth/trading/portfolio.py                ✅ built
+                                 kth/trading/trade_gen.py                ✅ built
+                                 kth/trading/sheets.py                   ✅ built
+                                 kth/pipeline/daily.py                   ✅ built (Kaggle unattended orchestration)
+                                 kth/io/kaggle_runtime.py                ✅ built (SA auth, injectable)
+                                 kaggle/build_kaggle_notebook.py         ✅ built (≤5-cell Kaggle notebook)
+                                 scripts/cron_pipeline.sh                ✅ built
+                                 notebooks/05_decision_report.ipynb      ✅ built (Colab version)
 LAYER 4: Backtest             kth/backtest/walkforward.py            ✅ built
                                 kth/backtest/strategy.py               ✅ built
                                 kth/backtest/metrics.py                 ✅ built
@@ -204,6 +210,9 @@ kronos-th/
 │   │   ├── __init__.py
 │   │   ├── universe.py             ✅ 100-ticker universe + FRICTION costs
 │   │   └── loader.py               ✅ yfinance → Kronos schema + caching
+│   ├── io/                         ✅ built (2026-06-21)
+│   │   ├── __init__.py
+│   │   └── kaggle_runtime.py       ✅ SA auth, RuntimeConfig, injectable getter
 │   ├── models/                     ✅ built
 │   │   ├── __init__.py
 │   │   ├── kronos_wrapper.py       ✅ KronosTH zero-shot wrapper
@@ -214,14 +223,26 @@ kronos-th/
 │   │   ├── walkforward.py          ✅ Walk-forward eval driver
 │   │   ├── strategy.py             ✅ Signal → position translation
 │   │   └── metrics.py              ✅ Sharpe, MaxDD, Calmar, VaR, attribution
+│   ├── pipeline/                   ✅ built (2026-06-21)
+│   │   ├── __init__.py
+│   │   └── daily.py                ✅ run_daily_pipeline() — 6 injectable seams
 │   ├── trading/                    ✅ built (2026-06-02)
 │   │   ├── __init__.py
 │   │   ├── portfolio.py            ✅ Paper/live position tracking, P&L, trade log
-│   │   └── trade_gen.py            ✅ Trade ticket generation, 3-filter rule
+│   │   ├── trade_gen.py            ✅ Trade ticket generation, 3-filter rule
+│   │   ├── sheets.py               ✅ Staging + promotion + position rows
+│   │   └── sheets_config.py        ✅ Sheet tab names + header schemas
+│   ├── testing/                    ✅ built (2026-06-21)
+│   │   ├── __init__.py
+│   │   └── synthetic.py            ✅ Shared synthetic OHLCV generator
 │   └── utils/                      ✅ built
 │       ├── __init__.py
 │       ├── plot.py                 ✅ Standard chart styles
 │       └── report.py               ✅ Daily decision report renderer
+│
+├── kaggle/                           ✅ Kaggle scheduled pipeline (2026-06-21)
+│   ├── build_kaggle_notebook.py      ✅ Generates kronos_kaggle_pipeline.ipynb
+│   └── kronos_kaggle_pipeline.ipynb  ✅ 5-cell thin wrapper (no business logic)
 │
 ├── notebooks/
 │   ├── 01_data_layer.ipynb         ✅ Verify yfinance access (Colab-ready)
@@ -232,7 +253,9 @@ kronos-th/
 │
 ├── data/
 │   ├── raw/                        Cached parquet (one per ticker)
-│   └── processed/                  Train/val/test splits for fine-tune
+│   ├── processed/                  Train/val/test splits for fine-tune
+│   └── backtest_results/           Walk-forward results per run
+│       └── MANIFEST.md             ✅ Authoritative vs stale runs (2026-06-21)
 │
 └── configs/                        YAML configs for fine-tune experiments
 ```
@@ -451,16 +474,24 @@ If our strategy doesn't beat all four after frictions, we say so plainly.
 
 ### ✅ Built and tested
 
-- `kth/data/universe.py` — 100-ticker universe (50 Thai, 17 US, 12 crypto, rest unchanged), FRICTION dict
+- `kth/data/universe.py` — 100-ticker universe (50 Thai, 17 US, 12 crypto, rest unchanged), FRICTION dict, SECTOR mapping, O(1) reverse-lookup dict
 - `kth/data/loader.py` — yfinance loader, Kronos-format conversion, parquet cache, quality checks
 - `verify_data_layer.py` — 5 offline tests, all pass against synthetic data
+- `verify_fixes.py` — 17 regression tests for stats fixes (PSR, alignment, bootstrap, cash guard, etc.) — all pass
+- `verify_kaggle_runtime.py` — 19 tests for Kaggle auth + pipeline orchestration (idempotency, capital reset, trade edits, BKK clock, failure path) — all pass
 - `notebooks/01_data_layer.ipynb` — Colab notebook for verifying real yfinance access
 - `kth/models/kronos_wrapper.py` — KronosTH wrapper (zero-shot inference)
 - `kth/models/finetune.py` — Dataset preparation, tokenizer caching, evaluate_model
 - `kth/models/_kronos_bridge.py` — Import bridge for local Kronos repo
-- `kth/backtest/walkforward.py` — Walk-forward backtest with benchmark comparison
-- `kth/backtest/strategy.py` — Signal → position translation
-- `kth/backtest/metrics.py` — Sharpe, MaxDD, Calmar, hit-rate, attribution
+- `kth/backtest/walkforward.py` — Walk-forward backtest with benchmark comparison, equity curve indexed by mark-day (2026-06-21 fix), blended entry price on rebalance
+- `kth/backtest/strategy.py` — Signal → position translation, dead-code cleanup (2026-06-21)
+- `kth/backtest/metrics.py` — Sharpe, MaxDD, Calmar, hit-rate, attribution. PSR uses per-period SR (2026-06-21 fix), stationary block bootstrap for Sharpe CI, t-test uses ddof=1
+- `kth/pipeline/daily.py` — `run_daily_pipeline()` with 6 injectable seams, Risk Metrics upsert-by-date, Calibration idempotency, col>26 fix (2026-06-21)
+- `kth/io/kaggle_runtime.py` — SA auth, RuntimeConfig, load_secrets(), make_sheets_client()
+- `kaggle/build_kaggle_notebook.py` — Generates ≤5-cell Kaggle scheduled notebook
+- `run_pipeline.py` — Thin entrypoint, `--dry-run` for offline smoke tests
+- `kth/testing/synthetic.py` — Shared synthetic OHLCV generator for offline tests
+- `data/backtest_results/MANIFEST.md` — Marks authoritative (n50) vs stale (pre-n50, invvol) runs
 - `scripts/train_per_market.py` — SGDR fine-tuning (3 markets × 3 folds)
 - `scripts/eval_holdout.py` — Holdout evaluation on 2025 data
 - `scripts/compare_finetune.py` — Fine-tuned vs zero-shot backtest comparison
