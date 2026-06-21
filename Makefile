@@ -22,5 +22,5 @@ notebook-gpu:
 download:
 	docker compose run --rm notebook python -c "\
 from kth.data.loader import download_universe; \
-from kth.data.universe import get_all_tickers; \
-download_universe(get_all_tickers(), period='10y', cache_dir='./data/raw')"
+from kth.data.universe import get_all_tickers_including_features; \
+download_universe(get_all_tickers_including_features(), period='10y', cache_dir='./data/raw')"

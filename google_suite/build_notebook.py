@@ -232,13 +232,13 @@ print(f"Fills: {confirmed_count} confirmed, {assumed_count} assumed, {len(fills)
 md("""## Cell 7 — Download Data""")
 
 code(r"""from kth.data.loader import download_universe, load_cached
-from kth.data.universe import get_all_tickers
+from kth.data.universe import get_all_tickers_including_features
 
 print("Downloading fresh OHLCV data (takes ~2 min on first run)…")
 download_universe()
 print("Download complete.")
 
-tickers        = get_all_tickers()
+tickers        = get_all_tickers_including_features()
 failed_tickers = set()
 ohlcv_dict     = {}
 

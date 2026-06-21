@@ -48,7 +48,7 @@ def _forecast_exists(ticker: str, today_str: str) -> bool:
 
 def _real_data_loader():
     from kth.data.loader import download_universe, load_cached
-    from kth.data.universe import get_all_tickers
+    from kth.data.universe import get_all_tickers_including_features
 
     def ensure(tickers):
         download_universe(tickers)

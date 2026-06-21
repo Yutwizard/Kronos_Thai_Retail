@@ -50,7 +50,7 @@ from kth.models.kronos_wrapper import (
     KronosTH, ForecastResult, HorizonForecast, _MODEL_CACHE
 )
 from kth.data.loader import to_kronos_format
-from kth.data.universe import get_all_tickers
+from kth.data.universe import get_all_tickers_including_features
 
 # Create synthetic data matching verify_data_layer.py pattern
 def make_synthetic_yf(ticker: str, n_days: int = 1260, seed: int = 0) -> pd.DataFrame:
@@ -90,7 +90,7 @@ def make_synthetic_yf(ticker: str, n_days: int = 1260, seed: int = 0) -> pd.Data
 # ---------------------------------------------------------------------------
 cache_dir = Path("./data/raw")
 cache_dir.mkdir(parents=True, exist_ok=True)
-all_tickers = get_all_tickers()
+all_tickers = get_all_tickers_including_features()
 for i, t in enumerate(all_tickers, 1):
     yf_df = make_synthetic_yf(t, n_days=600, seed=i)
     k_df = to_kronos_format(yf_df, t)

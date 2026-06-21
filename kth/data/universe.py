@@ -155,25 +155,40 @@ UNIVERSE = {
 }
 
 
+# Reverse-lookup: ticker -> asset class (built once at import, O(1) lookup)
+_TICKER_CLASS_MAP: dict[str, str] = {}
+for _cls, _items in UNIVERSE.items():
+    for _ticker, _, _ in _items:
+        _TICKER_CLASS_MAP[_ticker] = _cls
+
+# Reverse-lookup: ticker -> display name (built once at import, O(1) lookup)
+_DISPLAY_NAME_MAP: dict[str, str] = {}
+for _items in UNIVERSE.values():
+    for _ticker, _name, _ in _items:
+        _DISPLAY_NAME_MAP[_ticker] = _name
+
+
 def get_all_tickers():
-    """Flat list of every ticker in the universe."""
-    return [t for cls in UNIVERSE.values() for (t, _, _) in cls]
+    """Flat list of every INVESTABLE ticker in the universe (excludes fx_macro)."""
+    return [t for cls, items in UNIVERSE.items()
+            for (t, _, _) in items
+            if cls != "fx_macro"]
+
+
+def get_all_tickers_including_features():
+    """All tickers including fx_macro features. Use for data download only."""
+    return [t for cls, items in UNIVERSE.items()
+            for (t, _, _) in items]
 
 
 def get_ticker_class(ticker):
-    """Reverse lookup: which asset class does this ticker belong to?"""
-    for cls, items in UNIVERSE.items():
-        if any(t == ticker for (t, _, _) in items):
-            return cls
-    return None
+    """Reverse lookup: which asset class does this ticker belong to? O(1) dict lookup."""
+    return _TICKER_CLASS_MAP.get(ticker)
 
 
 def get_display_name(ticker):
-    for items in UNIVERSE.values():
-        for (t, name, _) in items:
-            if t == ticker:
-                return name
-    return ticker
+    """Reverse lookup: display name for a ticker. O(1) dict lookup."""
+    return _DISPLAY_NAME_MAP.get(ticker, ticker)
 
 
 # Trading frictions per asset class (used by backtester)
@@ -242,6 +257,7 @@ def get_sector(ticker: str) -> str:
 
 if __name__ == "__main__":
     print(f"Total asset classes: {len(UNIVERSE)}")
-    print(f"Total tickers:       {len(get_all_tickers())}")
+    print(f"Total tickers (investable):     {len(get_all_tickers())}")
+    print(f"Total tickers (incl features):  {len(get_all_tickers_including_features())}")
     for cls, items in UNIVERSE.items():
         print(f"  {cls:14s} {len(items):3d} tickers")

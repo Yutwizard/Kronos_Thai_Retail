@@ -9,7 +9,7 @@ from datetime import date
 from pathlib import Path
 
 from kth.data.loader import download_universe, load_cached
-from kth.data.universe import get_all_tickers
+from kth.data.universe import get_all_tickers_including_features
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 
@@ -41,7 +41,7 @@ def _check_price_sanity(tickers: list[str]) -> list[str]:
     return failures
 
 
-tickers = get_all_tickers()
+tickers = get_all_tickers_including_features()
 print(f"Downloading {len(tickers)} tickers (10 years each)...")
 report = download_universe(tickers, period="10y", cache_dir=str(CACHE_DIR))
 print("\nDownload complete.")

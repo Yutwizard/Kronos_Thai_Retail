@@ -62,7 +62,7 @@ def prepare_dataset(
       y_series: shape (pred_len,) — log-returns
     """
     from kth.data.loader import load_cached
-    from kth.data.universe import get_all_tickers, get_ticker_class
+    from kth.data.universe import get_all_tickers_including_features, get_ticker_class
 
     np.random.seed(seed)
     random.seed(seed)
@@ -87,7 +87,7 @@ def prepare_dataset(
         y = np.log(close_window.values[1:] / close_window.values[:-1])
         return x.reset_index(drop=True), pd.Series(y)
 
-    target_tickers = tickers if tickers is not None else get_all_tickers()
+    target_tickers = tickers if tickers is not None else get_all_tickers_including_features()
     skipped = 0
     print(f"prepare_dataset: {len(target_tickers)} tickers, fold {fold}")
 

@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from kth.data.universe import get_all_tickers, get_sector, get_ticker_class, FRICTION
+from kth.data.universe import get_all_tickers_including_features, get_sector, get_ticker_class, FRICTION
 from kth.trading.portfolio import (
     init_portfolio, get_positions, get_trade_log, compute_metrics, MODEL_VERSION,
     reset_portfolio, execute_trade, edit_trade, delete_trade,
@@ -450,7 +450,7 @@ def run_daily_pipeline(gc, spreadsheet_id, *, model, data_loader,
 
         fills = _read_fills(sh)
 
-        tickers = get_all_tickers()
+        tickers = get_all_tickers_including_features()
         ohlcv_dict = data_loader.ensure(tickers)
         if not ohlcv_dict:
             raise RuntimeError("No data loaded — aborting pipeline")

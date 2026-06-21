@@ -100,8 +100,8 @@ print("\n" + "=" * 70)
 print("TEST 4: Generate full universe (synthetic) and save to cache")
 print("=" * 70)
 
-from kth.data.universe import get_all_tickers
-all_tickers = get_all_tickers()
+from kth.data.universe import get_all_tickers_including_features
+all_tickers = get_all_tickers_including_features()
 
 reports = []
 for i, t in enumerate(all_tickers, 1):
@@ -165,8 +165,8 @@ Data layer is verified. The same code will work on Colab against real
 yfinance once you run:
 
     from kth.data.loader import download_universe
-    from kth.data.universe import get_all_tickers
-    download_universe(get_all_tickers(), period='10y',
+from kth.data.universe import get_all_tickers_including_features
+    download_universe(get_all_tickers_including_features(), period='10y',
                       cache_dir='./data/raw')
 
 Cached files now in: {cache_dir}

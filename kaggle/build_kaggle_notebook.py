@@ -102,7 +102,7 @@ model = type('ModelFacade', (), {'forecast': model_forecast})()
 
 # ── Data loader ─────────────────────────────────────────────────────────
 from kth.data.loader import download_universe, load_cached
-from kth.data.universe import get_all_tickers
+from kth.data.universe import get_all_tickers_including_features
 
 def data_ensure(tickers):
     download_universe(tickers)
