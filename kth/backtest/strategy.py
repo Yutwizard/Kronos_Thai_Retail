@@ -1,6 +1,8 @@
 """Pure strategy functions: signal generation, position selection, weight computation."""
 from __future__ import annotations
 
+import pandas as pd
+
 
 def compute_signals(
     forecasts: dict[str, object],  # dict of ForecastResult
@@ -58,7 +60,7 @@ def compute_weights(
         inv_vols = {}
         for t in selected:
             vol = recent_vols.get(t, 0.01)
-            if vol is None or vol != vol or vol <= 0:
+            if vol is None or pd.isna(vol) or vol <= 0:
                 vol = 0.01
             inv_vols[t] = 1.0 / max(vol, 1e-8)
         total = sum(inv_vols.values())
