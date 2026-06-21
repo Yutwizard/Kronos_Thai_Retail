@@ -470,7 +470,13 @@ If our strategy doesn't beat all four after frictions, we say so plainly.
 
 ---
 
-## 14. Current status (2026-05-21)
+## 14. Current status (2026-06-21, post-code-review)
+
+> **Code review fixes applied 2026-06-21.** Stored backtest numbers in
+> `data/backtest_results/` are STALE pending GPU re-run. See MANIFEST.md.
+> The alpha is regime-conditional (defensive tilt) — see README caveats.
+> Phase 1 no-GPU fixes complete: pytest suite (78 tests), friction centralization,
+> FIFO lot ledger, data versioning, scipy PSR, calibration fix, hysteresis refactor.
 
 ### ✅ Built and tested
 
