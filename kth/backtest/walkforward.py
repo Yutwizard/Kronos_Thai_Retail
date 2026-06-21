@@ -514,6 +514,7 @@ def _compute_benchmarks(config: BacktestConfig, tickers: list[str], ticker_data:
         tlt = load_cached("TLT", config.cache_dir).set_index("timestamps")["close"]
         combined = pd.concat([spy.rename("spy"), tlt.rename("tlt")], axis=1).dropna()
         rebal_dates = pd.date_range(start=config.start_date, end=config.end_date, freq="MS")
+        rebal_dates = rebal_dates.map(lambda d: d if d.weekday() < 5 else d + pd.offsets.BDay())
         values = []
         w_spy, w_tlt = 0.6, 0.4
         spy_units = w_spy / combined.iloc[0]["spy"]
