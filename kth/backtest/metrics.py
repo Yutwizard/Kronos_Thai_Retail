@@ -166,18 +166,32 @@ def compute_sharpe_ci(
 ) -> dict:
     """
     Bootstrap 95% confidence interval for the annualized Sharpe ratio.
-    Non-parametric — resamples daily returns with replacement.
+    Stationary block bootstrap — preserves time-series structure.
     """
     returns = daily_returns.dropna().values
-    if len(returns) < 2:
+    if len(returns) < 20:
         return {"sharpe_ci_2_5": 0.0, "sharpe_ci_97_5": 0.0}
 
-    bootstrapped = []
+    n = len(returns)
+    expected_block = max(int(n ** (1/3)), 2)
     rng = np.random.default_rng(42)
+    bootstrapped = []
     for _ in range(n_bootstrap):
-        sample = rng.choice(returns, size=len(returns), replace=True)
-        sr = float(sample.mean() / sample.std() * np.sqrt(periods_per_year)) if sample.std() > 0 else 0.0
-        bootstrapped.append(sr)
+        sample = np.empty(n)
+        idx = 0
+        while idx < n:
+            block_len = rng.geometric(1.0 / expected_block)
+            block_len = min(block_len, n - idx)
+            start = rng.integers(0, n)
+            for j in range(block_len):
+                sample[idx + j] = returns[(start + j) % n]
+            idx += block_len
+        std = sample.std()
+        if std > 0:
+            sr = float(sample.mean() / std * np.sqrt(periods_per_year))
+            bootstrapped.append(sr)
+    if not bootstrapped:
+        return {"sharpe_ci_2_5": 0.0, "sharpe_ci_97_5": 0.0}
 
     return {
         "sharpe_ci_2_5": float(np.percentile(bootstrapped, alpha * 100 / 2)),
