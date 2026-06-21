@@ -9,6 +9,8 @@ import json
 import numpy as np
 import pandas as pd
 
+from kth.utils.model_slug import model_slug as _model_slug
+
 
 def _get_calendar_for_tickers(tickers: list[str]) -> str:
     """Return 'B' for equities (business days) or 'D' for crypto (calendar days).
@@ -41,13 +43,6 @@ class BacktestConfig:
     min_ticker_history: int = 252
     forecast_cache_dir: str = "./data/forecast_cache"
     cache_dir: str = "./data/raw"
-
-
-def _model_slug(model_name: str) -> str:
-    """Convert model_name to a filesystem-safe slug for cache directory naming.
-    e.g. 'NeoQuasar/Kronos-small@a3f1c2d' -> 'NeoQuasar_Kronos-small-a3f1c2d'
-    """
-    return model_name.replace("/", "_").replace("@", "-").replace("\\", "_")
 
 
 def precompute_forecasts(
