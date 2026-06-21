@@ -266,10 +266,11 @@ def compute_metrics(
     total_friction = float(trades["friction_cost"].sum()) if not trades.empty else 0.0
 
     # t-stat vs benchmark
-    excess_daily = daily_returns - benchmark.pct_change().fillna(0)
-    if excess_daily.std() > 0:
-        t_stat = float(excess_daily.mean() / (excess_daily.std() / np.sqrt(len(excess_daily))))
-        p_value = float(2 * stats.t.sf(abs(t_stat), df=len(excess_daily) - 1))
+    excess_daily = (daily_returns - benchmark.pct_change()).dropna()
+    if excess_daily.std(ddof=1) > 0:
+        n = len(excess_daily)
+        t_stat = float(excess_daily.mean() / (excess_daily.std(ddof=1) / np.sqrt(n)))
+        p_value = float(2 * stats.t.sf(abs(t_stat), df=n - 1))
     else:
         t_stat = p_value = 0.0
 
