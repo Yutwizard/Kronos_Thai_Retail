@@ -27,3 +27,37 @@ def test_open_trades_blend_logic_correct():
     exec_price = 55.0
     gross_ret = (exec_price / blended - 1) * (total * blended)
     assert gross_ret > 0, f"Blended entry should give profit: {gross_ret}"
+
+
+def test_hysteresis_entry_exit_asymmetry():
+    """L4: entry requires threshold+buffer, exit requires threshold-buffer, with min_holding."""
+    from kth.backtest.strategy import apply_hysteresis
+    raw = {"A": 0.025, "B": 0.015, "C": 0.008}
+    sigs, ranking = apply_hysteresis(raw, {}, {}, 0.01, 0.005, 5)
+    assert "A" in sigs and sigs["A"] == 0.025
+    assert "B" not in sigs and "C" not in sigs
+
+    raw2 = {"A": 0.003}
+    sigs2, ranking2 = apply_hysteresis(raw2, {"A": 100}, {"A": 2}, 0.01, 0.005, 5)
+    assert sigs2["A"] == 1
+    assert "A" in ranking2
+
+    sigs3, _ = apply_hysteresis(raw2, {"A": 100}, {"A": 6}, 0.01, 0.005, 5)
+    assert sigs3["A"] == 0
+
+
+def test_hysteresis_hold_when_min_holding_not_met():
+    """L4: position held less than min_holding_days cannot exit even if signal drops."""
+    from kth.backtest.strategy import apply_hysteresis
+    raw = {"X": 0.001}
+    sigs, ranking = apply_hysteresis(raw, {"X": 50}, {"X": 3}, 0.01, 0.005, 5)
+    assert sigs["X"] == 1
+    assert "X" in ranking
+
+
+def test_hysteresis_new_position_needs_buffer_above_threshold():
+    """L4: new entry requires signal > threshold + buffer (not just > threshold)."""
+    from kth.backtest.strategy import apply_hysteresis
+    raw = {"Y": 0.012}  # above threshold (0.01) but below threshold+buffer (0.015)
+    sigs, _ = apply_hysteresis(raw, {}, {}, 0.01, 0.005, 5)
+    assert "Y" not in sigs

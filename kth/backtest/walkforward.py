@@ -279,20 +279,11 @@ def run_walkforward(
 
         # --- 2. SIGNAL with hysteresis ---
         raw_signals = compute_signals(forecasts, last_closes, config.long_threshold, config.pred_len)
-        signals: dict[str, float] = {}
-        signals_for_ranking: dict[str, float] = {}
-
-        for t, sig in raw_signals.items():
-            if t in holdings_units and holdings_units[t] > 0:
-                if sig < config.long_threshold - config.entry_buffer and holding_days.get(t, 0) >= config.min_holding_days:
-                    signals[t] = 0  # close
-                else:
-                    signals[t] = 1  # hold
-                    signals_for_ranking[t] = sig  # real signal value
-            else:
-                if sig > config.long_threshold + config.entry_buffer:
-                    signals[t] = sig  # open
-                    signals_for_ranking[t] = sig
+        from kth.backtest.strategy import apply_hysteresis
+        signals, signals_for_ranking = apply_hysteresis(
+            raw_signals, holdings_units, holding_days,
+            config.long_threshold, config.entry_buffer, config.min_holding_days,
+        )
 
         # --- 3. POSITION SIZING ---
         ranked = sorted(signals_for_ranking.keys(), key=lambda t: signals_for_ranking[t], reverse=True)

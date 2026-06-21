@@ -57,3 +57,34 @@ def compute_weights(
         return {t: inv_vols[t] / total for t in selected}
 
     raise ValueError(f"Unknown position_sizing mode: {mode}")
+
+
+def apply_hysteresis(
+    raw_signals: dict[str, float],
+    holdings: dict[str, float],
+    holding_days: dict[str, int],
+    config_long_threshold: float,
+    config_entry_buffer: float,
+    config_min_holding_days: int,
+) -> tuple[dict[str, float], dict[str, float]]:
+    """Apply entry/exit hysteresis to raw signals.
+
+    Returns (signals, signals_for_ranking):
+      - signals: {ticker: 0 or 1 or signal_value} — 0=close, 1=hold, value=open
+      - signals_for_ranking: {ticker: signal_value} — only held + newly opened
+    """
+    signals: dict[str, float] = {}
+    signals_for_ranking: dict[str, float] = {}
+    for t, sig in raw_signals.items():
+        if t in holdings and holdings[t] > 0:
+            if (sig < config_long_threshold - config_entry_buffer
+                    and holding_days.get(t, 0) >= config_min_holding_days):
+                signals[t] = 0
+            else:
+                signals[t] = 1
+                signals_for_ranking[t] = sig
+        else:
+            if sig > config_long_threshold + config_entry_buffer:
+                signals[t] = sig
+                signals_for_ranking[t] = sig
+    return signals, signals_for_ranking
