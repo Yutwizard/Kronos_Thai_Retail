@@ -214,11 +214,12 @@ SECTOR: dict[str, str] = {
     # Property (7)
     "LH.BK":    "Property","QH.BK":   "Property", "AP.BK":    "Property","ORI.BK":  "Property",
     "SIRI.BK":  "Property","PSH.BK":  "Property", "CPN.BK":   "Property",
-    # Healthcare (4)
-    "BDMS.BK":  "Healthcare","BH.BK": "Healthcare","BCH.BK":  "Healthcare","CHG.BK":"Healthcare",
-    # Retail (6)
+    # Healthcare (5)
+    "BDMS.BK":  "Healthcare","BH.BK": "Healthcare","BCH.BK":  "Healthcare",
+    "CHG.BK":   "Healthcare","MEGA.BK":"Healthcare",
+    # Retail (5)
     "CPALL.BK": "Retail",  "HMPRO.BK":"Retail",   "CRC.BK":   "Retail",
-    "GLOBAL.BK":"Retail",  "DOHOME.BK":"Retail",  "MEGA.BK":  "Retail",
+    "GLOBAL.BK":"Retail",  "DOHOME.BK":"Retail",
     # Hospitality & Tourism (4)
     "MINT.BK":  "Hospitality","CENTEL.BK":"Hospitality","ERW.BK":"Hospitality","AOT.BK":"Hospitality",
     # Telecom (2)
