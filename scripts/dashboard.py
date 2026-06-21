@@ -234,6 +234,27 @@ def api_risk():
     from kth.trading.portfolio import compute_metrics
     metrics = compute_metrics(TRADING_MODE)
     metrics["calibration"] = _get_calibration()
+    bootstrap_pvalue = metrics.get("bootstrap_pvalue", {})
+    metrics["p_value_labels"] = {
+        "live_bootstrap": {
+            "value": bootstrap_pvalue.get("pvalue"),
+            "label": "Live paper trading (centered bootstrap, accumulating)",
+            "status": bootstrap_pvalue.get("significant"),
+            "n_obs": bootstrap_pvalue.get("n_obs"),
+            "interpretation": (
+                "Needs >=20 days. Grows as paper trading history accumulates. "
+                "p<0.05 = edge confirmed; p>=0.15 = no confirmed edge."
+            ),
+        },
+        "historical_ttest": {
+            "label": "Historical backtest (t-test, frozen in data/backtest_results/)",
+            "interpretation": (
+                "Stored p-values from the 2023-2026 n50 backtests. "
+                "Never recalculated by the dashboard. See MANIFEST.md for which runs are authoritative."
+            ),
+            "caveat": "Stored numbers are STALE pending 2026-06-21 bug-fix GPU re-run.",
+        },
+    }
     return jsonify(metrics)
 
 
