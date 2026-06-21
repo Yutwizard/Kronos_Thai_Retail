@@ -25,16 +25,6 @@ def compute_signals(
     return signals
 
 
-def select_positions(
-    signals: dict[str, float],
-    max_positions: int,
-) -> list[str]:
-    """Top-N tickers by signal strength (descending). Held positions should pass
-    their actual signal value (not '1') so they rank correctly against new candidates."""
-    sorted_tickers = sorted(signals.keys(), key=lambda t: signals[t], reverse=True)
-    return sorted_tickers[:max_positions]
-
-
 def compute_weights(
     selected: list[str],
     signals: dict[str, float],
