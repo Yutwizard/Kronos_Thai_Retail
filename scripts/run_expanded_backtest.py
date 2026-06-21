@@ -250,7 +250,7 @@ def print_results(
     print(f"Full Period (2020-2024):")
     print(f"  CAGR: {full_metrics['cagr']:+9.2%}  Sharpe: {full_metrics['sharpe']:6.2f}  "
           f"Max DD: {full_metrics['max_drawdown']:+8.2%}  "
-          f"Alpha vs EW: {full_metrics.get('alpha_cagr', full_metrics.get('alpha', 0)):+8.2%}  "
+          f"Alpha vs EW: {full_metrics.get('alpha_cagr', full_metrics.get('alpha_vs_equal_weight', 0)):+8.2%}  "
           f"p={full_metrics['p_value']:.3f}")
     print()
     print(f"{'Period':<25} {'CAGR':>9} {'Sharpe':>7} {'Max DD':>9} {'Alpha EW':>9} "

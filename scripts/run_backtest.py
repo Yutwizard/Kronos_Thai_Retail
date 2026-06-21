@@ -75,7 +75,7 @@ def main():
     print(f"  Total Friction:    {m['total_friction_paid']:.4f}")
     print(f"  Annual Turnover:   {m['annual_turnover']:.2f}")
     print(f"  VaR 95% (1d):      {m['var_95']:+.4f}")
-    print(f"  Alpha (vs EW):     {m['alpha']:+.4f}")
+    print(f"  Alpha (vs EW):     {m['alpha_vs_equal_weight']:+.4f}")
     print(f"  Beta (vs EW):      {m['beta']:.3f}")
     print(f"  t-stat (vs EW):    {m['t_stat']:.2f} (p={m['p_value']:.3f})")
 

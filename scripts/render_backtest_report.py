@@ -54,7 +54,7 @@ def _metrics_table(m: dict) -> str:
         ("Trade Win Rate", _fmt(m.get("trade_win_rate"), ".2%")),
         ("Profit Factor", _fmt(m.get("profit_factor"), ".2f")),
         ("Payoff Ratio", _fmt(m.get("payoff_ratio"), ".2f")),
-        ("Alpha (vs EW)", _fmt(m.get("alpha"), "+.4f")),
+        ("Alpha (vs EW)", _fmt(m.get("alpha_vs_equal_weight"), "+.4f")),
         ("Beta (vs EW)", _fmt(m.get("beta"), ".3f")),
         ("t-stat (vs EW)", _fmt(m.get("t_stat"), ".2f")),
         ("p-value", _fmt(m.get("p_value"), ".3f")),

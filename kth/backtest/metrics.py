@@ -312,7 +312,7 @@ def compute_metrics(
         "calmar": calmar,
         "omega": omega,
         "information_ratio": info_ratio,
-        "alpha": alpha,
+        "alpha_vs_equal_weight": alpha,
         "beta": beta,
         "psr_0_5": psr_half,
         "psr_1_0": psr_one,
