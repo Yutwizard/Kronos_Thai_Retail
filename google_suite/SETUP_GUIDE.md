@@ -1,11 +1,19 @@
-# Kronos-TH Google Suite — Step-by-Step Setup Guide
+# Kronos-TH Google Suite — Colab Setup Guide (LEGACY)
+
+> **⚠️ This guide is for the legacy Colab (manual) pipeline only.**
+> Use **[`docs/SETUP_GUIDE.md`](../docs/SETUP_GUIDE.md)** for the recommended
+> Kaggle automated pipeline. The Kaggle guide covers everything from zero:
+> Sheets creation, Apps Script deployment, GCP service account, Kaggle notebook,
+> and scheduling — all in one document.
+>
+> This legacy guide is kept for reference if you need Colab as a backup runtime.
 
 > **For absolute beginners to Google Sheets, Apps Script, and Colab/Kaggle.**
 > No prior experience needed. Each step tells you exactly what to click and what to type.
 >
 > **Note:** This is one of two dashboard options. The Google Suite dashboard is zero-cost, browser-based, and requires no local GPU. The Flask dashboard (`docs/dashboard-user-manual.md`) is the alternative for users with a local Python + GPU setup. Both are fully functional; choose based on your environment.
 >
-> **Kaggle (recommended):** The pipeline runs unattended on Kaggle's free T4 GPU each evening. See `docs/kaggle-setup.md` for the Kaggle-specific setup. If using Kaggle, skip Phases 3–6 of this guide — the daily run is automated.
+> **Kaggle (recommended):** The pipeline runs unattended on Kaggle's free T4 GPU each evening. See `docs/SETUP_GUIDE.md` for the Kaggle-specific setup. If using Kaggle, skip Phases 3–6 of this guide — the daily run is automated.
 
 ---
 
@@ -294,7 +302,7 @@ If you see the page with the gray banner and five tabs, **congratulations — th
 
 ---
 
-## Phase 3 — Set Up Colab (if using Kaggle, skip to `docs/kaggle-setup.md`)
+## Phase 3 — Set Up Colab (if using Kaggle, see `docs/SETUP_GUIDE.md`)
 
 Google Colab is a website that lets you run Python code (including AI models) in your browser using Google's computers.
 

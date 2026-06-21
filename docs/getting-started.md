@@ -169,7 +169,7 @@ After this, if the `cron_pipeline.sh` fails (download or forecast step), you'll 
 Two dashboard options are available — choose based on your environment:
 
 - **Flask dashboard** (this section) — local Python + GPU, run via `scripts/dashboard.py` or the one-command launcher `scripts/start_dashboard.sh`
-- **Google Suite dashboard** (`google_suite/SETUP_GUIDE.md`) — zero-cost, browser-based, no local GPU required
+- **Google Suite dashboard** (`docs/SETUP_GUIDE.md`) — zero-cost, browser-based, no local GPU required
 
 Both reached feature parity on 2026-06-06 and are fully functional. Pick whichever fits your setup.
 
@@ -199,7 +199,7 @@ Open your browser and go to: **http://localhost:5555**
 
 ### Option B: Google Suite Dashboard (Zero-Cost, Browser-Based)
 
-See [`google_suite/SETUP_GUIDE.md`](../google_suite/SETUP_GUIDE.md) for full setup. Summary:
+See [`docs/SETUP_GUIDE.md`](SETUP_GUIDE.md) for complete setup. Summary:
 - No local GPU required (runs on Colab's free T4)
 - Browser-based, accessible from any device
 - Includes Reset Capital, Signal Health Banner, Trade Log edit/delete, 60s auto-refresh
@@ -222,8 +222,8 @@ Colab gives you a **free T4 GPU**. Forecasts take ~3 minutes instead of 12.
 
 If you want fully automated daily runs at $0 (no manual steps, no local machine):
 
-1. See `docs/kaggle-setup.md` — full step-by-step for service account, Kaggle secrets, and schedule
-2. See `google_suite/SETUP_GUIDE.md` Phases 1–2 for the spreadsheet and Apps Script setup
+1. See `docs/SETUP_GUIDE.md` — complete step-by-step from zero to dashboard
+2. Covers Sheets creation, Apps Script deployment, GCP service account, Kaggle notebook, and scheduling
 3. The pipeline runs each evening BKK time and updates the Google Suite dashboard automatically
 4. To verify offline: `python run_pipeline.py --dry-run`
 

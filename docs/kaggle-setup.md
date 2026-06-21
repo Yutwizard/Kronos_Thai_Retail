@@ -1,4 +1,11 @@
-# Kronos-TH — Fully Automated Pipeline (Kaggle → Google Sheets → Dashboard)
+# Kronos-TH — Kaggle Automated Pipeline (DEPRECATED)
+
+> **⚠️ This document has been superseded by [`docs/SETUP_GUIDE.md`](SETUP_GUIDE.md).**
+> The new guide covers everything from zero to dashboard in a single document:
+> Sheets creation, Apps Script deployment, GCP service account, Kaggle notebook,
+> and scheduling — all in one place with detailed newbie-friendly steps.
+>
+> This file is kept for reference only. Use `docs/SETUP_GUIDE.md` for new setups.
 
 This guide takes you from zero to a **$0, hands-off daily pipeline**: a Kaggle notebook
 runs every evening on a free GPU, writes results to Google Sheets, and the Apps Script

@@ -60,7 +60,7 @@ Idempotent: creates venv, installs both requirements files, downloads data (skip
 - **Google Sheets** = persistent data store + fill-confirmation input surface.
 - **Apps Script web app** = 5-tab dashboard SPA (`apps_script/Code.gs` backend, `apps_script/Index.html` frontend).
 - **JSON-bridge pattern:** Sheets → read fills → Drive JSON → existing `kth` functions → Drive JSON → Sheets. `os.chdir(KTH_REPO)` in Cell 1 makes `Path("data/...")` resolve against Drive. Cell 9 (update portfolio state) must run before Cell 10 (generate ticket).
-- `migrate_to_sheets.py` ports `data/positions/paper_portfolio.json` + `trade_log.csv` to Sheets (fresh-start only). Setup: `google_suite/SETUP_GUIDE.md`.
+- `migrate_to_sheets.py` ports `data/positions/paper_portfolio.json` + `trade_log.csv` to Sheets (fresh-start only). Setup: `docs/SETUP_GUIDE.md`.
 
 ## Key conventions an agent might miss
 
@@ -106,7 +106,7 @@ Full numbers live in `data/backtest_results/` and `PROJECT_STRUCTURE.md`. The du
 2. `CONTEXT.md` — domain language glossary
 3. `README.md` — project overview, caveats, quick start
 4. `docs/getting-started.md` — start here if new: install, paper trading, first-week walkthrough
-5. `google_suite/SETUP_GUIDE.md` — Google Suite setup (zero-cost, no local GPU)
+5. `docs/SETUP_GUIDE.md` — complete zero-to-dashboard setup (Sheets + Apps Script + Kaggle)
 6. `docs/dashboard-user-manual.md` — Flask dashboard setup (requires local GPU)
 7. `docs/operations-manual.md` / `docs/user-manual.md` — decision rules, methodology, usage
 8. `docs/superpowers/specs/` and `docs/superpowers/plans/` — approved design specs and implementation plans (completed ones in `archive/`)
