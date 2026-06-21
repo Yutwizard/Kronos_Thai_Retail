@@ -99,7 +99,7 @@ def compute_trade_metrics(trades: pd.DataFrame) -> dict:
     payoff = avg_win / avg_loss if avg_loss > 0 else 0.0
     gross_profit = wins["gross_return"].sum() if len(wins) > 0 else 0.0
     gross_loss = abs(losses["gross_return"].sum()) if len(losses) > 0 else 0.0
-    profit_factor = gross_profit / gross_loss if gross_loss > 0 else float("inf")
+    profit_factor = gross_profit / gross_loss if gross_loss > 0 else None
 
     # Win/loss streaks
     outcomes = (trades["gross_return"] > 0).astype(int)
