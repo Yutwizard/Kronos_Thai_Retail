@@ -533,28 +533,19 @@ def _compute_benchmarks(config: BacktestConfig, tickers: list[str], ticker_data:
     except Exception:
         benchmarks["60_40"] = pd.Series(1.0, index=trading_days)
 
-    # Equal-weight — NORMALIZED to 1.0 at start (not mean of raw prices)
     try:
-        eq_series = pd.Series(1.0, index=trading_days)
-        for day_idx, day in enumerate(trading_days):
-            norm_vals = []
-            for t in tickers:
-                try:
-                    df_t = ticker_data.get(t) if ticker_data else None
-                    if df_t is None:
-                        df_t = load_cached(t, config.cache_dir)
-                    close_mask = df_t["timestamps"] <= day
-                    start_mask = df_t["timestamps"] <= start_ts
-                    if close_mask.any() and start_mask.any():
-                        price = float(df_t.loc[close_mask, "close"].iloc[-1])
-                        start_price = float(df_t.loc[start_mask, "close"].iloc[-1])
-                        if start_price > 0:
-                            norm_vals.append(price / start_price)
-                except Exception:
-                    continue
-            if norm_vals:
-                eq_series.iloc[day_idx] = np.mean(norm_vals)
-        benchmarks["equal_weight"] = eq_series
+        closes = {}
+        for t in tickers:
+            df_t = ticker_data.get(t) if ticker_data else None
+            if df_t is None:
+                from kth.data.loader import load_cached
+                df_t = load_cached(t, config.cache_dir)
+            s = df_t.set_index("timestamps")["close"]
+            closes[t] = s
+        price_df = pd.DataFrame(closes)
+        norm_df = price_df / price_df.loc[start_ts]
+        eq_series = norm_df.mean(axis=1).reindex(trading_days, method="ffill")
+        benchmarks["equal_weight"] = eq_series.fillna(1.0)
     except Exception:
         benchmarks["equal_weight"] = pd.Series(1.0, index=trading_days)
 
