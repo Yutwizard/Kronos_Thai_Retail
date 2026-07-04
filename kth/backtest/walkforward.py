@@ -226,7 +226,7 @@ def run_walkforward(
     """
     from kth.data.loader import load_cached
     from kth.data.universe import get_ticker_class, FRICTION, get_friction
-    from kth.backtest.strategy import compute_signals, select_positions, compute_weights
+    from kth.backtest.strategy import compute_signals, compute_weights
 
     slug = _model_slug(kronos_th.model_name)
     forecast_cache = Path(config.forecast_cache_dir) / slug
