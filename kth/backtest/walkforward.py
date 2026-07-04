@@ -249,6 +249,19 @@ def run_walkforward(
             continue
     print(f"Eligible tickers: {len(eligible)} / {len(tickers)}")
 
+    if not eligible:
+        print("WARNING: No eligible tickers — returning empty result.")
+        return BacktestResult(
+            config=config,
+            equity_curve=pd.Series(dtype=float),
+            gross_equity_curve=pd.Series(dtype=float),
+            trades=pd.DataFrame(),
+            daily_returns=pd.Series(dtype=float),
+            benchmarks={},
+            metrics={},
+            per_class_attribution={},
+        )
+
     _validate_single_calendar(eligible)
 
     freq = _get_calendar_for_tickers(eligible)
