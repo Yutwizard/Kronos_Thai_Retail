@@ -21,7 +21,7 @@ precompute_forecasts(k, tickers, start_date=c.start_date, end_date=c.end_date,
 print(f'PRECOMPUTE: {(time.time()-t0)/3600:.1f} hrs', flush=True)
 
 r = run_walkforward(c, k, tickers)
-o = Path('data/backtest_results/thai_equity_2025_n50')
+o = Path('data/backtest_results/thai_equity_2025_n50_v2')
 o.mkdir(parents=True, exist_ok=True)
 r.save(str(o))
 m = r.metrics

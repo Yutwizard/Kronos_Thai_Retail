@@ -300,7 +300,8 @@ def compute_metrics(mode: str = "paper") -> dict:
         "closed_trades": closed_count,
         "market_state": market_state,
         "drawdown_velocity": dd_velocity,
-        "bootstrap_pvalue": bootstrap_pvalue,
+        "bootstrap_pvalue": {k: bool(v) if isinstance(v, (np.bool_, bool)) else float(v) if isinstance(v, (np.floating, float)) else int(v) if isinstance(v, (np.integer, int)) else v
+                             for k, v in bootstrap_pvalue.items()},
     }
 
 
