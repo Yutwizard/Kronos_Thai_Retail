@@ -43,6 +43,11 @@ def promote_staging(sh, staging_map: dict = None, sleep_sec: float = 1.0) -> dic
 
 
 def build_pos_rows(positions: dict, ohlcv_dict: dict, get_sector_fn: Callable[[str], str]) -> list:
+    try:
+        from kth_dr.universe_dr import get_dr_info_for_display
+    except ImportError:
+        get_dr_info_for_display = lambda t: None
+
     rows = []
     for p in positions['positions']:
         ohlcv = ohlcv_dict or {}
@@ -52,10 +57,25 @@ def build_pos_rows(positions: dict, ohlcv_dict: dict, get_sector_fn: Callable[[s
             close = p['avg_cost']
         pnl = (close - p['avg_cost']) * p['shares']
         pnl_pct = (close / p['avg_cost'] - 1) if p['avg_cost'] else 0
+
+        underlying_ticker = ''
+        premium_pct = ''
+        dr_info = get_dr_info_for_display(p['ticker'])
+        if dr_info:
+            underlying_ticker = dr_info['underlying_ticker']
+            try:
+                u_close = float(ohlcv[dr_info['underlying_ticker']]['close'].iloc[-1])
+                fx_close = float(ohlcv[dr_info['fx_ticker']]['close'].iloc[-1])
+                dr_intrinsic = (u_close * fx_close) / dr_info['ratio']
+                premium_pct = round((close / dr_intrinsic) - 1, 4) if dr_intrinsic else ''
+            except (KeyError, ZeroDivisionError):
+                premium_pct = ''
+
         rows.append([
             p['ticker'], p['shares'], p['avg_cost'], p.get('entry_date', ''),
             get_sector_fn(p['ticker']), round(close, 2),
-            round(pnl, 2),             round(pnl_pct, 4), round(pnl_pct + 0.10, 4),  # pct_to_stoploss = P&L% + ~10% stoploss buffer
+            round(pnl, 2), round(pnl_pct, 4), round(pnl_pct + 0.10, 4),
+            underlying_ticker, premium_pct,
         ])
     return rows
 

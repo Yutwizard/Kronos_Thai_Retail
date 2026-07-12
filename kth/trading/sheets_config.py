@@ -24,7 +24,8 @@ MANUAL_TRADES = 'Manual Trades'
 PORTFOLIO_HEADERS = ['cash', 'initial_capital', 'mode', 'model_version', 'forecast_date']
 EQUITY_CURVE_HEADERS = ['date', 'equity', 'cash', 'invested']
 POSITIONS_HEADERS = ['ticker', 'shares', 'avg_cost', 'entry_date', 'sector',
-                     'current_price', 'pnl', 'pnl_pct', 'pct_to_stoploss']
+                     'current_price', 'pnl', 'pnl_pct', 'pct_to_stoploss',
+                     'underlying_ticker', 'premium_pct']
 TRADE_LOG_HEADERS = ['timestamp', 'ticker', 'action', 'shares', 'price', 'rationale',
                      'friction_cost', 'model_version', 'id', 'ref_id']
 FORECASTS_HEADERS = ['date_updated', 'ticker', 'rank_score', 'exp_ret', 'band_width',

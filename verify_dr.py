@@ -320,6 +320,41 @@ def test_ensure_dr_data_nonexistent_does_not_raise():
     print("PASS test_ensure_dr_data_nonexistent_does_not_raise")
 
 
+# ---- Task 8: sheets_config.py / sheets.py — Positions schema ----
+
+def test_positions_headers_has_11_columns():
+    from kth.trading.sheets_config import POSITIONS_HEADERS
+    assert len(POSITIONS_HEADERS) == 11, POSITIONS_HEADERS
+    assert POSITIONS_HEADERS[-2:] == ['underlying_ticker', 'premium_pct']
+    print("PASS test_positions_headers_has_11_columns")
+
+
+def test_build_pos_rows_row_length_matches_headers():
+    """Regression guard: every row build_pos_rows emits must have exactly as
+    many values as POSITIONS_HEADERS has columns."""
+    import pandas as pd
+    from kth.trading.sheets import build_pos_rows
+    from kth.trading.sheets_config import POSITIONS_HEADERS
+    from kth.data.universe import get_sector
+    positions = {"positions": [{"ticker": "PTT.BK", "shares": 100, "avg_cost": 30.0, "entry_date": "2026-01-01"}]}
+    ohlcv = {"PTT.BK": pd.DataFrame({"close": [31.0]})}
+    rows = build_pos_rows(positions, ohlcv, get_sector)
+    assert len(rows[0]) == len(POSITIONS_HEADERS)
+    print("PASS test_build_pos_rows_row_length_matches_headers")
+
+
+def test_build_pos_rows_blank_for_non_dr_position():
+    import pandas as pd
+    from kth.trading.sheets import build_pos_rows
+    from kth.data.universe import get_sector
+    positions = {"positions": [{"ticker": "PTT.BK", "shares": 100, "avg_cost": 30.0, "entry_date": "2026-01-01"}]}
+    ohlcv = {"PTT.BK": pd.DataFrame({"close": [31.0]})}
+    rows = build_pos_rows(positions, ohlcv, get_sector)
+    assert rows[0][-2] == '', "non-DR position must have blank underlying_ticker"
+    assert rows[0][-1] == '', "non-DR position must have blank premium_pct"
+    print("PASS test_build_pos_rows_blank_for_non_dr_position")
+
+
 if __name__ == "__main__":
     import inspect
     import tempfile
