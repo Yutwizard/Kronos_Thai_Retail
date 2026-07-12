@@ -300,6 +300,26 @@ def test_tradable_tickers_includes_thai_equity():
     print("PASS test_tradable_tickers_includes_thai_equity")
 
 
+# ---- Task 7: kth_dr/loader_dr.py ----
+
+def test_load_dr_bundle_nonexistent_underlying():
+    """Should raise FileNotFoundError for an underlying with no DR mapping."""
+    from kth_dr.loader_dr import load_dr_bundle
+    try:
+        load_dr_bundle("TOTALLY.FAKE")
+        assert False, "expected FileNotFoundError"
+    except FileNotFoundError:
+        pass
+    print("PASS test_load_dr_bundle_nonexistent_underlying")
+
+
+def test_ensure_dr_data_nonexistent_does_not_raise():
+    """Should not crash for unknown underlying — just a no-op."""
+    from kth_dr.loader_dr import ensure_dr_data
+    ensure_dr_data("TOTALLY.FAKE")
+    print("PASS test_ensure_dr_data_nonexistent_does_not_raise")
+
+
 if __name__ == "__main__":
     import inspect
     import tempfile
