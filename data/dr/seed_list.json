@@ -1,0 +1,39 @@
+{
+  "_note": "Hand-curated seed list of DRs. Format: underlying -> [DR candidates]. Add/edit entries manually, then run scripts/dr/discover_drs.py to generate mapping.json. Use home-market tickers for the underlying, not a US ADR that's already directly investable (see universe.py's us_equity notes) — that's why Toyota is 7203.T (Tokyo) and ASML is ASML.AS (Amsterdam), not their US-listed tickers.",
+  "005930.KS": [
+    {
+      "dr_ticker": "SAMSUNG80.BK",
+      "display_name": "Samsung Electronics",
+      "underlying_exchange": "KR",
+      "underlying_currency": "KRW",
+      "ratio": 80
+    }
+  ],
+  "0700.HK": [
+    {
+      "dr_ticker": "TENCENT80.BK",
+      "display_name": "Tencent Holdings",
+      "underlying_exchange": "HK",
+      "underlying_currency": "HKD",
+      "ratio": 80
+    }
+  ],
+  "7203.T": [
+    {
+      "dr_ticker": "TOYOTA80.BK",
+      "display_name": "Toyota Motor",
+      "underlying_exchange": "JP",
+      "underlying_currency": "JPY",
+      "ratio": 80
+    }
+  ],
+  "ASML.AS": [
+    {
+      "dr_ticker": "ASML80.BK",
+      "display_name": "ASML Holding",
+      "underlying_exchange": "NL",
+      "underlying_currency": "EUR",
+      "ratio": 80
+    }
+  ]
+}
