@@ -355,6 +355,36 @@ def test_build_pos_rows_blank_for_non_dr_position():
     print("PASS test_build_pos_rows_blank_for_non_dr_position")
 
 
+# ---- Task 9: end-to-end wiring checks ----
+
+def test_kth_dr_imports_cleanly():
+    """kth_dr package must import without errors even with no mapping file."""
+    import kth_dr
+    assert kth_dr.__name__ == "kth_dr"
+    print("PASS test_kth_dr_imports_cleanly")
+
+
+def test_universe_plugin_hook_works_with_dr():
+    from kth.data.universe import register_asset_class, get_ticker_class, get_sector, get_friction, _extra_ticker_class, _extra_sector, _extra_friction
+    register_asset_class({"INTEGRATION.TEST": "dr"}, sector={"INTEGRATION.TEST": "Global"}, friction={"dr": {"commission_oneway": 0.001, "slippage_oneway": 0.001}})
+    assert get_ticker_class("INTEGRATION.TEST") == "dr"
+    assert get_sector("INTEGRATION.TEST") == "Global"
+    assert get_friction("INTEGRATION.TEST")["commission_oneway"] == 0.001
+    _extra_ticker_class.pop("INTEGRATION.TEST", None)
+    _extra_sector.pop("INTEGRATION.TEST", None)
+    _extra_friction.pop("dr", None)
+    print("PASS test_universe_plugin_hook_works_with_dr")
+
+
+def test_trade_gen_imports_and_functions_without_dr():
+    """trade_gen must import and function even if kth_dr is absent/broken."""
+    from kth.trading import trade_gen
+    assert hasattr(trade_gen, "THAI_TICKERS")
+    assert hasattr(trade_gen, "TRADABLE_TICKERS")
+    assert len(trade_gen.THAI_TICKERS) > 0
+    print("PASS test_trade_gen_imports_and_functions_without_dr")
+
+
 if __name__ == "__main__":
     import inspect
     import tempfile
