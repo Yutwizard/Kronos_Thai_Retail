@@ -260,6 +260,46 @@ def test_is_already_in_universe_unknown():
     print("PASS test_is_already_in_universe_unknown")
 
 
+# ---- Task 6: kth_dr/trade_gen_dr.py — execution resolution, same-underlying guard ----
+
+def test_resolve_execution_ticker_non_dr():
+    from kth_dr.trade_gen_dr import resolve_execution_ticker
+    assert resolve_execution_ticker("PTT.BK") == "PTT.BK"
+    print("PASS test_resolve_execution_ticker_non_dr")
+
+
+def test_resolve_execution_price_non_dr_returns_input_close():
+    from kth_dr.trade_gen_dr import resolve_execution_price
+    assert resolve_execution_price("PTT.BK", "PTT.BK", 42.5) == 42.5
+    print("PASS test_resolve_execution_price_non_dr_returns_input_close")
+
+
+def test_get_underlying_for_held_non_dr():
+    from kth_dr.trade_gen_dr import get_underlying_for_held
+    assert get_underlying_for_held("PTT.BK") == "PTT.BK"
+    print("PASS test_get_underlying_for_held_non_dr")
+
+
+def test_is_held_underlying_no_match():
+    from kth_dr.trade_gen_dr import is_held_underlying
+    assert is_held_underlying(["PTT.BK", "KBANK.BK"], "AAPL") is False
+    print("PASS test_is_held_underlying_no_match")
+
+
+def test_is_held_underlying_empty():
+    from kth_dr.trade_gen_dr import is_held_underlying
+    assert is_held_underlying([], "AAPL") is False
+    print("PASS test_is_held_underlying_empty")
+
+
+def test_tradable_tickers_includes_thai_equity():
+    """Regression guard: TRADABLE_TICKERS must never shrink below THAI_TICKERS
+    even if kth_dr is broken/absent."""
+    from kth.trading.trade_gen import TRADABLE_TICKERS, THAI_TICKERS
+    assert set(THAI_TICKERS).issubset(set(TRADABLE_TICKERS))
+    print("PASS test_tradable_tickers_includes_thai_equity")
+
+
 if __name__ == "__main__":
     import inspect
     import tempfile
