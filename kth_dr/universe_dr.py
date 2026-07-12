@@ -102,3 +102,20 @@ def get_dr_info_for_display(dr_ticker: str) -> dict | None:
                 "fx_ticker": entry.get("fx_ticker", "THB=X"),
             }
     return None
+
+
+def build_registration_dicts() -> tuple[dict[str, str], dict[str, str], dict[str, dict]]:
+    """Build the three dicts needed by register_asset_class() from verified DRs."""
+    _ensure_loaded()
+    ticker_class = {}
+    sector = {}
+    friction = {"dr": {"commission_oneway": 0.00168, "slippage_oneway": 0.0010}}
+    for underlying, entry in DR_MAP.items():
+        if "excluded_reason" in entry:
+            continue
+        for alt in entry.get("alternatives", []):
+            if alt.get("verified"):
+                dr_ticker = alt["dr_ticker"]
+                ticker_class[dr_ticker] = "dr"
+                sector[dr_ticker] = "Global"
+    return ticker_class, sector, friction
