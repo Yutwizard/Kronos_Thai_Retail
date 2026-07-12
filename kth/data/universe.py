@@ -167,6 +167,21 @@ for _items in UNIVERSE.values():
     for _ticker, _name, _ in _items:
         _DISPLAY_NAME_MAP[_ticker] = _name
 
+_extra_ticker_class: dict[str, str] = {}
+_extra_sector: dict[str, str] = {}
+_extra_friction: dict[str, dict] = {}
+
+def register_asset_class(
+    ticker_class: dict[str, str],
+    sector: dict[str, str] | None = None,
+    friction: dict[str, dict] | None = None,
+):
+    _extra_ticker_class.update(ticker_class)
+    if sector:
+        _extra_sector.update(sector)
+    if friction:
+        _extra_friction.update(friction)
+
 
 def get_all_tickers():
     """Flat list of every INVESTABLE ticker in the universe (excludes fx_macro)."""
@@ -182,8 +197,10 @@ def get_all_tickers_including_features():
 
 
 def get_ticker_class(ticker):
-    """Reverse lookup: which asset class does this ticker belong to? O(1) dict lookup."""
-    return _TICKER_CLASS_MAP.get(ticker)
+    result = _TICKER_CLASS_MAP.get(ticker)
+    if result is not None:
+        return result
+    return _extra_ticker_class.get(ticker)
 
 
 def get_display_name(ticker):
@@ -251,19 +268,26 @@ SECTOR: dict[str, str] = {
 
 
 def get_sector(ticker: str) -> str:
-    """Return SET sector label for a thai_equity ticker. Returns 'Other' for non-Thai tickers."""
-    return SECTOR.get(ticker, "Other")
+    result = SECTOR.get(ticker)
+    if result is not None:
+        return result
+    return _extra_sector.get(ticker, "Other")
 
 
 _DEFAULT_FRICTION = {"commission_oneway": 0.003, "slippage_oneway": 0.001}
 
 
 def get_friction(ticker: str) -> dict[str, float]:
-    """Return the FRICTION dict for a ticker's asset class. Single source of truth."""
     cls = get_ticker_class(ticker)
     if cls is None:
         return dict(_DEFAULT_FRICTION)
-    return dict(FRICTION.get(cls, _DEFAULT_FRICTION))
+    base = FRICTION.get(cls)
+    if base is not None:
+        return dict(base)
+    extra = _extra_friction.get(cls)
+    if extra is not None:
+        return dict(extra)
+    return dict(_DEFAULT_FRICTION)
 
 
 def get_one_way_friction_rate(ticker: str) -> float:
