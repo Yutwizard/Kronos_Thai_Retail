@@ -34,6 +34,7 @@ pip install -r requirements.txt && pip install -e .
 python verify_data_layer.py       # data layer: schema + caching (5 tests)
 python verify_fixes.py            # review fixes: stats + pipeline + universe (17 tests)
 python verify_kaggle_runtime.py   # Kaggle pipeline: auth + orchestration (19 tests)
+python verify_dr.py               # DR integration: plugin hook, mapping, trade-gen wiring (34 tests)
 
 # Docker (recommended — consistent environment)
 make build && make verify
@@ -116,3 +117,5 @@ Full numbers live in `data/backtest_results/` and `PROJECT_STRUCTURE.md`. The du
 12. `kth/pipeline/daily.py` — daily orchestration (the `run_daily_pipeline` function)
 13. `kth/io/kaggle_runtime.py` — Kaggle secrets auth (injectable, offline-testable)
 14. `data/backtest_results/MANIFEST.md` — which backtest runs to cite (and which are stale)
+
+- DR (Depositary Receipt) integration: live. See `docs/superpowers/specs/2026-07-12-global-dr-integration-design.md`.

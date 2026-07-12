@@ -501,6 +501,11 @@ If our strategy doesn't beat all four after frictions, we say so plainly.
 - `scripts/train_per_market.py` — SGDR fine-tuning (3 markets × 3 folds)
 - `scripts/eval_holdout.py` — Holdout evaluation on 2025 data
 - `scripts/compare_finetune.py` — Fine-tuned vs zero-shot backtest comparison
+- `kth_dr/universe_dr.py` — DR_MAP loading, get_dr_for_underlying(), get_dr_underlying_tickers(), get_verified_dr_tickers()
+- `kth_dr/loader_dr.py` — load_dr_bundle() for 3-series OHLCV bundle
+- `kth_dr/discover_drs.py` — seed list -> mapping.json (SET-wide scan is a stubbed follow-up, not implemented)
+- `kth_dr/trade_gen_dr.py` — execution ticker/price/name resolution, same-underlying guard
+- `verify_dr.py` — 34 integration tests for DR plugin hook, mapping, trade-gen wiring
 - `README.md` — project overview
 - `requirements.txt` — minimal pinned deps
 - `docs/user-manual.md` — full user manual with methodology, backtest results, and usage instructions
