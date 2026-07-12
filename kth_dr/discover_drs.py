@@ -1,0 +1,182 @@
+"""DR discovery algorithm — seed list -> mapping.json.
+
+Usage:
+    python -m kth_dr.discover_drs
+
+Process (seed-list path, implemented):
+    1. Load seed list from data/dr/seed_list.json
+    2. For each seed entry: check for overlap with the existing universe,
+       download DR data, compute liquidity/history stats
+    3. Rank alternatives, write mapping.json
+
+NOT implemented yet (tracked as a follow-up, not a bug in this task):
+    - Secondary SET-wide scan for DR naming patterns (scan_set_for_drs,
+      resolve_underlying below are stubs — they exist to show the intended
+      shape of that follow-up, but main() never calls them).
+"""
+import json
+import time
+from pathlib import Path
+
+import yfinance as yf
+
+from kth.data.universe import get_all_tickers
+
+SEED_PATH = Path("data/dr/seed_list.json")
+MAPPING_PATH = Path("data/dr/mapping.json")
+
+# Naming patterns a future SET-wide scan would match against — unused today,
+# kept here so the follow-up task starts from a documented starting point.
+DR_NAMING_PATTERNS = [
+    r"\d+\.BK$",       # e.g. AAPL80.BK
+    r"NVDR.*\.BK$",    # e.g. AAPL-NVDR.BK
+    r"DR.*\.BK$",      # e.g. AAPLDR.BK
+]
+
+
+def load_seed_list() -> dict:
+    if not SEED_PATH.exists():
+        return {}
+    with open(SEED_PATH) as f:
+        return json.load(f)
+
+
+def load_existing_mapping() -> dict:
+    if not MAPPING_PATH.exists():
+        return {"_meta": {"generated": "", "dr_count": 0, "underlying_count": 0, "status": "needs_review"}}
+    with open(MAPPING_PATH) as f:
+        return json.load(f)
+
+
+def compute_dr_stats(dr_ticker: str) -> dict:
+    """Download DR history, return avg_volume_30d, history_rows, listing_date."""
+    try:
+        ticker = yf.Ticker(dr_ticker)
+        hist = ticker.history(period="6mo")
+        if hist.empty:
+            return {"avg_volume_30d": 0, "history_rows": 0, "listing_date": None}
+        recent = hist.tail(30)
+        avg_vol = float(recent["Volume"].mean()) if not recent.empty else 0
+        first_date = str(hist.index[0].date()) if not hist.empty else None
+        return {
+            "avg_volume_30d": round(avg_vol),
+            "history_rows": len(hist),
+            "listing_date": first_date,
+        }
+    except Exception:
+        return {"avg_volume_30d": 0, "history_rows": 0, "listing_date": None}
+
+
+def is_already_in_universe(ticker: str) -> bool:
+    """Only catches exact matches against universe.py's hardcoded 100 tickers.
+    Does NOT know that "any US-listed stock" is directly investable — that
+    judgment call is why Task 4's seed list uses home-market tickers instead of
+    US ADRs. Don't rely on this function alone when adding new seed entries."""
+    all_tickers = get_all_tickers()
+    return ticker in all_tickers
+
+
+def resolve_underlying(dr_ticker: str) -> tuple[str | None, str | None, int | None]:
+    """[Follow-up, not called by main()] Try to resolve a DR ticker to its
+    underlying via yfinance Ticker.info. Field availability is inconsistent
+    across tickers — this needs real-world tuning before it's trustworthy."""
+    try:
+        ticker = yf.Ticker(dr_ticker)
+        info = ticker.info
+        underlying = info.get("underlyingSymbol") or info.get("underlying") or info.get("symbol")
+        name = info.get("underlyingName") or info.get("shortName") or ""
+        if underlying:
+            return underlying, name, 80
+    except Exception:
+        pass
+    return None, None, None
+
+
+def scan_set_for_drs(existing_drs: set[str]) -> list[dict]:
+    """[Follow-up, not called by main()] Secondary scan: look for DR-named
+    tickers on SET not already in the seed list. Not implemented — yfinance has
+    no ticker-search API; this needs an external SET listing source."""
+    return []
+
+
+def rank_alternatives(alternatives: list[dict]) -> list[dict]:
+    sorted_alts = sorted(alternatives, key=lambda a: a.get("avg_volume_30d", 0), reverse=True)
+    for i, alt in enumerate(sorted_alts):
+        alt["liquidity_rank"] = i + 1
+    return sorted_alts
+
+
+def main():
+    seed = load_seed_list()
+    existing = load_existing_mapping()
+
+    # Track verified status across runs so re-running discovery never silently
+    # un-verifies something the user already approved.
+    previous_verified: dict[str, bool] = {}
+    for underlying, entry in existing.items():
+        if underlying.startswith("_"):
+            continue
+        for alt in entry.get("alternatives", []):
+            if alt.get("verified"):
+                previous_verified[alt["dr_ticker"]] = True
+
+    mapping = {}
+    excluded = {}
+
+    for underlying, candidates in seed.items():
+        if underlying.startswith("_"):
+            continue
+        dr_ticker = candidates[0]["dr_ticker"]
+        ratio = candidates[0].get("ratio", 80)
+        display_name = candidates[0].get("display_name", underlying)
+        exchange = candidates[0].get("underlying_exchange", "")
+        currency = candidates[0].get("underlying_currency", "")
+
+        if is_already_in_universe(underlying):
+            excluded[underlying] = {
+                "display_name": display_name,
+                "excluded_reason": "already_direct",
+                "note": f"{underlying} is already directly investable",
+            }
+            continue
+
+        stats = compute_dr_stats(dr_ticker)
+        was_verified = previous_verified.get(dr_ticker, False)
+
+        alt = {
+            "dr_ticker": dr_ticker,
+            "ratio": ratio,
+            "avg_volume_30d": stats["avg_volume_30d"],
+            "listing_date": stats["listing_date"],
+            "history_rows": stats["history_rows"],
+            "verified": was_verified,
+        }
+
+        mapping[underlying] = {
+            "display_name": display_name,
+            "underlying_exchange": exchange,
+            "underlying_currency": currency,
+            "fx_ticker": "THB=X",
+            "primary_dr": dr_ticker,
+            "alternatives": rank_alternatives([alt]),
+        }
+
+    output = {
+        "_meta": {
+            "generated": time.strftime("%Y-%m-%dT%H:%M:%S+07:00"),
+            "dr_count": len(mapping),
+            "underlying_count": len(mapping),
+            "status": "needs_review",
+        },
+        **excluded,
+        **mapping,
+    }
+
+    MAPPING_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with open(MAPPING_PATH, "w") as f:
+        json.dump(output, f, indent=2, ensure_ascii=False)
+    print(f"Wrote {MAPPING_PATH} — {len(mapping)} underlyings, {len(excluded)} excluded")
+
+
+if __name__ == "__main__":
+    main()

@@ -172,6 +172,94 @@ def test_get_dr_info_for_display(tmp):
     print("PASS test_get_dr_info_for_display")
 
 
+# ---- Task 5: kth_dr/discover_drs.py — seed loading, ranking, exclusion ----
+
+def test_load_seed_list_returns_dict():
+    from kth_dr.discover_drs import load_seed_list
+    seed = load_seed_list()
+    assert isinstance(seed, dict)
+    assert "005930.KS" in seed
+    print("PASS test_load_seed_list_returns_dict")
+
+
+def test_load_seed_list_has_correct_structure():
+    from kth_dr.discover_drs import load_seed_list
+    seed = load_seed_list()
+    entry = seed["005930.KS"]
+    assert isinstance(entry, list)
+    assert entry[0]["dr_ticker"] == "SAMSUNG80.BK"
+    assert entry[0]["ratio"] == 80
+    print("PASS test_load_seed_list_has_correct_structure")
+
+
+def test_seed_list_uses_home_market_tickers_not_us_adr():
+    """Regression guard: Toyota/ASML must be keyed by their home listing, not
+    their US ADR ticker, or the DR loses its reason for existing."""
+    from kth_dr.discover_drs import load_seed_list
+    seed = load_seed_list()
+    assert "TM" not in seed, "Toyota must be keyed by 7203.T (Tokyo), not the NYSE ADR 'TM'"
+    assert "ASML" not in seed, "ASML must be keyed by ASML.AS (Amsterdam), not the Nasdaq ticker 'ASML'"
+    assert "7203.T" in seed
+    assert "ASML.AS" in seed
+    print("PASS test_seed_list_uses_home_market_tickers_not_us_adr")
+
+
+def test_load_existing_mapping_no_file(tmp):
+    from pathlib import Path
+    from kth_dr import discover_drs as dd
+    orig = dd.MAPPING_PATH
+    dd.MAPPING_PATH = Path(tmp) / "nonexistent.json"
+    try:
+        mapping = dd.load_existing_mapping()
+        assert "_meta" in mapping
+        assert mapping["_meta"]["status"] == "needs_review"
+    finally:
+        dd.MAPPING_PATH = orig
+    print("PASS test_load_existing_mapping_no_file")
+
+
+def test_load_existing_mapping_with_file(tmp):
+    import json
+    from pathlib import Path
+    from kth_dr import discover_drs as dd
+    orig = dd.MAPPING_PATH
+    test_path = Path(tmp) / "mapping.json"
+    test_path.write_text(json.dumps({"005930.KS": {"alternatives": [{"dr_ticker": "SAMSUNG80.BK", "verified": True}]}}))
+    dd.MAPPING_PATH = test_path
+    try:
+        mapping = dd.load_existing_mapping()
+        assert "005930.KS" in mapping
+        assert mapping["005930.KS"]["alternatives"][0]["verified"] is True
+    finally:
+        dd.MAPPING_PATH = orig
+    print("PASS test_load_existing_mapping_with_file")
+
+
+def test_rank_alternatives_sorts_by_volume():
+    from kth_dr.discover_drs import rank_alternatives
+    alts = [
+        {"dr_ticker": "LOW.BK", "avg_volume_30d": 100},
+        {"dr_ticker": "HIGH.BK", "avg_volume_30d": 50000},
+        {"dr_ticker": "MID.BK", "avg_volume_30d": 1000},
+    ]
+    ranked = rank_alternatives(alts)
+    assert [a["dr_ticker"] for a in ranked] == ["HIGH.BK", "MID.BK", "LOW.BK"]
+    assert [a["liquidity_rank"] for a in ranked] == [1, 2, 3]
+    print("PASS test_rank_alternatives_sorts_by_volume")
+
+
+def test_is_already_in_universe_known():
+    from kth_dr.discover_drs import is_already_in_universe
+    assert is_already_in_universe("AAPL") is True
+    print("PASS test_is_already_in_universe_known")
+
+
+def test_is_already_in_universe_unknown():
+    from kth_dr.discover_drs import is_already_in_universe
+    assert is_already_in_universe("005930.KS") is False
+    print("PASS test_is_already_in_universe_unknown")
+
+
 if __name__ == "__main__":
     import inspect
     import tempfile
