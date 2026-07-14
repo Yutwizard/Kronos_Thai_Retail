@@ -1,10 +1,10 @@
 {
   "_meta": {
-    "generated": "2026-07-14T22:31:56+07:00",
-    "dr_count": 4,
-    "underlying_count": 4,
+    "generated": "2026-07-14T22:42:40+07:00",
+    "dr_count": 71,
+    "underlying_count": 71,
     "status": "partially_reviewed",
-    "status_note": "TENCENT80/TOYOTA80/ASML01 verified 2026-07-14 against primary sources (SET IM, KTB, Bualuang). 005930.KS (Samsung) has no confirmed SET-listed DR — SAMSUNG80.BK does not exist on Yahoo Finance; needs either a real ticker or removal from seed_list.json."
+    "status_note": "4 verified against primary sources 2026-07-14 (TENCENT80/TOYOTA80/ASML01/NOVOB80). 63 more discovered real+liquid (history_rows>=60, real yfinance data) but ratio is an unconfirmed placeholder (999) and verified=false for all of them — do not trust ratio or flip verified without checking the DR's own factsheet (see data/dr/README.md). 005930.KS (Samsung) and 2330.TW (TSMC): no real SET DR ticker found, both 404 on Yahoo. HUAHONG23.BK (Hua Hong Semiconductor) is real but only 26 history_rows, below MIN_DR_HISTORY=60 — too newly listed, will qualify once more history accumulates."
   },
   "005930.KS": {
     "display_name": "Samsung Electronics",
@@ -72,11 +72,1218 @@
       {
         "dr_ticker": "ASML01.BK",
         "ratio": 1200,
-        "avg_volume_30d": 191144,
+        "avg_volume_30d": 191158,
         "listing_date": "2023-11-17",
         "history_rows": 645,
         "verified": true,
         "verified_note": "Ratio 1:1200 confirmed on bualuang.co.th's own ASML01 product page (first trading date 16 Nov 2023, matches discovered listing_date); ticker/issuer confirmed on set.or.th quote page. Reviewed 2026-07-14.",
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "9988.HK": {
+    "display_name": "Alibaba Group",
+    "underlying_exchange": "HK",
+    "underlying_currency": "HKD",
+    "fx_ticker": "HKDTHB=X",
+    "primary_dr": "BABA80.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "BABA80.BK",
+        "ratio": 999,
+        "avg_volume_30d": 16465844,
+        "listing_date": "2025-04-30",
+        "history_rows": 294,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "9888.HK": {
+    "display_name": "Baidu",
+    "underlying_exchange": "HK",
+    "underlying_currency": "HKD",
+    "fx_ticker": "HKDTHB=X",
+    "primary_dr": "BIDU80.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "BIDU80.BK",
+        "ratio": 999,
+        "avg_volume_30d": 6273765,
+        "listing_date": "2023-08-15",
+        "history_rows": 711,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "9618.HK": {
+    "display_name": "JD.com",
+    "underlying_exchange": "HK",
+    "underlying_currency": "HKD",
+    "fx_ticker": "HKDTHB=X",
+    "primary_dr": "JD80.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "JD80.BK",
+        "ratio": 999,
+        "avg_volume_30d": 296175,
+        "listing_date": "2025-03-11",
+        "history_rows": 323,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "3690.HK": {
+    "display_name": "Meituan",
+    "underlying_exchange": "HK",
+    "underlying_currency": "HKD",
+    "fx_ticker": "HKDTHB=X",
+    "primary_dr": "MEITUAN80.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "MEITUAN80.BK",
+        "ratio": 999,
+        "avg_volume_30d": 1946236,
+        "listing_date": "2025-03-11",
+        "history_rows": 323,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "9999.HK": {
+    "display_name": "NetEase",
+    "underlying_exchange": "HK",
+    "underlying_currency": "HKD",
+    "fx_ticker": "HKDTHB=X",
+    "primary_dr": "NETEASE80.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "NETEASE80.BK",
+        "ratio": 999,
+        "avg_volume_30d": 94987,
+        "listing_date": "2023-03-15",
+        "history_rows": 805,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "1211.HK": {
+    "display_name": "BYD Company",
+    "underlying_exchange": "HK",
+    "underlying_currency": "HKD",
+    "fx_ticker": "HKDTHB=X",
+    "primary_dr": "BYDCOM80.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "BYDCOM80.BK",
+        "ratio": 999,
+        "avg_volume_30d": 16245579,
+        "listing_date": "2022-07-26",
+        "history_rows": 961,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "1810.HK": {
+    "display_name": "Xiaomi",
+    "underlying_exchange": "HK",
+    "underlying_currency": "HKD",
+    "fx_ticker": "HKDTHB=X",
+    "primary_dr": "XIAOMI80.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "XIAOMI80.BK",
+        "ratio": 999,
+        "avg_volume_30d": 1836818,
+        "listing_date": "2025-04-30",
+        "history_rows": 294,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "2899.HK": {
+    "display_name": "Zijin Mining",
+    "underlying_exchange": "HK",
+    "underlying_currency": "HKD",
+    "fx_ticker": "HKDTHB=X",
+    "primary_dr": "ZIJIN80.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "ZIJIN80.BK",
+        "ratio": 999,
+        "avg_volume_30d": 335942,
+        "listing_date": "2025-11-11",
+        "history_rows": 166,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "1024.HK": {
+    "display_name": "Kuaishou Technology",
+    "underlying_exchange": "HK",
+    "underlying_currency": "HKD",
+    "fx_ticker": "HKDTHB=X",
+    "primary_dr": "KUAISH80.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "KUAISH80.BK",
+        "ratio": 999,
+        "avg_volume_30d": 4446254,
+        "listing_date": "2025-09-11",
+        "history_rows": 203,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "0175.HK": {
+    "display_name": "Geely Automobile",
+    "underlying_exchange": "HK",
+    "underlying_currency": "HKD",
+    "fx_ticker": "HKDTHB=X",
+    "primary_dr": "GEELY80.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "GEELY80.BK",
+        "ratio": 999,
+        "avg_volume_30d": 63889,
+        "listing_date": "2025-09-11",
+        "history_rows": 202,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "1398.HK": {
+    "display_name": "ICBC",
+    "underlying_exchange": "HK",
+    "underlying_currency": "HKD",
+    "fx_ticker": "HKDTHB=X",
+    "primary_dr": "ICBC19.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "ICBC19.BK",
+        "ratio": 999,
+        "avg_volume_30d": 76416,
+        "listing_date": "2025-09-02",
+        "history_rows": 214,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "3968.HK": {
+    "display_name": "China Merchants Bank",
+    "underlying_exchange": "HK",
+    "underlying_currency": "HKD",
+    "fx_ticker": "HKDTHB=X",
+    "primary_dr": "CMBANK23.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "CMBANK23.BK",
+        "ratio": 999,
+        "avg_volume_30d": 72929,
+        "listing_date": "2025-11-13",
+        "history_rows": 159,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "0857.HK": {
+    "display_name": "PetroChina",
+    "underlying_exchange": "HK",
+    "underlying_currency": "HKD",
+    "fx_ticker": "HKDTHB=X",
+    "primary_dr": "PETROCN80.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "PETROCN80.BK",
+        "ratio": 999,
+        "avg_volume_30d": 555835,
+        "listing_date": "2025-11-11",
+        "history_rows": 166,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "9992.HK": {
+    "display_name": "Pop Mart",
+    "underlying_exchange": "HK",
+    "underlying_currency": "HKD",
+    "fx_ticker": "HKDTHB=X",
+    "primary_dr": "POPMART80.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "POPMART80.BK",
+        "ratio": 999,
+        "avg_volume_30d": 395458,
+        "listing_date": "2025-03-11",
+        "history_rows": 323,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "2269.HK": {
+    "display_name": "WuXi Biologics",
+    "underlying_exchange": "HK",
+    "underlying_currency": "HKD",
+    "fx_ticker": "HKDTHB=X",
+    "primary_dr": "WUXI13.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "WUXI13.BK",
+        "ratio": 999,
+        "avg_volume_30d": 3034,
+        "listing_date": "2025-11-20",
+        "history_rows": 158,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "1177.HK": {
+    "display_name": "Sino Biopharmaceutical",
+    "underlying_exchange": "HK",
+    "underlying_currency": "HKD",
+    "fx_ticker": "HKDTHB=X",
+    "primary_dr": "SINOBIO19.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "SINOBIO19.BK",
+        "ratio": 999,
+        "avg_volume_30d": 52032,
+        "listing_date": "2026-01-19",
+        "history_rows": 122,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "2382.HK": {
+    "display_name": "Sunny Optical Technology",
+    "underlying_exchange": "HK",
+    "underlying_currency": "HKD",
+    "fx_ticker": "HKDTHB=X",
+    "primary_dr": "SUNNY19.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "SUNNY19.BK",
+        "ratio": 999,
+        "avg_volume_30d": 616809,
+        "listing_date": "2025-09-02",
+        "history_rows": 214,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "0981.HK": {
+    "display_name": "SMIC",
+    "underlying_exchange": "HK",
+    "underlying_currency": "HKD",
+    "fx_ticker": "HKDTHB=X",
+    "primary_dr": "SMIC13.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "SMIC13.BK",
+        "ratio": 999,
+        "avg_volume_30d": 15879,
+        "listing_date": "2025-11-20",
+        "history_rows": 159,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "0992.HK": {
+    "display_name": "Lenovo",
+    "underlying_exchange": "HK",
+    "underlying_currency": "HKD",
+    "fx_ticker": "HKDTHB=X",
+    "primary_dr": "LENOVO13.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "LENOVO13.BK",
+        "ratio": 999,
+        "avg_volume_30d": 77234,
+        "listing_date": "2025-11-18",
+        "history_rows": 161,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "3692.HK": {
+    "display_name": "Hansoh Pharma",
+    "underlying_exchange": "HK",
+    "underlying_currency": "HKD",
+    "fx_ticker": "HKDTHB=X",
+    "primary_dr": "HANSOH19.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "HANSOH19.BK",
+        "ratio": 999,
+        "avg_volume_30d": 45329,
+        "listing_date": "2026-01-19",
+        "history_rows": 122,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "2020.HK": {
+    "display_name": "Anta Sports Products",
+    "underlying_exchange": "HK",
+    "underlying_currency": "HKD",
+    "fx_ticker": "HKDTHB=X",
+    "primary_dr": "ANTA13.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "ANTA13.BK",
+        "ratio": 999,
+        "avg_volume_30d": 2654,
+        "listing_date": "2025-11-18",
+        "history_rows": 161,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "6690.HK": {
+    "display_name": "Haier Smart Home",
+    "underlying_exchange": "HK",
+    "underlying_currency": "HKD",
+    "fx_ticker": "HKDTHB=X",
+    "primary_dr": "HAIERS19.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "HAIERS19.BK",
+        "ratio": 999,
+        "avg_volume_30d": 61388,
+        "listing_date": "2025-04-22",
+        "history_rows": 296,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "0941.HK": {
+    "display_name": "China Mobile",
+    "underlying_exchange": "HK",
+    "underlying_currency": "HKD",
+    "fx_ticker": "HKDTHB=X",
+    "primary_dr": "CHMOBILE19.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "CHMOBILE19.BK",
+        "ratio": 999,
+        "avg_volume_30d": 292170,
+        "listing_date": "2025-04-22",
+        "history_rows": 296,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "0020.HK": {
+    "display_name": "SenseTime",
+    "underlying_exchange": "HK",
+    "underlying_currency": "HKD",
+    "fx_ticker": "HKDTHB=X",
+    "primary_dr": "SENSE23.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "SENSE23.BK",
+        "ratio": 999,
+        "avg_volume_30d": 178057,
+        "listing_date": "2025-11-13",
+        "history_rows": 160,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "1347.HK": {
+    "display_name": "Hua Hong Semiconductor",
+    "underlying_exchange": "HK",
+    "underlying_currency": "HKD",
+    "fx_ticker": "HKDTHB=X",
+    "primary_dr": "HUAHONG23.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "HUAHONG23.BK",
+        "ratio": 999,
+        "avg_volume_30d": 2314003,
+        "listing_date": "2026-06-09",
+        "history_rows": 26,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "0590.HK": {
+    "display_name": "Luk Fook Jewellery",
+    "underlying_exchange": "HK",
+    "underlying_currency": "HKD",
+    "fx_ticker": "HKDTHB=X",
+    "primary_dr": "LPGOLD13.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "LPGOLD13.BK",
+        "ratio": 999,
+        "avg_volume_30d": 47763,
+        "listing_date": "2025-11-18",
+        "history_rows": 161,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "9660.HK": {
+    "display_name": "Horizon Robotics",
+    "underlying_exchange": "HK",
+    "underlying_currency": "HKD",
+    "fx_ticker": "HKDTHB=X",
+    "primary_dr": "HORIZON23.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "HORIZON23.BK",
+        "ratio": 999,
+        "avg_volume_30d": 403343,
+        "listing_date": "2025-11-13",
+        "history_rows": 160,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "3888.HK": {
+    "display_name": "Kingsoft Corporation",
+    "underlying_exchange": "HK",
+    "underlying_currency": "HKD",
+    "fx_ticker": "HKDTHB=X",
+    "primary_dr": "KINGSOFT23.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "KINGSOFT23.BK",
+        "ratio": 999,
+        "avg_volume_30d": 53049,
+        "listing_date": "2025-11-13",
+        "history_rows": 158,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "9880.HK": {
+    "display_name": "UBTECH Robotics",
+    "underlying_exchange": "HK",
+    "underlying_currency": "HKD",
+    "fx_ticker": "HKDTHB=X",
+    "primary_dr": "UBTECH23.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "UBTECH23.BK",
+        "ratio": 999,
+        "avg_volume_30d": 8502276,
+        "listing_date": "2025-11-13",
+        "history_rows": 160,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "9633.HK": {
+    "display_name": "Nongfu Spring",
+    "underlying_exchange": "HK",
+    "underlying_currency": "HKD",
+    "fx_ticker": "HKDTHB=X",
+    "primary_dr": "NONGFU80.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "NONGFU80.BK",
+        "ratio": 999,
+        "avg_volume_30d": 292935,
+        "listing_date": "2025-03-11",
+        "history_rows": 323,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "3750.HK": {
+    "display_name": "CATL",
+    "underlying_exchange": "HK",
+    "underlying_currency": "HKD",
+    "fx_ticker": "HKDTHB=X",
+    "primary_dr": "CATL80.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "CATL80.BK",
+        "ratio": 999,
+        "avg_volume_30d": 208033,
+        "listing_date": "2025-09-11",
+        "history_rows": 203,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "6758.T": {
+    "display_name": "Sony Group",
+    "underlying_exchange": "JP",
+    "underlying_currency": "JPY",
+    "fx_ticker": "JPYTHB=X",
+    "primary_dr": "SONY80.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "SONY80.BK",
+        "ratio": 999,
+        "avg_volume_30d": 378469,
+        "listing_date": "2024-06-21",
+        "history_rows": 500,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "7267.T": {
+    "display_name": "Honda Motor",
+    "underlying_exchange": "JP",
+    "underlying_currency": "JPY",
+    "fx_ticker": "JPYTHB=X",
+    "primary_dr": "HONDA19.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "HONDA19.BK",
+        "ratio": 999,
+        "avg_volume_30d": 33418,
+        "listing_date": "2024-09-11",
+        "history_rows": 445,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "7974.T": {
+    "display_name": "Nintendo",
+    "underlying_exchange": "JP",
+    "underlying_currency": "JPY",
+    "fx_ticker": "JPYTHB=X",
+    "primary_dr": "NINTENDO19.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "NINTENDO19.BK",
+        "ratio": 999,
+        "avg_volume_30d": 72728,
+        "listing_date": "2024-05-29",
+        "history_rows": 516,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "9984.T": {
+    "display_name": "SoftBank Group",
+    "underlying_exchange": "JP",
+    "underlying_currency": "JPY",
+    "fx_ticker": "JPYTHB=X",
+    "primary_dr": "SOFTBANK23.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "SOFTBANK23.BK",
+        "ratio": 999,
+        "avg_volume_30d": 1505005,
+        "listing_date": "2026-01-05",
+        "history_rows": 132,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "8035.T": {
+    "display_name": "Tokyo Electron",
+    "underlying_exchange": "JP",
+    "underlying_currency": "JPY",
+    "fx_ticker": "JPYTHB=X",
+    "primary_dr": "TEL23.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "TEL23.BK",
+        "ratio": 999,
+        "avg_volume_30d": 299253,
+        "listing_date": "2025-11-13",
+        "history_rows": 160,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "6857.T": {
+    "display_name": "Advantest Corp",
+    "underlying_exchange": "JP",
+    "underlying_currency": "JPY",
+    "fx_ticker": "JPYTHB=X",
+    "primary_dr": "ADVANT19.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "ADVANT19.BK",
+        "ratio": 999,
+        "avg_volume_30d": 415405,
+        "listing_date": "2026-01-19",
+        "history_rows": 122,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "8306.T": {
+    "display_name": "Mitsubishi UFJ Financial Group",
+    "underlying_exchange": "JP",
+    "underlying_currency": "JPY",
+    "fx_ticker": "JPYTHB=X",
+    "primary_dr": "MUFG19.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "MUFG19.BK",
+        "ratio": 999,
+        "avg_volume_30d": 80166,
+        "listing_date": "2024-09-11",
+        "history_rows": 445,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "8316.T": {
+    "display_name": "Sumitomo Mitsui Financial Group",
+    "underlying_exchange": "JP",
+    "underlying_currency": "JPY",
+    "fx_ticker": "JPYTHB=X",
+    "primary_dr": "SMFG19.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "SMFG19.BK",
+        "ratio": 999,
+        "avg_volume_30d": 28717,
+        "listing_date": "2024-05-29",
+        "history_rows": 520,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "8001.T": {
+    "display_name": "Itochu Corp",
+    "underlying_exchange": "JP",
+    "underlying_currency": "JPY",
+    "fx_ticker": "JPYTHB=X",
+    "primary_dr": "ITOCHU19.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "ITOCHU19.BK",
+        "ratio": 999,
+        "avg_volume_30d": 18095,
+        "listing_date": "2025-09-02",
+        "history_rows": 214,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "8058.T": {
+    "display_name": "Mitsubishi Corp",
+    "underlying_exchange": "JP",
+    "underlying_currency": "JPY",
+    "fx_ticker": "JPYTHB=X",
+    "primary_dr": "MITSU19.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "MITSU19.BK",
+        "ratio": 999,
+        "avg_volume_30d": 127324,
+        "listing_date": "2024-09-11",
+        "history_rows": 445,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "6861.T": {
+    "display_name": "Keyence Corp",
+    "underlying_exchange": "JP",
+    "underlying_currency": "JPY",
+    "fx_ticker": "JPYTHB=X",
+    "primary_dr": "KEYENCE23.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "KEYENCE23.BK",
+        "ratio": 999,
+        "avg_volume_30d": 274182,
+        "listing_date": "2025-11-13",
+        "history_rows": 160,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "9983.T": {
+    "display_name": "Fast Retailing (Uniqlo)",
+    "underlying_exchange": "JP",
+    "underlying_currency": "JPY",
+    "fx_ticker": "JPYTHB=X",
+    "primary_dr": "UNIQLO80.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "UNIQLO80.BK",
+        "ratio": 999,
+        "avg_volume_30d": 35249,
+        "listing_date": "2024-06-21",
+        "history_rows": 500,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "8136.T": {
+    "display_name": "Sanrio",
+    "underlying_exchange": "JP",
+    "underlying_currency": "JPY",
+    "fx_ticker": "JPYTHB=X",
+    "primary_dr": "SANRIO23.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "SANRIO23.BK",
+        "ratio": 999,
+        "avg_volume_30d": 156729,
+        "listing_date": "2025-11-13",
+        "history_rows": 160,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "3563.T": {
+    "display_name": "Food & Life Companies (Sushiro)",
+    "underlying_exchange": "JP",
+    "underlying_currency": "JPY",
+    "fx_ticker": "JPYTHB=X",
+    "primary_dr": "SUSHI23.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "SUSHI23.BK",
+        "ratio": 999,
+        "avg_volume_30d": 1001492,
+        "listing_date": "2025-11-13",
+        "history_rows": 160,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "RMS.PA": {
+    "display_name": "Hermès International",
+    "underlying_exchange": "FR",
+    "underlying_currency": "EUR",
+    "fx_ticker": "EURTHB=X",
+    "primary_dr": "HERMES80.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "HERMES80.BK",
+        "ratio": 999,
+        "avg_volume_30d": 181696,
+        "listing_date": "2024-10-30",
+        "history_rows": 412,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "OR.PA": {
+    "display_name": "L'Oréal",
+    "underlying_exchange": "FR",
+    "underlying_currency": "EUR",
+    "fx_ticker": "EURTHB=X",
+    "primary_dr": "LOREAL80.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "LOREAL80.BK",
+        "ratio": 999,
+        "avg_volume_30d": 56768,
+        "listing_date": "2024-10-21",
+        "history_rows": 418,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "MC.PA": {
+    "display_name": "LVMH",
+    "underlying_exchange": "FR",
+    "underlying_currency": "EUR",
+    "fx_ticker": "EURTHB=X",
+    "primary_dr": "LVMH01.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "LVMH01.BK",
+        "ratio": 999,
+        "avg_volume_30d": 111443,
+        "listing_date": "2023-11-17",
+        "history_rows": 645,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "NOVO-B.CO": {
+    "display_name": "Novo Nordisk",
+    "underlying_exchange": "DK",
+    "underlying_currency": "DKK",
+    "fx_ticker": "DKKTHB=X",
+    "primary_dr": "NOVOB80.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "NOVOB80.BK",
+        "ratio": 1000,
+        "avg_volume_30d": 4554505,
+        "listing_date": "2024-10-21",
+        "history_rows": 418,
+        "verified": true,
+        "verified_note": "Ratio 1:1000 confirmed via search of krungthai.com's NOVOB80 product page (issuer KTB, underlying listed Nasdaq Copenhagen). Reviewed 2026-07-14.",
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "SAN.PA": {
+    "display_name": "Sanofi",
+    "underlying_exchange": "FR",
+    "underlying_currency": "EUR",
+    "fx_ticker": "EURTHB=X",
+    "primary_dr": "SANOFI80.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "SANOFI80.BK",
+        "ratio": 999,
+        "avg_volume_30d": 172007,
+        "listing_date": "2024-10-18",
+        "history_rows": 419,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "RACE.MI": {
+    "display_name": "Ferrari",
+    "underlying_exchange": "IT",
+    "underlying_currency": "EUR",
+    "fx_ticker": "EURTHB=X",
+    "primary_dr": "FERRARI80.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "FERRARI80.BK",
+        "ratio": 999,
+        "avg_volume_30d": 289931,
+        "listing_date": "2024-10-21",
+        "history_rows": 418,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "2330.TW": {
+    "display_name": "Taiwan Semiconductor (TSMC)",
+    "underlying_exchange": "TW",
+    "underlying_currency": "TWD",
+    "fx_ticker": "TWDTHB=X",
+    "primary_dr": "TSMC80.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "TSMC80.BK",
+        "ratio": 999,
+        "avg_volume_30d": 0,
+        "listing_date": null,
+        "history_rows": 0,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "D05.SI": {
+    "display_name": "DBS Group",
+    "underlying_exchange": "SG",
+    "underlying_currency": "SGD",
+    "fx_ticker": "SGDTHB=X",
+    "primary_dr": "DBS19.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "DBS19.BK",
+        "ratio": 999,
+        "avg_volume_30d": 59991,
+        "listing_date": "2024-08-23",
+        "history_rows": 462,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "U11.SI": {
+    "display_name": "United Overseas Bank",
+    "underlying_exchange": "SG",
+    "underlying_currency": "SGD",
+    "fx_ticker": "SGDTHB=X",
+    "primary_dr": "UOB19.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "UOB19.BK",
+        "ratio": 999,
+        "avg_volume_30d": 77854,
+        "listing_date": "2024-08-23",
+        "history_rows": 462,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "Z74.SI": {
+    "display_name": "Singtel",
+    "underlying_exchange": "SG",
+    "underlying_currency": "SGD",
+    "fx_ticker": "SGDTHB=X",
+    "primary_dr": "SINGTEL80.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "SINGTEL80.BK",
+        "ratio": 999,
+        "avg_volume_30d": 49212,
+        "listing_date": "2024-04-02",
+        "history_rows": 554,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "S68.SI": {
+    "display_name": "Singapore Exchange",
+    "underlying_exchange": "SG",
+    "underlying_currency": "SGD",
+    "fx_ticker": "SGDTHB=X",
+    "primary_dr": "SGX19.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "SGX19.BK",
+        "ratio": 999,
+        "avg_volume_30d": 121659,
+        "listing_date": "2025-10-22",
+        "history_rows": 175,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "C6L.SI": {
+    "display_name": "Singapore Airlines",
+    "underlying_exchange": "SG",
+    "underlying_currency": "SGD",
+    "fx_ticker": "SGDTHB=X",
+    "primary_dr": "SIA19.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "SIA19.BK",
+        "ratio": 999,
+        "avg_volume_30d": 22371,
+        "listing_date": "2023-09-19",
+        "history_rows": 686,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "U96.SI": {
+    "display_name": "Sembcorp Industries",
+    "underlying_exchange": "SG",
+    "underlying_currency": "SGD",
+    "fx_ticker": "SGDTHB=X",
+    "primary_dr": "SEMB19.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "SEMB19.BK",
+        "ratio": 999,
+        "avg_volume_30d": 20420,
+        "listing_date": "2025-10-22",
+        "history_rows": 173,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "V03.SI": {
+    "display_name": "Venture Corporation",
+    "underlying_exchange": "SG",
+    "underlying_currency": "SGD",
+    "fx_ticker": "SGDTHB=X",
+    "primary_dr": "VENTURE19.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "VENTURE19.BK",
+        "ratio": 999,
+        "avg_volume_30d": 24232,
+        "listing_date": "2024-02-28",
+        "history_rows": 574,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "S63.SI": {
+    "display_name": "Singapore Technologies Engineering",
+    "underlying_exchange": "SG",
+    "underlying_currency": "SGD",
+    "fx_ticker": "SGDTHB=X",
+    "primary_dr": "STEG19.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "STEG19.BK",
+        "ratio": 999,
+        "avg_volume_30d": 18554,
+        "listing_date": "2024-03-04",
+        "history_rows": 571,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "VCB.VN": {
+    "display_name": "Vietcombank",
+    "underlying_exchange": "VN",
+    "underlying_currency": "VND",
+    "fx_ticker": "VNDTHB=X",
+    "primary_dr": "VCB19.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "VCB19.BK",
+        "ratio": 999,
+        "avg_volume_30d": 29063,
+        "listing_date": "2025-03-06",
+        "history_rows": 326,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "VNM.VN": {
+    "display_name": "Vinamilk",
+    "underlying_exchange": "VN",
+    "underlying_currency": "VND",
+    "fx_ticker": "VNDTHB=X",
+    "primary_dr": "VNM19.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "VNM19.BK",
+        "ratio": 999,
+        "avg_volume_30d": 196300,
+        "listing_date": "2024-10-11",
+        "history_rows": 427,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "VHM.VN": {
+    "display_name": "Vinhomes",
+    "underlying_exchange": "VN",
+    "underlying_currency": "VND",
+    "fx_ticker": "VNDTHB=X",
+    "primary_dr": "VHM19.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "VHM19.BK",
+        "ratio": 999,
+        "avg_volume_30d": 268148,
+        "listing_date": "2025-09-04",
+        "history_rows": 206,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "HPG.VN": {
+    "display_name": "Hoa Phat Group",
+    "underlying_exchange": "VN",
+    "underlying_currency": "VND",
+    "fx_ticker": "VNDTHB=X",
+    "primary_dr": "HPG19.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "HPG19.BK",
+        "ratio": 999,
+        "avg_volume_30d": 101138,
+        "listing_date": "2025-09-04",
+        "history_rows": 208,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "MSN.VN": {
+    "display_name": "Masan Group",
+    "underlying_exchange": "VN",
+    "underlying_currency": "VND",
+    "fx_ticker": "VNDTHB=X",
+    "primary_dr": "MSN19.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "MSN19.BK",
+        "ratio": 999,
+        "avg_volume_30d": 3822,
+        "listing_date": "2026-01-19",
+        "history_rows": 122,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "MWG.VN": {
+    "display_name": "Mobile World Investment",
+    "underlying_exchange": "VN",
+    "underlying_currency": "VND",
+    "fx_ticker": "VNDTHB=X",
+    "primary_dr": "MWG19.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "MWG19.BK",
+        "ratio": 999,
+        "avg_volume_30d": 104312,
+        "listing_date": "2025-03-06",
+        "history_rows": 326,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "FPT.VN": {
+    "display_name": "FPT Corp",
+    "underlying_exchange": "VN",
+    "underlying_currency": "VND",
+    "fx_ticker": "VNDTHB=X",
+    "primary_dr": "FPTVN19.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "FPTVN19.BK",
+        "ratio": 999,
+        "avg_volume_30d": 299463,
+        "listing_date": "2024-12-13",
+        "history_rows": 386,
+        "verified": false,
         "liquidity_rank": 1
       }
     ]

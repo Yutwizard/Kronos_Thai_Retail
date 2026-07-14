@@ -35,5 +35,608 @@
       "underlying_currency": "EUR",
       "ratio": 1200
     }
+  ],
+  "9988.HK": [
+    {
+      "dr_ticker": "BABA80.BK",
+      "display_name": "Alibaba Group",
+      "underlying_exchange": "HK",
+      "underlying_currency": "HKD",
+      "ratio": 999
+    }
+  ],
+  "9888.HK": [
+    {
+      "dr_ticker": "BIDU80.BK",
+      "display_name": "Baidu",
+      "underlying_exchange": "HK",
+      "underlying_currency": "HKD",
+      "ratio": 999
+    }
+  ],
+  "9618.HK": [
+    {
+      "dr_ticker": "JD80.BK",
+      "display_name": "JD.com",
+      "underlying_exchange": "HK",
+      "underlying_currency": "HKD",
+      "ratio": 999
+    }
+  ],
+  "3690.HK": [
+    {
+      "dr_ticker": "MEITUAN80.BK",
+      "display_name": "Meituan",
+      "underlying_exchange": "HK",
+      "underlying_currency": "HKD",
+      "ratio": 999
+    }
+  ],
+  "9999.HK": [
+    {
+      "dr_ticker": "NETEASE80.BK",
+      "display_name": "NetEase",
+      "underlying_exchange": "HK",
+      "underlying_currency": "HKD",
+      "ratio": 999
+    }
+  ],
+  "1211.HK": [
+    {
+      "dr_ticker": "BYDCOM80.BK",
+      "display_name": "BYD Company",
+      "underlying_exchange": "HK",
+      "underlying_currency": "HKD",
+      "ratio": 999
+    }
+  ],
+  "1810.HK": [
+    {
+      "dr_ticker": "XIAOMI80.BK",
+      "display_name": "Xiaomi",
+      "underlying_exchange": "HK",
+      "underlying_currency": "HKD",
+      "ratio": 999
+    }
+  ],
+  "2899.HK": [
+    {
+      "dr_ticker": "ZIJIN80.BK",
+      "display_name": "Zijin Mining",
+      "underlying_exchange": "HK",
+      "underlying_currency": "HKD",
+      "ratio": 999
+    }
+  ],
+  "1024.HK": [
+    {
+      "dr_ticker": "KUAISH80.BK",
+      "display_name": "Kuaishou Technology",
+      "underlying_exchange": "HK",
+      "underlying_currency": "HKD",
+      "ratio": 999
+    }
+  ],
+  "0175.HK": [
+    {
+      "dr_ticker": "GEELY80.BK",
+      "display_name": "Geely Automobile",
+      "underlying_exchange": "HK",
+      "underlying_currency": "HKD",
+      "ratio": 999
+    }
+  ],
+  "1398.HK": [
+    {
+      "dr_ticker": "ICBC19.BK",
+      "display_name": "ICBC",
+      "underlying_exchange": "HK",
+      "underlying_currency": "HKD",
+      "ratio": 999
+    }
+  ],
+  "3968.HK": [
+    {
+      "dr_ticker": "CMBANK23.BK",
+      "display_name": "China Merchants Bank",
+      "underlying_exchange": "HK",
+      "underlying_currency": "HKD",
+      "ratio": 999
+    }
+  ],
+  "0857.HK": [
+    {
+      "dr_ticker": "PETROCN80.BK",
+      "display_name": "PetroChina",
+      "underlying_exchange": "HK",
+      "underlying_currency": "HKD",
+      "ratio": 999
+    }
+  ],
+  "9992.HK": [
+    {
+      "dr_ticker": "POPMART80.BK",
+      "display_name": "Pop Mart",
+      "underlying_exchange": "HK",
+      "underlying_currency": "HKD",
+      "ratio": 999
+    }
+  ],
+  "2269.HK": [
+    {
+      "dr_ticker": "WUXI13.BK",
+      "display_name": "WuXi Biologics",
+      "underlying_exchange": "HK",
+      "underlying_currency": "HKD",
+      "ratio": 999
+    }
+  ],
+  "1177.HK": [
+    {
+      "dr_ticker": "SINOBIO19.BK",
+      "display_name": "Sino Biopharmaceutical",
+      "underlying_exchange": "HK",
+      "underlying_currency": "HKD",
+      "ratio": 999
+    }
+  ],
+  "2382.HK": [
+    {
+      "dr_ticker": "SUNNY19.BK",
+      "display_name": "Sunny Optical Technology",
+      "underlying_exchange": "HK",
+      "underlying_currency": "HKD",
+      "ratio": 999
+    }
+  ],
+  "0981.HK": [
+    {
+      "dr_ticker": "SMIC13.BK",
+      "display_name": "SMIC",
+      "underlying_exchange": "HK",
+      "underlying_currency": "HKD",
+      "ratio": 999
+    }
+  ],
+  "0992.HK": [
+    {
+      "dr_ticker": "LENOVO13.BK",
+      "display_name": "Lenovo",
+      "underlying_exchange": "HK",
+      "underlying_currency": "HKD",
+      "ratio": 999
+    }
+  ],
+  "3692.HK": [
+    {
+      "dr_ticker": "HANSOH19.BK",
+      "display_name": "Hansoh Pharma",
+      "underlying_exchange": "HK",
+      "underlying_currency": "HKD",
+      "ratio": 999
+    }
+  ],
+  "2020.HK": [
+    {
+      "dr_ticker": "ANTA13.BK",
+      "display_name": "Anta Sports Products",
+      "underlying_exchange": "HK",
+      "underlying_currency": "HKD",
+      "ratio": 999
+    }
+  ],
+  "6690.HK": [
+    {
+      "dr_ticker": "HAIERS19.BK",
+      "display_name": "Haier Smart Home",
+      "underlying_exchange": "HK",
+      "underlying_currency": "HKD",
+      "ratio": 999
+    }
+  ],
+  "0941.HK": [
+    {
+      "dr_ticker": "CHMOBILE19.BK",
+      "display_name": "China Mobile",
+      "underlying_exchange": "HK",
+      "underlying_currency": "HKD",
+      "ratio": 999
+    }
+  ],
+  "0020.HK": [
+    {
+      "dr_ticker": "SENSE23.BK",
+      "display_name": "SenseTime",
+      "underlying_exchange": "HK",
+      "underlying_currency": "HKD",
+      "ratio": 999
+    }
+  ],
+  "1347.HK": [
+    {
+      "dr_ticker": "HUAHONG23.BK",
+      "display_name": "Hua Hong Semiconductor",
+      "underlying_exchange": "HK",
+      "underlying_currency": "HKD",
+      "ratio": 999
+    }
+  ],
+  "0590.HK": [
+    {
+      "dr_ticker": "LPGOLD13.BK",
+      "display_name": "Luk Fook Jewellery",
+      "underlying_exchange": "HK",
+      "underlying_currency": "HKD",
+      "ratio": 999
+    }
+  ],
+  "9660.HK": [
+    {
+      "dr_ticker": "HORIZON23.BK",
+      "display_name": "Horizon Robotics",
+      "underlying_exchange": "HK",
+      "underlying_currency": "HKD",
+      "ratio": 999
+    }
+  ],
+  "3888.HK": [
+    {
+      "dr_ticker": "KINGSOFT23.BK",
+      "display_name": "Kingsoft Corporation",
+      "underlying_exchange": "HK",
+      "underlying_currency": "HKD",
+      "ratio": 999
+    }
+  ],
+  "9880.HK": [
+    {
+      "dr_ticker": "UBTECH23.BK",
+      "display_name": "UBTECH Robotics",
+      "underlying_exchange": "HK",
+      "underlying_currency": "HKD",
+      "ratio": 999
+    }
+  ],
+  "9633.HK": [
+    {
+      "dr_ticker": "NONGFU80.BK",
+      "display_name": "Nongfu Spring",
+      "underlying_exchange": "HK",
+      "underlying_currency": "HKD",
+      "ratio": 999
+    }
+  ],
+  "3750.HK": [
+    {
+      "dr_ticker": "CATL80.BK",
+      "display_name": "CATL",
+      "underlying_exchange": "HK",
+      "underlying_currency": "HKD",
+      "ratio": 999
+    }
+  ],
+  "6758.T": [
+    {
+      "dr_ticker": "SONY80.BK",
+      "display_name": "Sony Group",
+      "underlying_exchange": "JP",
+      "underlying_currency": "JPY",
+      "ratio": 999
+    }
+  ],
+  "7267.T": [
+    {
+      "dr_ticker": "HONDA19.BK",
+      "display_name": "Honda Motor",
+      "underlying_exchange": "JP",
+      "underlying_currency": "JPY",
+      "ratio": 999
+    }
+  ],
+  "7974.T": [
+    {
+      "dr_ticker": "NINTENDO19.BK",
+      "display_name": "Nintendo",
+      "underlying_exchange": "JP",
+      "underlying_currency": "JPY",
+      "ratio": 999
+    }
+  ],
+  "9984.T": [
+    {
+      "dr_ticker": "SOFTBANK23.BK",
+      "display_name": "SoftBank Group",
+      "underlying_exchange": "JP",
+      "underlying_currency": "JPY",
+      "ratio": 999
+    }
+  ],
+  "8035.T": [
+    {
+      "dr_ticker": "TEL23.BK",
+      "display_name": "Tokyo Electron",
+      "underlying_exchange": "JP",
+      "underlying_currency": "JPY",
+      "ratio": 999
+    }
+  ],
+  "6857.T": [
+    {
+      "dr_ticker": "ADVANT19.BK",
+      "display_name": "Advantest Corp",
+      "underlying_exchange": "JP",
+      "underlying_currency": "JPY",
+      "ratio": 999
+    }
+  ],
+  "8306.T": [
+    {
+      "dr_ticker": "MUFG19.BK",
+      "display_name": "Mitsubishi UFJ Financial Group",
+      "underlying_exchange": "JP",
+      "underlying_currency": "JPY",
+      "ratio": 999
+    }
+  ],
+  "8316.T": [
+    {
+      "dr_ticker": "SMFG19.BK",
+      "display_name": "Sumitomo Mitsui Financial Group",
+      "underlying_exchange": "JP",
+      "underlying_currency": "JPY",
+      "ratio": 999
+    }
+  ],
+  "8001.T": [
+    {
+      "dr_ticker": "ITOCHU19.BK",
+      "display_name": "Itochu Corp",
+      "underlying_exchange": "JP",
+      "underlying_currency": "JPY",
+      "ratio": 999
+    }
+  ],
+  "8058.T": [
+    {
+      "dr_ticker": "MITSU19.BK",
+      "display_name": "Mitsubishi Corp",
+      "underlying_exchange": "JP",
+      "underlying_currency": "JPY",
+      "ratio": 999
+    }
+  ],
+  "6861.T": [
+    {
+      "dr_ticker": "KEYENCE23.BK",
+      "display_name": "Keyence Corp",
+      "underlying_exchange": "JP",
+      "underlying_currency": "JPY",
+      "ratio": 999
+    }
+  ],
+  "9983.T": [
+    {
+      "dr_ticker": "UNIQLO80.BK",
+      "display_name": "Fast Retailing (Uniqlo)",
+      "underlying_exchange": "JP",
+      "underlying_currency": "JPY",
+      "ratio": 999
+    }
+  ],
+  "8136.T": [
+    {
+      "dr_ticker": "SANRIO23.BK",
+      "display_name": "Sanrio",
+      "underlying_exchange": "JP",
+      "underlying_currency": "JPY",
+      "ratio": 999
+    }
+  ],
+  "3563.T": [
+    {
+      "dr_ticker": "SUSHI23.BK",
+      "display_name": "Food & Life Companies (Sushiro)",
+      "underlying_exchange": "JP",
+      "underlying_currency": "JPY",
+      "ratio": 999
+    }
+  ],
+  "RMS.PA": [
+    {
+      "dr_ticker": "HERMES80.BK",
+      "display_name": "Hermès International",
+      "underlying_exchange": "FR",
+      "underlying_currency": "EUR",
+      "ratio": 999
+    }
+  ],
+  "OR.PA": [
+    {
+      "dr_ticker": "LOREAL80.BK",
+      "display_name": "L'Oréal",
+      "underlying_exchange": "FR",
+      "underlying_currency": "EUR",
+      "ratio": 999
+    }
+  ],
+  "MC.PA": [
+    {
+      "dr_ticker": "LVMH01.BK",
+      "display_name": "LVMH",
+      "underlying_exchange": "FR",
+      "underlying_currency": "EUR",
+      "ratio": 999
+    }
+  ],
+  "NOVO-B.CO": [
+    {
+      "dr_ticker": "NOVOB80.BK",
+      "display_name": "Novo Nordisk",
+      "underlying_exchange": "DK",
+      "underlying_currency": "DKK",
+      "ratio": 1000
+    }
+  ],
+  "SAN.PA": [
+    {
+      "dr_ticker": "SANOFI80.BK",
+      "display_name": "Sanofi",
+      "underlying_exchange": "FR",
+      "underlying_currency": "EUR",
+      "ratio": 999
+    }
+  ],
+  "RACE.MI": [
+    {
+      "dr_ticker": "FERRARI80.BK",
+      "display_name": "Ferrari",
+      "underlying_exchange": "IT",
+      "underlying_currency": "EUR",
+      "ratio": 999
+    }
+  ],
+  "2330.TW": [
+    {
+      "dr_ticker": "TSMC80.BK",
+      "display_name": "Taiwan Semiconductor (TSMC)",
+      "underlying_exchange": "TW",
+      "underlying_currency": "TWD",
+      "ratio": 999
+    }
+  ],
+  "D05.SI": [
+    {
+      "dr_ticker": "DBS19.BK",
+      "display_name": "DBS Group",
+      "underlying_exchange": "SG",
+      "underlying_currency": "SGD",
+      "ratio": 999
+    }
+  ],
+  "U11.SI": [
+    {
+      "dr_ticker": "UOB19.BK",
+      "display_name": "United Overseas Bank",
+      "underlying_exchange": "SG",
+      "underlying_currency": "SGD",
+      "ratio": 999
+    }
+  ],
+  "Z74.SI": [
+    {
+      "dr_ticker": "SINGTEL80.BK",
+      "display_name": "Singtel",
+      "underlying_exchange": "SG",
+      "underlying_currency": "SGD",
+      "ratio": 999
+    }
+  ],
+  "S68.SI": [
+    {
+      "dr_ticker": "SGX19.BK",
+      "display_name": "Singapore Exchange",
+      "underlying_exchange": "SG",
+      "underlying_currency": "SGD",
+      "ratio": 999
+    }
+  ],
+  "C6L.SI": [
+    {
+      "dr_ticker": "SIA19.BK",
+      "display_name": "Singapore Airlines",
+      "underlying_exchange": "SG",
+      "underlying_currency": "SGD",
+      "ratio": 999
+    }
+  ],
+  "U96.SI": [
+    {
+      "dr_ticker": "SEMB19.BK",
+      "display_name": "Sembcorp Industries",
+      "underlying_exchange": "SG",
+      "underlying_currency": "SGD",
+      "ratio": 999
+    }
+  ],
+  "V03.SI": [
+    {
+      "dr_ticker": "VENTURE19.BK",
+      "display_name": "Venture Corporation",
+      "underlying_exchange": "SG",
+      "underlying_currency": "SGD",
+      "ratio": 999
+    }
+  ],
+  "S63.SI": [
+    {
+      "dr_ticker": "STEG19.BK",
+      "display_name": "Singapore Technologies Engineering",
+      "underlying_exchange": "SG",
+      "underlying_currency": "SGD",
+      "ratio": 999
+    }
+  ],
+  "VCB.VN": [
+    {
+      "dr_ticker": "VCB19.BK",
+      "display_name": "Vietcombank",
+      "underlying_exchange": "VN",
+      "underlying_currency": "VND",
+      "ratio": 999
+    }
+  ],
+  "VNM.VN": [
+    {
+      "dr_ticker": "VNM19.BK",
+      "display_name": "Vinamilk",
+      "underlying_exchange": "VN",
+      "underlying_currency": "VND",
+      "ratio": 999
+    }
+  ],
+  "VHM.VN": [
+    {
+      "dr_ticker": "VHM19.BK",
+      "display_name": "Vinhomes",
+      "underlying_exchange": "VN",
+      "underlying_currency": "VND",
+      "ratio": 999
+    }
+  ],
+  "HPG.VN": [
+    {
+      "dr_ticker": "HPG19.BK",
+      "display_name": "Hoa Phat Group",
+      "underlying_exchange": "VN",
+      "underlying_currency": "VND",
+      "ratio": 999
+    }
+  ],
+  "MSN.VN": [
+    {
+      "dr_ticker": "MSN19.BK",
+      "display_name": "Masan Group",
+      "underlying_exchange": "VN",
+      "underlying_currency": "VND",
+      "ratio": 999
+    }
+  ],
+  "MWG.VN": [
+    {
+      "dr_ticker": "MWG19.BK",
+      "display_name": "Mobile World Investment",
+      "underlying_exchange": "VN",
+      "underlying_currency": "VND",
+      "ratio": 999
+    }
+  ],
+  "FPT.VN": [
+    {
+      "dr_ticker": "FPTVN19.BK",
+      "display_name": "FPT Corp",
+      "underlying_exchange": "VN",
+      "underlying_currency": "VND",
+      "ratio": 999
+    }
   ]
 }

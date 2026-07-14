@@ -236,6 +236,44 @@ def test_load_existing_mapping_with_file(tmp):
     print("PASS test_load_existing_mapping_with_file")
 
 
+def test_main_preserves_verified_note_across_reruns(tmp):
+    """Bug-fix regression guard: re-running discovery must not silently drop
+    human-added fields like verified_note — only the boolean 'verified' was
+    being carried forward, wiping the sourcing audit trail on every re-run."""
+    import json
+    from pathlib import Path
+    from unittest.mock import patch
+    from kth_dr import discover_drs as dd
+
+    seed_path = Path(tmp) / "seed_list.json"
+    mapping_path = Path(tmp) / "mapping.json"
+    seed_path.write_text(json.dumps({
+        "0700.HK": [{"dr_ticker": "TENCENT80.BK", "display_name": "Tencent Holdings",
+                      "underlying_exchange": "HK", "underlying_currency": "HKD", "ratio": 100}],
+    }))
+    mapping_path.write_text(json.dumps({
+        "0700.HK": {
+            "display_name": "Tencent Holdings", "fx_ticker": "HKDTHB=X", "primary_dr": "TENCENT80.BK",
+            "alternatives": [{"dr_ticker": "TENCENT80.BK", "ratio": 100, "verified": True,
+                               "verified_note": "confirmed via SET IM, reviewed 2026-07-14"}],
+        },
+    }))
+
+    orig_seed, orig_mapping = dd.SEED_PATH, dd.MAPPING_PATH
+    dd.SEED_PATH, dd.MAPPING_PATH = seed_path, mapping_path
+    try:
+        with patch.object(dd, "compute_dr_stats", return_value={"avg_volume_30d": 1000, "history_rows": 500, "listing_date": "2022-01-01"}):
+            dd.main()
+        with open(mapping_path) as f:
+            result = json.load(f)
+        alt = result["0700.HK"]["alternatives"][0]
+        assert alt["verified"] is True
+        assert alt["verified_note"] == "confirmed via SET IM, reviewed 2026-07-14"
+    finally:
+        dd.SEED_PATH, dd.MAPPING_PATH = orig_seed, orig_mapping
+    print("PASS test_main_preserves_verified_note_across_reruns")
+
+
 def test_rank_alternatives_sorts_by_volume():
     from kth_dr.discover_drs import rank_alternatives
     alts = [

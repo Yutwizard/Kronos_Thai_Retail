@@ -124,15 +124,16 @@ def main():
     seed = load_seed_list()
     existing = load_existing_mapping()
 
-    # Track verified status across runs so re-running discovery never silently
-    # un-verifies something the user already approved.
-    previous_verified: dict[str, bool] = {}
+    # Track verified status (and any other human-added fields, e.g. verified_note)
+    # across runs so re-running discovery never silently un-verifies something
+    # the user already approved, or discards the sourcing trail behind it.
+    previous_verified: dict[str, dict] = {}
     for underlying, entry in existing.items():
         if underlying.startswith("_"):
             continue
         for alt in entry.get("alternatives", []):
             if alt.get("verified"):
-                previous_verified[alt["dr_ticker"]] = True
+                previous_verified[alt["dr_ticker"]] = alt
 
     mapping = {}
     excluded = {}
@@ -155,7 +156,7 @@ def main():
             continue
 
         stats = compute_dr_stats(dr_ticker)
-        was_verified = previous_verified.get(dr_ticker, False)
+        prev = previous_verified.get(dr_ticker)
 
         alt = {
             "dr_ticker": dr_ticker,
@@ -163,8 +164,12 @@ def main():
             "avg_volume_30d": stats["avg_volume_30d"],
             "listing_date": stats["listing_date"],
             "history_rows": stats["history_rows"],
-            "verified": was_verified,
+            "verified": bool(prev),
         }
+        if prev and "verified_note" in prev:
+            # Carry forward the human's sourcing note — losing it on every
+            # re-run would erase the audit trail for why this DR was trusted.
+            alt["verified_note"] = prev["verified_note"]
 
         mapping[underlying] = {
             "display_name": display_name,
