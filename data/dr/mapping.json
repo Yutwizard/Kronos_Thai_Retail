@@ -1,0 +1,84 @@
+{
+  "_meta": {
+    "generated": "2026-07-14T22:31:56+07:00",
+    "dr_count": 4,
+    "underlying_count": 4,
+    "status": "partially_reviewed",
+    "status_note": "TENCENT80/TOYOTA80/ASML01 verified 2026-07-14 against primary sources (SET IM, KTB, Bualuang). 005930.KS (Samsung) has no confirmed SET-listed DR — SAMSUNG80.BK does not exist on Yahoo Finance; needs either a real ticker or removal from seed_list.json."
+  },
+  "005930.KS": {
+    "display_name": "Samsung Electronics",
+    "underlying_exchange": "KR",
+    "underlying_currency": "KRW",
+    "fx_ticker": "KRWTHB=X",
+    "primary_dr": "SAMSUNG80.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "SAMSUNG80.BK",
+        "ratio": 80,
+        "avg_volume_30d": 0,
+        "listing_date": null,
+        "history_rows": 0,
+        "verified": false,
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "0700.HK": {
+    "display_name": "Tencent Holdings",
+    "underlying_exchange": "HK",
+    "underlying_currency": "HKD",
+    "fx_ticker": "HKDTHB=X",
+    "primary_dr": "TENCENT80.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "TENCENT80.BK",
+        "ratio": 100,
+        "avg_volume_30d": 1496602,
+        "listing_date": "2022-06-10",
+        "history_rows": 992,
+        "verified": true,
+        "verified_note": "Ratio 1:100 confirmed via SET Information Memorandum (issuer KTB, 'General Document Number 7'); ticker/issuer confirmed on set.or.th company-profile. Reviewed 2026-07-14.",
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "7203.T": {
+    "display_name": "Toyota Motor",
+    "underlying_exchange": "JP",
+    "underlying_currency": "JPY",
+    "fx_ticker": "JPYTHB=X",
+    "primary_dr": "TOYOTA80.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "TOYOTA80.BK",
+        "ratio": 100,
+        "avg_volume_30d": 81712,
+        "listing_date": "2024-06-21",
+        "history_rows": 500,
+        "verified": true,
+        "verified_note": "Ratio 1:100 ('1 Toyota share : DR 100 units') confirmed on krungthai.com's own TOYOTA80 product page; ticker/issuer confirmed on set.or.th company-profile. Reviewed 2026-07-14.",
+        "liquidity_rank": 1
+      }
+    ]
+  },
+  "ASML.AS": {
+    "display_name": "ASML Holding",
+    "underlying_exchange": "NL",
+    "underlying_currency": "EUR",
+    "fx_ticker": "EURTHB=X",
+    "primary_dr": "ASML01.BK",
+    "alternatives": [
+      {
+        "dr_ticker": "ASML01.BK",
+        "ratio": 1200,
+        "avg_volume_30d": 191144,
+        "listing_date": "2023-11-17",
+        "history_rows": 645,
+        "verified": true,
+        "verified_note": "Ratio 1:1200 confirmed on bualuang.co.th's own ASML01 product page (first trading date 16 Nov 2023, matches discovered listing_date); ticker/issuer confirmed on set.or.th quote page. Reviewed 2026-07-14.",
+        "liquidity_rank": 1
+      }
+    ]
+  }
+}

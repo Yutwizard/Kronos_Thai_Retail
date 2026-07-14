@@ -15,7 +15,7 @@
       "display_name": "Tencent Holdings",
       "underlying_exchange": "HK",
       "underlying_currency": "HKD",
-      "ratio": 80
+      "ratio": 100
     }
   ],
   "7203.T": [
@@ -24,16 +24,16 @@
       "display_name": "Toyota Motor",
       "underlying_exchange": "JP",
       "underlying_currency": "JPY",
-      "ratio": 80
+      "ratio": 100
     }
   ],
   "ASML.AS": [
     {
-      "dr_ticker": "ASML80.BK",
+      "dr_ticker": "ASML01.BK",
       "display_name": "ASML Holding",
       "underlying_exchange": "NL",
       "underlying_currency": "EUR",
-      "ratio": 80
+      "ratio": 1200
     }
   ]
 }
