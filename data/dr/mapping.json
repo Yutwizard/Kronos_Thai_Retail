@@ -1,10 +1,10 @@
 {
   "_meta": {
-    "generated": "2026-07-14T22:42:40+07:00",
+    "generated": "2026-07-14T22:47:50+07:00",
     "dr_count": 71,
     "underlying_count": 71,
     "status": "partially_reviewed",
-    "status_note": "4 verified against primary sources 2026-07-14 (TENCENT80/TOYOTA80/ASML01/NOVOB80). 63 more discovered real+liquid (history_rows>=60, real yfinance data) but ratio is an unconfirmed placeholder (999) and verified=false for all of them — do not trust ratio or flip verified without checking the DR's own factsheet (see data/dr/README.md). 005930.KS (Samsung) and 2330.TW (TSMC): no real SET DR ticker found, both 404 on Yahoo. HUAHONG23.BK (Hua Hong Semiconductor) is real but only 26 history_rows, below MIN_DR_HISTORY=60 — too newly listed, will qualify once more history accumulates."
+    "status_note": "13 verified against primary/near-primary sources as of 2026-07-14: TENCENT80, TOYOTA80, ASML01, NOVOB80 (explicit ratio from issuer's own site or SET's Information Memorandum PDF); BABA80, BIDU80, BYDCOM80 (explicit ratio statement, cross-checked); MEITUAN80, XIAOMI80, KUAISH80, SUNNY19, UBTECH23, SUSHI23 (ratio inferred from TradingView's 'Repr X Sh' security-description tag rather than an explicit issuer statement -- same-caliber source but one step more indirect; spot-check before sizing a large position). 55 more discovered real+liquid (history_rows>=60) but ratio is an unconfirmed placeholder (999) and verified=false -- do not trust ratio or flip verified without checking the factsheet (see data/dr/README.md). SOFTBANK23.BK: real and liquid but ratio is UNRESOLVED, not just unconfirmed -- the original Nov-2025 listing announcement states 2110:1, but search results suggest it was adjusted to 527.5:1 effective 2026-01-05 (listing_date/history start exactly matches that date, suggesting a real restructuring event) with no primary source found for the new number. Needs a direct factsheet check before touching. 005930.KS (Samsung) and 2330.TW (TSMC): no real SET DR ticker found, both 404 on Yahoo. HUAHONG23.BK (Hua Hong Semiconductor) is real but only 26 history_rows, below MIN_DR_HISTORY=60 -- too newly listed, will qualify once more history accumulates."
   },
   "005930.KS": {
     "display_name": "Samsung Electronics",
@@ -72,7 +72,7 @@
       {
         "dr_ticker": "ASML01.BK",
         "ratio": 1200,
-        "avg_volume_30d": 191158,
+        "avg_volume_30d": 191315,
         "listing_date": "2023-11-17",
         "history_rows": 645,
         "verified": true,
@@ -90,11 +90,12 @@
     "alternatives": [
       {
         "dr_ticker": "BABA80.BK",
-        "ratio": 999,
+        "ratio": 100,
         "avg_volume_30d": 16465844,
         "listing_date": "2025-04-30",
         "history_rows": 294,
-        "verified": false,
+        "verified": true,
+        "verified_note": "Ratio 1:100 ('1 Alibaba share to 100 DR units') confirmed via SET's own listing news release (set.or.th mediacenter, article BABA80); issuer KTB. Reviewed 2026-07-14.",
         "liquidity_rank": 1
       }
     ]
@@ -108,11 +109,12 @@
     "alternatives": [
       {
         "dr_ticker": "BIDU80.BK",
-        "ratio": 999,
+        "ratio": 100,
         "avg_volume_30d": 6273765,
         "listing_date": "2023-08-15",
         "history_rows": 711,
-        "verified": false,
+        "verified": true,
+        "verified_note": "Ratio 1:100 ('1 Baidu share to 100 DR units') confirmed via search of krungthai.com's BIDU80 product page; issuer KTB. Reviewed 2026-07-14.",
         "liquidity_rank": 1
       }
     ]
@@ -144,11 +146,12 @@
     "alternatives": [
       {
         "dr_ticker": "MEITUAN80.BK",
-        "ratio": 999,
+        "ratio": 100,
         "avg_volume_30d": 1946236,
         "listing_date": "2025-03-11",
         "history_rows": 323,
-        "verified": false,
+        "verified": true,
+        "verified_note": "Ratio 1:100 inferred from TradingView security description 'Units Thailand Depositery Receipts Repr 0.01 Sh' (0.01 share/unit = 100 units/share), issuer KTB confirmed via krungthai.com product page. Reviewed 2026-07-14. Note: TradingView-tag inference is a weaker source than an explicit SET/issuer ratio statement — worth a follow-up spot-check.",
         "liquidity_rank": 1
       }
     ]
@@ -180,11 +183,12 @@
     "alternatives": [
       {
         "dr_ticker": "BYDCOM80.BK",
-        "ratio": 999,
+        "ratio": 1000,
         "avg_volume_30d": 16245579,
         "listing_date": "2022-07-26",
         "history_rows": 961,
-        "verified": false,
+        "verified": true,
+        "verified_note": "Ratio 1:1000 confirmed via two independent search hits: explicit '1 underlying share to 1,000 DR units' statement and TradingView tag 'Repr 0.001 Sh'; issuer KTB. Reviewed 2026-07-14.",
         "liquidity_rank": 1
       }
     ]
@@ -198,11 +202,12 @@
     "alternatives": [
       {
         "dr_ticker": "XIAOMI80.BK",
-        "ratio": 999,
+        "ratio": 10,
         "avg_volume_30d": 1836818,
         "listing_date": "2025-04-30",
         "history_rows": 294,
-        "verified": false,
+        "verified": true,
+        "verified_note": "Ratio 1:10 inferred from TradingView security description 'Repr 0.1 Sh' (0.1 share/unit = 10 units/share); issuer KTB. Reviewed 2026-07-14. Note: an earlier search snippet said 'conversion ratio of 10 to 1' which is ambiguous phrasing for the same fact -- flag for a follow-up spot-check against the factsheet PDF if this DR is ever sized heavily.",
         "liquidity_rank": 1
       }
     ]
@@ -234,11 +239,12 @@
     "alternatives": [
       {
         "dr_ticker": "KUAISH80.BK",
-        "ratio": 999,
+        "ratio": 100,
         "avg_volume_30d": 4446254,
         "listing_date": "2025-09-11",
         "history_rows": 203,
-        "verified": false,
+        "verified": true,
+        "verified_note": "Ratio 1:100 inferred from TradingView security description 'Repr 0.01 Sh'; issuer KTB. Reviewed 2026-07-14.",
         "liquidity_rank": 1
       }
     ]
@@ -378,11 +384,12 @@
     "alternatives": [
       {
         "dr_ticker": "SUNNY19.BK",
-        "ratio": 999,
+        "ratio": 100,
         "avg_volume_30d": 616809,
         "listing_date": "2025-09-02",
         "history_rows": 214,
-        "verified": false,
+        "verified": true,
+        "verified_note": "Ratio 1:100 inferred from TradingView security description 'Repr 0.01 Sh'. Reviewed 2026-07-14.",
         "liquidity_rank": 1
       }
     ]
@@ -594,11 +601,12 @@
     "alternatives": [
       {
         "dr_ticker": "UBTECH23.BK",
-        "ratio": 999,
+        "ratio": 100,
         "avg_volume_30d": 8502276,
         "listing_date": "2025-11-13",
         "history_rows": 160,
-        "verified": false,
+        "verified": true,
+        "verified_note": "Ratio 1:100 inferred from TradingView security description 'Repr 0.01 Sh'; issuer InnovestX (INVX). Reviewed 2026-07-14.",
         "liquidity_rank": 1
       }
     ]
@@ -882,11 +890,12 @@
     "alternatives": [
       {
         "dr_ticker": "SUSHI23.BK",
-        "ratio": 999,
+        "ratio": 100,
         "avg_volume_30d": 1001492,
         "listing_date": "2025-11-13",
         "history_rows": 160,
-        "verified": false,
+        "verified": true,
+        "verified_note": "Ratio 1:100 inferred from TradingView security description 'Repr 0.01 Sh'. Reviewed 2026-07-14.",
         "liquidity_rank": 1
       }
     ]
@@ -955,7 +964,7 @@
       {
         "dr_ticker": "NOVOB80.BK",
         "ratio": 1000,
-        "avg_volume_30d": 4554505,
+        "avg_volume_30d": 4557383,
         "listing_date": "2024-10-21",
         "history_rows": 418,
         "verified": true,

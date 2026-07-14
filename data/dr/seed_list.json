@@ -42,7 +42,7 @@
       "display_name": "Alibaba Group",
       "underlying_exchange": "HK",
       "underlying_currency": "HKD",
-      "ratio": 999
+      "ratio": 100
     }
   ],
   "9888.HK": [
@@ -51,7 +51,7 @@
       "display_name": "Baidu",
       "underlying_exchange": "HK",
       "underlying_currency": "HKD",
-      "ratio": 999
+      "ratio": 100
     }
   ],
   "9618.HK": [
@@ -69,7 +69,7 @@
       "display_name": "Meituan",
       "underlying_exchange": "HK",
       "underlying_currency": "HKD",
-      "ratio": 999
+      "ratio": 100
     }
   ],
   "9999.HK": [
@@ -87,7 +87,7 @@
       "display_name": "BYD Company",
       "underlying_exchange": "HK",
       "underlying_currency": "HKD",
-      "ratio": 999
+      "ratio": 1000
     }
   ],
   "1810.HK": [
@@ -96,7 +96,7 @@
       "display_name": "Xiaomi",
       "underlying_exchange": "HK",
       "underlying_currency": "HKD",
-      "ratio": 999
+      "ratio": 10
     }
   ],
   "2899.HK": [
@@ -114,7 +114,7 @@
       "display_name": "Kuaishou Technology",
       "underlying_exchange": "HK",
       "underlying_currency": "HKD",
-      "ratio": 999
+      "ratio": 100
     }
   ],
   "0175.HK": [
@@ -186,7 +186,7 @@
       "display_name": "Sunny Optical Technology",
       "underlying_exchange": "HK",
       "underlying_currency": "HKD",
-      "ratio": 999
+      "ratio": 100
     }
   ],
   "0981.HK": [
@@ -294,7 +294,7 @@
       "display_name": "UBTECH Robotics",
       "underlying_exchange": "HK",
       "underlying_currency": "HKD",
-      "ratio": 999
+      "ratio": 100
     }
   ],
   "9633.HK": [
@@ -438,7 +438,7 @@
       "display_name": "Food & Life Companies (Sushiro)",
       "underlying_exchange": "JP",
       "underlying_currency": "JPY",
-      "ratio": 999
+      "ratio": 100
     }
   ],
   "RMS.PA": [
