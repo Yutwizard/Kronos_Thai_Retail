@@ -1,5 +1,6 @@
 """DR mapping data — loaded from data/dr/mapping.json at import time."""
 import json
+import logging
 from pathlib import Path
 
 DR_MAP_PATH = Path("data/dr/mapping.json")
@@ -10,10 +11,20 @@ DR_MAP: dict = {}
 
 
 def _load_dr_mapping() -> dict:
+    """mapping.json is hand-edited (a human flips `verified`), so a typo here
+    must degrade to "no DRs" — never crash the pipeline that imports us."""
     if not DR_MAP_PATH.exists():
         return {}
-    with open(DR_MAP_PATH) as f:
-        return json.load(f)
+    try:
+        with open(DR_MAP_PATH) as f:
+            data = json.load(f)
+    except (json.JSONDecodeError, OSError) as e:
+        logging.warning(f"DR mapping unreadable ({DR_MAP_PATH}): {e} — continuing without DRs")
+        return {}
+    if not isinstance(data, dict):
+        logging.warning(f"DR mapping malformed ({DR_MAP_PATH}): top level must be an object — continuing without DRs")
+        return {}
+    return data
 
 
 def _ensure_loaded():
@@ -24,7 +35,7 @@ def _ensure_loaded():
 def get_dr_for_underlying(underlying_ticker: str) -> dict | None:
     _ensure_loaded()
     entry = DR_MAP.get(underlying_ticker)
-    if entry is None or "excluded_reason" in entry:
+    if not isinstance(entry, dict) or "excluded_reason" in entry:
         return None
     alternatives = entry.get("alternatives", [])
     if not alternatives:
@@ -111,7 +122,8 @@ def build_registration_dicts() -> tuple[dict[str, str], dict[str, str], dict[str
     sector = {}
     friction = {"dr": {"commission_oneway": 0.00168, "slippage_oneway": 0.0010}}
     for underlying, entry in DR_MAP.items():
-        if "excluded_reason" in entry:
+        # _meta is a dict but _unresolved is a list — same guard as the getters above
+        if not isinstance(entry, dict) or "excluded_reason" in entry:
             continue
         for alt in entry.get("alternatives", []):
             if alt.get("verified"):

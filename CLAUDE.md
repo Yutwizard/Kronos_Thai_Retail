@@ -16,9 +16,9 @@ pip install -r requirements.txt          # data layer only
 pip install -r requirements-ml.txt      # ML stack (torch etc.)
 pip install -e .                         # make kth importable as a package
 python verify_data_layer.py             # data layer: 5 tests
-python verify_fixes.py                  # review fixes: stats + pipeline + universe (17 tests)
-python verify_kaggle_runtime.py         # Kaggle pipeline: auth + orchestration (19 tests)
-python verify_dr.py                     # DR integration: plugin hook, mapping, trade-gen wiring (34 tests)
+python verify_fixes.py                  # review fixes: stats + pipeline + universe (24 tests)
+python verify_kaggle_runtime.py         # Kaggle pipeline: auth + orchestration (20 tests)
+python verify_dr.py                     # DR integration: plugin hook, mapping, trade-gen wiring (39 tests)
 python run_pipeline.py --dry-run        # full pipeline smoke test, offline
 ```
 

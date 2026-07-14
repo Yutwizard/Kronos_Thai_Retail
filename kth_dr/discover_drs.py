@@ -34,6 +34,16 @@ DR_NAMING_PATTERNS = [
 ]
 
 
+def fx_ticker_for_currency(currency: str) -> str:
+    """Yahoo FX symbol converting `currency` to THB. Yahoo quotes USD/THB as
+    plain 'THB=X'; every other pair is '<CCY>THB=X' (e.g. 'KRWTHB=X').
+    Hard-coding 'THB=X' for a KRW/HKD/JPY/EUR underlying would multiply the
+    foreign close by the USD/THB rate and make premium_pct garbage."""
+    if not currency or currency.upper() == "USD":
+        return "THB=X"
+    return f"{currency.upper()}THB=X"
+
+
 def load_seed_list() -> dict:
     if not SEED_PATH.exists():
         return {}
@@ -49,10 +59,14 @@ def load_existing_mapping() -> dict:
 
 
 def compute_dr_stats(dr_ticker: str) -> dict:
-    """Download DR history, return avg_volume_30d, history_rows, listing_date."""
+    """Download DR history, return avg_volume_30d, history_rows, listing_date.
+
+    period="max": history_rows feeds the MIN_DR_HISTORY gate — a capped window
+    (e.g. "6mo" ≈ 125 rows) would silently disqualify every DR if the gate is
+    ever raised past the cap. Volume still averages only the last 30 rows."""
     try:
         ticker = yf.Ticker(dr_ticker)
-        hist = ticker.history(period="6mo")
+        hist = ticker.history(period="max")
         if hist.empty:
             return {"avg_volume_30d": 0, "history_rows": 0, "listing_date": None}
         recent = hist.tail(30)
@@ -156,7 +170,7 @@ def main():
             "display_name": display_name,
             "underlying_exchange": exchange,
             "underlying_currency": currency,
-            "fx_ticker": "THB=X",
+            "fx_ticker": fx_ticker_for_currency(currency),
             "primary_dr": dr_ticker,
             "alternatives": rank_alternatives([alt]),
         }

@@ -45,7 +45,7 @@ _TEST_MAPPING = {
         "display_name": "Samsung Electronics",
         "underlying_exchange": "KR",
         "underlying_currency": "KRW",
-        "fx_ticker": "THB=X",
+        "fx_ticker": "KRWTHB=X",
         "primary_dr": "SAMSUNG80.BK",
         "alternatives": [
             {
@@ -168,6 +168,7 @@ def test_get_dr_info_for_display(tmp):
         assert info is not None
         assert info["underlying_ticker"] == "005930.KS"
         assert info["ratio"] == 80
+        assert info["fx_ticker"] == "KRWTHB=X", "must carry the mapping's own FX pair, not a THB=X default"
     _with_test_mapping(tmp, check)
     print("PASS test_get_dr_info_for_display")
 
@@ -383,6 +384,99 @@ def test_trade_gen_imports_and_functions_without_dr():
     assert hasattr(trade_gen, "TRADABLE_TICKERS")
     assert len(trade_gen.THAI_TICKERS) > 0
     print("PASS test_trade_gen_imports_and_functions_without_dr")
+
+
+# ---- Task 11: code-review hardening (2026-07-14) — FX correctness + broken-mapping resilience ----
+
+def test_fx_ticker_for_currency():
+    """Bug-fix regression guard: fx_ticker must match the underlying's own
+    currency. Hard-coded 'THB=X' (USD/THB) made premium_pct garbage for every
+    non-USD underlying — all four seed entries."""
+    from kth_dr.discover_drs import fx_ticker_for_currency
+    assert fx_ticker_for_currency("USD") == "THB=X"
+    assert fx_ticker_for_currency("KRW") == "KRWTHB=X"
+    assert fx_ticker_for_currency("HKD") == "HKDTHB=X"
+    assert fx_ticker_for_currency("JPY") == "JPYTHB=X"
+    assert fx_ticker_for_currency("EUR") == "EURTHB=X"
+    assert fx_ticker_for_currency("") == "THB=X"
+    print("PASS test_fx_ticker_for_currency")
+
+
+def test_build_registration_dicts_skips_non_dict_entries(tmp):
+    """Bug-fix regression guard: _unresolved (a list) crashed
+    build_registration_dicts with AttributeError at `import kth_dr` time."""
+    from kth_dr.universe_dr import build_registration_dicts
+    def check():
+        ticker_class, sector, friction = build_registration_dicts()
+        assert ticker_class == {"SAMSUNG80.BK": "dr"}, ticker_class
+        assert sector == {"SAMSUNG80.BK": "Global"}
+        assert "dr" in friction
+    _with_test_mapping(tmp, check)
+    print("PASS test_build_registration_dicts_skips_non_dict_entries")
+
+
+def test_load_dr_mapping_malformed_returns_empty(tmp):
+    """A hand-edit typo in mapping.json must degrade to 'no DRs', not raise."""
+    from pathlib import Path
+    from kth_dr import universe_dr as ud
+    bad_path = Path(tmp) / "mapping.json"
+    bad_path.write_text("{ this is not json")
+    orig_path = ud.DR_MAP_PATH
+    ud.DR_MAP_PATH = bad_path
+    ud.DR_MAP.clear()
+    try:
+        assert ud._load_dr_mapping() == {}
+        assert ud.get_dr_for_underlying("005930.KS") is None
+        assert ud.get_dr_underlying_tickers() == []
+    finally:
+        ud.DR_MAP_PATH = orig_path
+        ud.DR_MAP.clear()
+    print("PASS test_load_dr_mapping_malformed_returns_empty")
+
+
+def test_trade_gen_import_survives_malformed_mapping(tmp):
+    """End-to-end guard for the optional-import seams: with a corrupt
+    data/dr/mapping.json in cwd, `import kth.trading.trade_gen` must still
+    succeed and keep the full thai_equity list tradable."""
+    import os
+    import subprocess
+    import sys
+    from pathlib import Path
+    dr_dir = Path(tmp) / "data" / "dr"
+    dr_dir.mkdir(parents=True)
+    (dr_dir / "mapping.json").write_text("{ this is not json")
+    env = dict(os.environ)
+    env["PYTHONPATH"] = os.getcwd() + os.pathsep + env.get("PYTHONPATH", "")
+    result = subprocess.run(
+        [sys.executable, "-c",
+         "from kth.trading.trade_gen import TRADABLE_TICKERS, THAI_TICKERS; "
+         "assert set(THAI_TICKERS).issubset(set(TRADABLE_TICKERS)); print('OK')"],
+        cwd=tmp, env=env, capture_output=True, text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "OK" in result.stdout
+    print("PASS test_trade_gen_import_survives_malformed_mapping")
+
+
+def test_build_pos_rows_dr_premium_uses_fx(tmp):
+    """premium_pct = dr_close / (underlying_close × fx / ratio) − 1, using the
+    mapping's own FX pair. 32000 KRW × 0.025 THB/KRW ÷ 80 = 10.00 THB intrinsic;
+    DR at 10.50 THB → +5% premium."""
+    import pandas as pd
+    from kth.trading.sheets import build_pos_rows
+    from kth.data.universe import get_sector
+    def check():
+        positions = {"positions": [{"ticker": "SAMSUNG80.BK", "shares": 100, "avg_cost": 10.0, "entry_date": "2026-01-01"}]}
+        ohlcv = {
+            "SAMSUNG80.BK": pd.DataFrame({"close": [10.5]}),
+            "005930.KS": pd.DataFrame({"close": [32000.0]}),
+            "KRWTHB=X": pd.DataFrame({"close": [0.025]}),
+        }
+        rows = build_pos_rows(positions, ohlcv, get_sector)
+        assert rows[0][-2] == "005930.KS", rows[0]
+        assert rows[0][-1] == 0.05, rows[0]
+    _with_test_mapping(tmp, check)
+    print("PASS test_build_pos_rows_dr_premium_uses_fx")
 
 
 if __name__ == "__main__":

@@ -503,6 +503,10 @@ def run_daily_pipeline(gc, spreadsheet_id, *, model, data_loader,
             tickers = tickers + dr_tickers + dr_underlyings + dr_fx_tickers
         except ImportError:
             pass
+        except Exception as e:
+            # kth_dr present but unusable — run the pipeline without DRs
+            # rather than failing the whole daily run over an optional feature.
+            print(f"WARN: DR ticker wiring skipped: {e}")
         ohlcv_dict = data_loader.ensure(tickers)
         if not ohlcv_dict:
             raise RuntimeError("No data loaded — aborting pipeline")

@@ -23,6 +23,11 @@ try:
     DR_UNDERLYING_TICKERS = get_dr_underlying_tickers()
 except ImportError:
     DR_UNDERLYING_TICKERS = []
+except Exception as e:
+    # kth_dr present but unusable (e.g. hand-edited mapping.json with a bad
+    # schema) — degrade to thai-only rather than killing the module import.
+    logging.warning(f"kth_dr present but unusable ({e}) — continuing without DR tickers")
+    DR_UNDERLYING_TICKERS = []
 TRADABLE_TICKERS = THAI_TICKERS + DR_UNDERLYING_TICKERS
 BACKTEST_METRICS = {
     "thai_equity": {"sharpe": 1.40, "cagr": 0.3144, "max_dd": -0.1797},
