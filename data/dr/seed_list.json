@@ -60,7 +60,7 @@
       "display_name": "JD.com",
       "underlying_exchange": "HK",
       "underlying_currency": "HKD",
-      "ratio": 999
+      "ratio": 100
     }
   ],
   "3690.HK": [
@@ -105,7 +105,7 @@
       "display_name": "Zijin Mining",
       "underlying_exchange": "HK",
       "underlying_currency": "HKD",
-      "ratio": 999
+      "ratio": 10
     }
   ],
   "1024.HK": [
@@ -150,7 +150,7 @@
       "display_name": "PetroChina",
       "underlying_exchange": "HK",
       "underlying_currency": "HKD",
-      "ratio": 999
+      "ratio": 10
     }
   ],
   "9992.HK": [
@@ -186,7 +186,7 @@
       "display_name": "Sunny Optical Technology",
       "underlying_exchange": "HK",
       "underlying_currency": "HKD",
-      "ratio": 100
+      "ratio": 999
     }
   ],
   "0981.HK": [
@@ -294,7 +294,7 @@
       "display_name": "UBTECH Robotics",
       "underlying_exchange": "HK",
       "underlying_currency": "HKD",
-      "ratio": 100
+      "ratio": 999
     }
   ],
   "9633.HK": [
@@ -303,7 +303,7 @@
       "display_name": "Nongfu Spring",
       "underlying_exchange": "HK",
       "underlying_currency": "HKD",
-      "ratio": 999
+      "ratio": 100
     }
   ],
   "3750.HK": [
@@ -321,7 +321,7 @@
       "display_name": "Sony Group",
       "underlying_exchange": "JP",
       "underlying_currency": "JPY",
-      "ratio": 999
+      "ratio": 200
     }
   ],
   "7267.T": [
@@ -438,7 +438,7 @@
       "display_name": "Food & Life Companies (Sushiro)",
       "underlying_exchange": "JP",
       "underlying_currency": "JPY",
-      "ratio": 100
+      "ratio": 999
     }
   ],
   "RMS.PA": [
@@ -492,7 +492,7 @@
       "display_name": "Ferrari",
       "underlying_exchange": "IT",
       "underlying_currency": "EUR",
-      "ratio": 999
+      "ratio": 10000
     }
   ],
   "2330.TW": [
