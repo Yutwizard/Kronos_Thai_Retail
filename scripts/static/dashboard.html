@@ -195,7 +195,14 @@ async function refresh() {
   updateHealth(health);
   const compare = await fetchJSON("/api/forecasts/compare");
   const fcMap = {};
-  (compare || forecasts)?.forecasts?.forEach(f => { fcMap[f.ticker] = f; });
+  // Positions are keyed by execution_ticker (what you actually hold/traded —
+  // the DR itself for a DR position), but forecast rows are keyed by the
+  // underlying (ticker). Index by both so updatePositions()'s fcMap[p.ticker]
+  // lookup resolves for DR positions too, not just plain thai_equity ones.
+  (compare || forecasts)?.forecasts?.forEach(f => {
+    fcMap[f.ticker] = f;
+    if (f.execution_ticker) fcMap[f.execution_ticker] = f;
+  });
   updatePositions(positions, fcMap);
   updateForecasts(compare || forecasts);
   updateTradeTicket(trades, risk);
@@ -345,6 +352,7 @@ function updatePositions(pos, fcMap) {
     body.innerHTML = '<p class="empty">No positions yet. Paper trade to start tracking.</p>'; return;
   }
   const hasFc = fcMap && Object.keys(fcMap).length > 0;
+  const hasDr = pos.positions.some(p => p.underlying_ticker);
   let html = `<table><thead><tr>
     <th title="${COL.ticker}">Ticker</th>
     <th>Shares</th>
@@ -352,6 +360,10 @@ function updatePositions(pos, fcMap) {
     <th title="Current market price (last close, THB)">Mark</th>
     <th title="Unrealised P&amp;L = (Mark − Avg Cost) / Avg Cost">P&amp;L%</th>
     <th title="Position value as % of total portfolio">Weight</th>`;
+  if (hasDr) {
+    html += `<th title="Foreign ticker this DR tracks">Underlying</th>`;
+    html += `<th title="DR price vs. its intrinsic value = (underlying close × FX) ÷ ratio. Positive = DR trading above its underlying (expensive); negative = below (cheap). Large/growing premiums are a signal to reduce, independent of the forecast.">Premium %</th>`;
+  }
   if (hasFc) {
     html += `<th title="${COL.expRet}">Exp Ret (?)</th>`;
     html += `<th title="${COL.delta}">Δ Prev (?)</th>`;
@@ -373,12 +385,23 @@ function updatePositions(pos, fcMap) {
     }
 
     html += `<tr class="${rowCls}">
-      <td class="ticker">${p.ticker}</td>
+      <td class="ticker">${p.ticker}${p.underlying_ticker ? ' <span class="badge dr" title="Depositary Receipt — tracks underlying '+p.underlying_ticker+'">DR</span>' : ''}</td>
       <td class="num">${(p.shares||0).toLocaleString()}</td>
       <td class="num">${(p.avg_cost||0).toFixed(2)}</td>
       <td class="num">${(p.mark||0).toFixed(2)}</td>
       <td class="num ${pnlCls}">${(p.pnl_pct*100).toFixed(1)}%</td>
       <td class="num">${(p.weight*100).toFixed(0)}%</td>`;
+
+    if (hasDr) {
+      if (p.underlying_ticker) {
+        const premCls = p.premium_pct === null || p.premium_pct === undefined ? "muted"
+          : p.premium_pct >= 0 ? "red" : "green"; // positive premium = expensive = caution
+        const premTxt = p.premium_pct === null || p.premium_pct === undefined ? "—" : (p.premium_pct*100).toFixed(1)+"%";
+        html += `<td class="muted">${p.underlying_ticker}</td><td class="num ${premCls}">${premTxt}</td>`;
+      } else {
+        html += '<td class="muted">—</td><td class="muted">—</td>';
+      }
+    }
 
     if (hasFc && f) {
       const dir = f.direction === "up" ? "↑" : "↓";
@@ -399,11 +422,12 @@ function updatePositions(pos, fcMap) {
   const dataNote = fcDates.length > 0 && fcDates[0].close
     ? `Forecast based on <strong>latest available close prices</strong>. Exp Ret and Band update each time you run the pipeline.`
     : '';
+  const drNote = hasDr ? `<strong>Premium %</strong> DR price vs. intrinsic value (underlying × FX ÷ ratio) — positive = trading rich, negative = trading cheap &nbsp;|&nbsp; ` : '';
   html += `<div class="col-legend">
     <strong>Exp Ret</strong> Model's 20-day forecast from latest close &nbsp;|&nbsp;
     <strong>Δ Prev</strong> Change vs previous pipeline run &nbsp;|&nbsp;
     <strong>Band</strong> Uncertainty: &lt;10%=🟢 10–30%=🟡 &gt;30%=🔴 &nbsp;|&nbsp;
-    Row: green=bullish hold, orange=reduce, red=exit &nbsp;|&nbsp;
+    ${drNote}Row: green=bullish hold, orange=reduce, red=exit &nbsp;|&nbsp;
     ${dataNote}
   </div>`;
   body.innerHTML = html;
@@ -421,6 +445,20 @@ function _flagDelta(prev, curr) {
   const up = (prev==="red"&&curr==="yellow")||(prev==="yellow"&&curr==="green");
   return up ? ' <span class="flag-up" title="Confidence improved">↗</span>'
             : ' <span class="flag-dn" title="Confidence downgraded">↘</span>';
+}
+// Forecast rows carry `ticker` (the signal-source underlying, e.g. "0700.HK")
+// and `execution_ticker` (what you actually place an order for, e.g.
+// "TENCENT80.BK") separately — for a DR these differ, and the underlying
+// isn't tradable on a Thai broker at all. Show the tradable one with a DR
+// badge so the ranking/morning-brief tables never display an unbuyable symbol.
+function _tickerCell(f) {
+  const execTicker = f.execution_ticker || f.ticker;
+  const isDr = f.class === "dr" || (f.execution_ticker && f.execution_ticker !== f.ticker);
+  if (isDr) {
+    return '<td class="ticker">' + execTicker
+      + ' <span class="badge dr" title="Depositary Receipt — tracks underlying ' + f.ticker + '">DR</span></td>';
+  }
+  return '<td class="ticker">' + execTicker + '</td>';
 }
 
 // Column header definitions — shown as tooltips on hover
@@ -462,7 +500,7 @@ function updateForecasts(fc) {
     const dir = f.direction === "up" ? "↑" : "↓";
     const retCls = f.exp_ret >= 0 ? "green" : "red";
     const flagChange = _flagDelta(f.prev_confidence, f.confidence);
-    html += '<tr><td class="ticker">' + f.ticker + '</td>'
+    html += '<tr>' + _tickerCell(f)
       + '<td class="num">' + (f.close?.toFixed(2)||"—") + '</td>'
       + '<td class="num ' + retCls + '">' + dir + ' ' + (f.exp_ret*100).toFixed(2) + '%</td>';
     if (hasDelta) html += '<td class="num">' + _deltaStr(f.delta_exp_ret) + '</td>';
@@ -499,7 +537,7 @@ function updateForecasts(fc) {
     const retCls = f.exp_ret >= 0 ? "green" : "red";
     const flagChange = _flagDelta(f.prev_confidence, f.confidence);
     rankHtml += '<tr class="rank-row" data-ticker="' + f.ticker.toLowerCase() + '">'
-      + '<td>' + (i+1) + '</td><td class="ticker">' + f.ticker + '</td>'
+      + '<td>' + (i+1) + '</td>' + _tickerCell(f)
       + '<td class="muted">' + (f.name||"") + '</td>'
       + '<td class="num">' + (f.close?.toFixed(2)||"—") + '</td>'
       + '<td class="num ' + retCls + '">' + dir + ' ' + (f.exp_ret*100).toFixed(2) + '%</td>';
@@ -842,7 +880,7 @@ async function loadRankingForDate(selectedDate) {
     const retCls = f.exp_ret >= 0 ? "green" : "red";
     const flagChange = _flagDelta(f.prev_confidence, f.confidence);
     rankHtml += '<tr class="rank-row" data-ticker="' + f.ticker.toLowerCase() + '">'
-      + '<td>' + (i+1) + '</td><td class="ticker">' + f.ticker + '</td>'
+      + '<td>' + (i+1) + '</td>' + _tickerCell(f)
       + '<td class="muted">' + (f.name||"") + '</td>'
       + '<td class="num">' + (f.close?.toFixed(2)||"—") + '</td>'
       + '<td class="num ' + retCls + '">' + dir + ' ' + (f.exp_ret*100).toFixed(2) + '%</td>';

@@ -65,6 +65,12 @@ def get_positions(mode: str = "paper") -> dict:
         return {"positions": [], "total_value": pf["cash"], "cash": pf["cash"],
                 "frozen": pf.get("frozen", False), "equity": pf["equity_curve"][-1]["value"] if pf["equity_curve"] else pf["cash"]}
 
+    from kth.data.universe import get_ticker_class
+    try:
+        from kth_dr.universe_dr import get_dr_info_for_display
+    except ImportError:
+        get_dr_info_for_display = lambda t: None
+
     enriched = []
     for ticker, pos in positions.items():
         mark = _get_current_price(ticker)
@@ -72,6 +78,19 @@ def get_positions(mode: str = "paper") -> dict:
             mark = 0.0  # fallback
         pnl = (mark - pos["avg_cost"]) / pos["avg_cost"] if pos["avg_cost"] > 0 else 0
         val = pos["shares"] * mark
+
+        underlying_ticker = None
+        premium_pct = None
+        dr_info = get_dr_info_for_display(ticker)
+        if dr_info:
+            underlying_ticker = dr_info["underlying_ticker"]
+            u_close = _get_current_price(dr_info["underlying_ticker"])
+            fx_close = _get_current_price(dr_info["fx_ticker"])
+            if u_close and fx_close and dr_info["ratio"]:
+                dr_intrinsic = (u_close * fx_close) / dr_info["ratio"]
+                if dr_intrinsic:
+                    premium_pct = round((mark / dr_intrinsic) - 1, 4)
+
         enriched.append({
             "ticker": ticker,
             "shares": pos["shares"],
@@ -79,6 +98,9 @@ def get_positions(mode: str = "paper") -> dict:
             "mark": mark,
             "pnl_pct": round(pnl, 4),
             "value": round(val, 2),
+            "class": get_ticker_class(ticker),
+            "underlying_ticker": underlying_ticker,
+            "premium_pct": premium_pct,
         })
 
     # Sort by value desc

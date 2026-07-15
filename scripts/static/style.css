@@ -23,6 +23,7 @@ body {
 .badge { padding: 2px 10px; border-radius: 4px; font-size: 0.75em; font-weight: 700; }
 .badge.paper { background: #e3f2fd; color: var(--blue); }
 .badge.live { background: #ffebee; color: #c62828; }
+.badge.dr { background: #fff3e0; color: #e65100; padding: 1px 6px; font-size: 0.7em; margin-left: 4px; cursor: help; }
 .banner { padding: 4px 10px; border-radius: 4px; font-size: 0.8em; }
 .banner.warn { background: #fff3e0; color: #e65100; }
 .banner.stop { background: #ffebee; color: #c62828; font-weight: 700; padding: 10px 16px; }
