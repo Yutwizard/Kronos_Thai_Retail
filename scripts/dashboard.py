@@ -521,7 +521,15 @@ def cmd_generate():
         if result.returncode != 0:
             log(f"STEP1_FAILED: {result.stderr[:200]}")
             return 1
-        log("STEP1_OK")
+        # download_data.py can exit 0 while individual tickers silently failed
+        # to download (yfinance quirks per exchange, rate limits, etc.) --
+        # those tickers then vanish from the forecast run with only a vague
+        # "insufficient history" message in Step 2, no visible cause. Surface
+        # per-ticker failures/sanity flags here so STEP1_OK never hides them.
+        warn_lines = [l for l in result.stdout.splitlines() if "FAILED" in l or "⚠" in l]
+        for wl in warn_lines:
+            log(f"STEP1_WARN: {wl.strip()}")
+        log("STEP1_OK" + (f" ({len(warn_lines)} ticker warning(s), see above)" if warn_lines else ""))
     except Exception as e:
         log(f"STEP1_FAILED: {e}")
         return 1
