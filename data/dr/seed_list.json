@@ -1,14 +1,5 @@
 {
-  "_note": "Hand-curated seed list of DRs. Format: underlying -> [DR candidates]. Add/edit entries manually, then run scripts/dr/discover_drs.py to generate mapping.json. Use home-market tickers for the underlying, not a US ADR that's already directly investable (see universe.py's us_equity notes) — that's why Toyota is 7203.T (Tokyo) and ASML is ASML.AS (Amsterdam), not their US-listed tickers. ISSUER POLICY (added 2026-07-15): only include DRs issued by a Thai bank or a securities-firm subsidiary of a Thai bank -- KTB (Krungthai Bank, ticker suffix '80'), BLS (Bualuang Securities, subsidiary of Bangkok Bank, suffix '01'), and INVX (InnovestX Securities, subsidiary of SCBX/Siam Commercial Bank, suffix '23'). Do NOT add DRs issued by Yuanta Securities (Thailand) (suffix '19' -- subsidiary of Taiwan's Yuanta Financial Holdings, not a Thai bank) or KGI Securities (suffix '13' -- also Taiwan-affiliated). 32 candidates issued by those two were removed on 2026-07-15 for this reason.",
-  "005930.KS": [
-    {
-      "dr_ticker": "SAMSUNG80.BK",
-      "display_name": "Samsung Electronics",
-      "underlying_exchange": "KR",
-      "underlying_currency": "KRW",
-      "ratio": 80
-    }
-  ],
+  "_note": "Hand-curated seed list of DRs. Format: underlying -> [DR candidates]. Add/edit entries manually, then run scripts/dr/discover_drs.py to generate mapping.json. Use home-market tickers for the underlying, not a US ADR that's already directly investable (see universe.py's us_equity notes) — that's why Toyota is 7203.T (Tokyo) and ASML is ASML.AS (Amsterdam), not their US-listed tickers. ISSUER POLICY (added 2026-07-15): only include DRs issued by a Thai bank or a securities-firm subsidiary of a Thai bank -- KTB (Krungthai Bank, ticker suffix '80'), BLS (Bualuang Securities, subsidiary of Bangkok Bank, suffix '01'), and INVX (InnovestX Securities, subsidiary of SCBX/Siam Commercial Bank, suffix '23'). Do NOT add DRs issued by Yuanta Securities (Thailand) (suffix '19' -- subsidiary of Taiwan's Yuanta Financial Holdings, not a Thai bank) or KGI Securities (suffix '13' -- also Taiwan-affiliated). 32 candidates issued by those two were removed on 2026-07-15 for this reason. CONFIRMED NO DR EXISTS (checked 2026-07-15 across KTB/BLS/InnovestX's own DR listings, user confirmed): Samsung Electronics (005930.KS) and TSMC (2330.TW). Both were previously seeded with guessed placeholder tickers (SAMSUNG80.BK, TSMC80.BK) that 404'd on Yahoo; removed rather than left in as permanent dead entries. Don't re-add without a real confirmed ticker.",
   "0700.HK": [
     {
       "dr_ticker": "TENCENT80.BK",
@@ -331,15 +322,6 @@
       "underlying_exchange": "IT",
       "underlying_currency": "EUR",
       "ratio": 10000
-    }
-  ],
-  "2330.TW": [
-    {
-      "dr_ticker": "TSMC80.BK",
-      "display_name": "Taiwan Semiconductor (TSMC)",
-      "underlying_exchange": "TW",
-      "underlying_currency": "TWD",
-      "ratio": 999
     }
   ],
   "Z74.SI": [

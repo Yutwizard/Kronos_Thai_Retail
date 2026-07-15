@@ -179,17 +179,17 @@ def test_load_seed_list_returns_dict():
     from kth_dr.discover_drs import load_seed_list
     seed = load_seed_list()
     assert isinstance(seed, dict)
-    assert "005930.KS" in seed
+    assert "0700.HK" in seed
     print("PASS test_load_seed_list_returns_dict")
 
 
 def test_load_seed_list_has_correct_structure():
     from kth_dr.discover_drs import load_seed_list
     seed = load_seed_list()
-    entry = seed["005930.KS"]
+    entry = seed["0700.HK"]
     assert isinstance(entry, list)
-    assert entry[0]["dr_ticker"] == "SAMSUNG80.BK"
-    assert entry[0]["ratio"] == 80
+    assert entry[0]["dr_ticker"] == "TENCENT80.BK"
+    assert entry[0]["ratio"] == 100
     print("PASS test_load_seed_list_has_correct_structure")
 
 
