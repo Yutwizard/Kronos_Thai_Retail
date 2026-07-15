@@ -78,7 +78,7 @@
       "display_name": "NetEase",
       "underlying_exchange": "HK",
       "underlying_currency": "HKD",
-      "ratio": 999
+      "ratio": 100
     }
   ],
   "1211.HK": [
@@ -123,7 +123,7 @@
       "display_name": "Geely Automobile",
       "underlying_exchange": "HK",
       "underlying_currency": "HKD",
-      "ratio": 999
+      "ratio": 10
     }
   ],
   "1398.HK": [
@@ -159,7 +159,7 @@
       "display_name": "Pop Mart",
       "underlying_exchange": "HK",
       "underlying_currency": "HKD",
-      "ratio": 999
+      "ratio": 100
     }
   ],
   "2269.HK": [
@@ -312,7 +312,7 @@
       "display_name": "CATL",
       "underlying_exchange": "HK",
       "underlying_currency": "HKD",
-      "ratio": 999
+      "ratio": 100
     }
   ],
   "6758.T": [
@@ -420,7 +420,7 @@
       "display_name": "Fast Retailing (Uniqlo)",
       "underlying_exchange": "JP",
       "underlying_currency": "JPY",
-      "ratio": 999
+      "ratio": 1000
     }
   ],
   "8136.T": [
@@ -447,7 +447,7 @@
       "display_name": "Hermès International",
       "underlying_exchange": "FR",
       "underlying_currency": "EUR",
-      "ratio": 999
+      "ratio": 10000
     }
   ],
   "OR.PA": [
@@ -456,7 +456,7 @@
       "display_name": "L'Oréal",
       "underlying_exchange": "FR",
       "underlying_currency": "EUR",
-      "ratio": 999
+      "ratio": 10000
     }
   ],
   "MC.PA": [
@@ -465,7 +465,7 @@
       "display_name": "LVMH",
       "underlying_exchange": "FR",
       "underlying_currency": "EUR",
-      "ratio": 999
+      "ratio": 1600
     }
   ],
   "NOVO-B.CO": [
@@ -483,7 +483,7 @@
       "display_name": "Sanofi",
       "underlying_exchange": "FR",
       "underlying_currency": "EUR",
-      "ratio": 999
+      "ratio": 1000
     }
   ],
   "RACE.MI": [
@@ -528,7 +528,7 @@
       "display_name": "Singtel",
       "underlying_exchange": "SG",
       "underlying_currency": "SGD",
-      "ratio": 999
+      "ratio": 10
     }
   ],
   "S68.SI": [

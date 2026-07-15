@@ -1,10 +1,10 @@
 {
   "_meta": {
-    "generated": "2026-07-15T07:11:16+07:00",
+    "generated": "2026-07-15T07:16:41+07:00",
     "dr_count": 71,
     "underlying_count": 71,
     "status": "partially_reviewed",
-    "status_note": "19 verified against primary sources as of 2026-07-15: TENCENT80, TOYOTA80, ASML01, NOVOB80, BABA80, BIDU80, BYDCOM80, MEITUAN80, XIAOMI80, KUAISH80 (from batch 1-2); PETROCN80, ZIJIN80, JD80, NONGFU80, SONY80, FERRARI80 (batch 3, all confirmed via KTB's own product pages or factsheet PDFs). METHODOLOGY WARNING: earlier verifications inferred ratio from TradingView's 'Units ... Repr X Sh' security-description tag when no explicit issuer statement was found. This tag proved WRONG for PETROCN80 and ZIJIN80 (tag implied 1:100 via 'Repr 0.01 Sh', real ratio for both is 1:10, confirmed on krungthai.com) while being correct for MEITUAN80/KUAISH80 (also 'Repr 0.01 Sh', correctly 1:100) -- the tag is not a reliable sole source either way and must never be trusted without an independent explicit statement or primary-source page. Three earlier verifications that rested ONLY on this tag with no corroboration (SUNNY19, UBTECH23, SUSHI23) have been REVERTED to verified=false, ratio=999 pending a real primary-source check -- their issuers (Yuanta, InnovestX) only expose ratio data behind JS-rendered pages this session's tools could not read. 51 more discovered real+liquid (history_rows>=60) with ratio still an unconfirmed placeholder (999). SOFTBANK23.BK: real, liquid, ratio UNRESOLVED -- three different numbers found across sources (2110:1 from the original Nov-2025 SET listing announcement, ~527.5:1 from an unconfirmed secondary summary, and a 'Repr 0.01 Sh' tag implying 100:1) with no single reconciling primary source found; needs a human with a JS-capable browser to check SET's Rights & Benefits tab directly. 005930.KS (Samsung) and 2330.TW (TSMC): no real SET DR ticker found, both 404 on Yahoo. HUAHONG23.BK (Hua Hong Semiconductor) real but only 26 history_rows, below MIN_DR_HISTORY=60."
+    "status_note": "26 verified against primary sources as of 2026-07-15: TENCENT80, TOYOTA80, ASML01, NOVOB80, BABA80, BIDU80, BYDCOM80, MEITUAN80, XIAOMI80, KUAISH80, PETROCN80, ZIJIN80, JD80, NONGFU80, SONY80, FERRARI80, POPMART80, NETEASE80, GEELY80, CATL80, UNIQLO80, HERMES80, LOREAL80, LVMH01, SANOFI80, SINGTEL80 -- all confirmed via the issuer's own product page (krungthai.com for KTB '80'-series, bualuang.co.th for BLS '01'-series) or an official SET/factsheet document, EXCEPT MEITUAN80/XIAOMI80/KUAISH80/BYDCOM80 which used TradingView's 'Repr X Sh' tag (see methodology warning below). 42 more discovered real+liquid (history_rows>=60) with ratio still an unconfirmed placeholder (999). METHODOLOGY WARNING: the 'Repr X Sh' TradingView tag is NOT reliable as a sole source -- confirmed correct for MEITUAN80/KUAISH80 ('Repr 0.01 Sh'=100, correct) but WRONG for PETROCN80/ZIJIN80 (same 'Repr 0.01 Sh' tag, real ratio is 10 for both, confirmed on krungthai.com). Never trust it without an independent explicit statement or a primary-source page. Three verifications resting only on this tag with no corroboration (SUNNY19, UBTECH23, SUSHI23) were REVERTED to verified=false/ratio=999 -- their issuers (Yuanta, InnovestX) only expose ratio data behind JS-rendered pages (dr19.yuanta.co.th, dr23.innovestx.co.th) that this session's tools could not read; needs a human with a browser. Same wall blocks ADVANT19, HORIZON23, FPTVN19, TEL23, CHMOBILE19, KEYENCE23, VHM19 and other non-KTB/non-BLS names -- krungthai.com/bualuang.co.th product pages work reliably for KTB/BLS names but Yuanta/InnovestX pages do not render for this session's fetch tool. SOFTBANK23.BK: real, liquid, ratio UNRESOLVED -- three conflicting numbers found (2110:1 original Nov-2025 listing, ~527.5:1 unconfirmed secondary claim, 'Repr 0.01 Sh' implying 100:1), no primary source reconciling them. 005930.KS (Samsung) and 2330.TW (TSMC): no real SET DR ticker found, both 404 on Yahoo. HUAHONG23.BK (Hua Hong Semiconductor) real but only 26 history_rows, below MIN_DR_HISTORY=60."
   },
   "005930.KS": {
     "display_name": "Samsung Electronics",
@@ -166,11 +166,12 @@
     "alternatives": [
       {
         "dr_ticker": "NETEASE80.BK",
-        "ratio": 999,
+        "ratio": 100,
         "avg_volume_30d": 94987,
         "listing_date": "2023-03-15",
         "history_rows": 805,
-        "verified": false,
+        "verified": true,
+        "verified_note": "Ratio 1:100 confirmed on krungthai.com's own NETEASE80 product page ('1 หุ้น : DR 100 หน่วย', cross-checked against its own price-example table); issuer KTB. Reviewed 2026-07-15.",
         "liquidity_rank": 1
       }
     ]
@@ -260,11 +261,12 @@
     "alternatives": [
       {
         "dr_ticker": "GEELY80.BK",
-        "ratio": 999,
+        "ratio": 10,
         "avg_volume_30d": 63889,
         "listing_date": "2025-09-11",
         "history_rows": 202,
-        "verified": false,
+        "verified": true,
+        "verified_note": "Ratio 1:10 confirmed on krungthai.com's own GEELY80 product page ('1 หุ้น : DR 10 หน่วย'); issuer KTB. Reviewed 2026-07-15.",
         "liquidity_rank": 1
       }
     ]
@@ -333,11 +335,12 @@
     "alternatives": [
       {
         "dr_ticker": "POPMART80.BK",
-        "ratio": 999,
+        "ratio": 100,
         "avg_volume_30d": 395458,
         "listing_date": "2025-03-11",
         "history_rows": 323,
-        "verified": false,
+        "verified": true,
+        "verified_note": "Ratio 1:100 confirmed on krungthai.com's own POPMART80 product page ('1 หุ้น POPMART : DR 100 หน่วย'); issuer KTB. Reviewed 2026-07-15.",
         "liquidity_rank": 1
       }
     ]
@@ -640,11 +643,12 @@
     "alternatives": [
       {
         "dr_ticker": "CATL80.BK",
-        "ratio": 999,
+        "ratio": 100,
         "avg_volume_30d": 208033,
         "listing_date": "2025-09-11",
         "history_rows": 203,
-        "verified": false,
+        "verified": true,
+        "verified_note": "Ratio 1:100 confirmed on krungthai.com's own CATL80 product page ('1 หุ้น : DR 100 หน่วย'); issuer KTB. Reviewed 2026-07-15.",
         "liquidity_rank": 1
       }
     ]
@@ -857,11 +861,12 @@
     "alternatives": [
       {
         "dr_ticker": "UNIQLO80.BK",
-        "ratio": 999,
+        "ratio": 1000,
         "avg_volume_30d": 35249,
         "listing_date": "2024-06-21",
         "history_rows": 500,
-        "verified": false,
+        "verified": true,
+        "verified_note": "Ratio 1:1000 confirmed on krungthai.com's own UNIQLO80 product page ('1 หุ้น Fast Retailing : DR 1,000 หน่วย'); issuer KTB. Reviewed 2026-07-15.",
         "liquidity_rank": 1
       }
     ]
@@ -911,11 +916,12 @@
     "alternatives": [
       {
         "dr_ticker": "HERMES80.BK",
-        "ratio": 999,
+        "ratio": 10000,
         "avg_volume_30d": 189573,
         "listing_date": "2024-10-30",
         "history_rows": 412,
-        "verified": false,
+        "verified": true,
+        "verified_note": "Ratio 1:10000 confirmed on krungthai.com's own HERMES80 product page ('1 หุ้น : DR 10,000 หน่วย'); issuer KTB. Reviewed 2026-07-15.",
         "liquidity_rank": 1
       }
     ]
@@ -929,11 +935,12 @@
     "alternatives": [
       {
         "dr_ticker": "LOREAL80.BK",
-        "ratio": 999,
+        "ratio": 10000,
         "avg_volume_30d": 56816,
         "listing_date": "2024-10-21",
         "history_rows": 418,
-        "verified": false,
+        "verified": true,
+        "verified_note": "Ratio 1:10000 confirmed on krungthai.com's own LOREAL80 product page ('1 หุ้น : DR 10,000 หน่วย'); issuer KTB. Reviewed 2026-07-15.",
         "liquidity_rank": 1
       }
     ]
@@ -947,11 +954,12 @@
     "alternatives": [
       {
         "dr_ticker": "LVMH01.BK",
-        "ratio": 999,
+        "ratio": 1600,
         "avg_volume_30d": 113899,
         "listing_date": "2023-11-17",
         "history_rows": 645,
-        "verified": false,
+        "verified": true,
+        "verified_note": "Ratio 1:1600 confirmed on bualuang.co.th's own LVMH01 product page; issuer BLS. Reviewed 2026-07-15.",
         "liquidity_rank": 1
       }
     ]
@@ -984,11 +992,12 @@
     "alternatives": [
       {
         "dr_ticker": "SANOFI80.BK",
-        "ratio": 999,
+        "ratio": 1000,
         "avg_volume_30d": 171742,
         "listing_date": "2024-10-18",
         "history_rows": 419,
-        "verified": false,
+        "verified": true,
+        "verified_note": "Ratio 1:1000 confirmed on krungthai.com's own SANOFI80 product page ('1 หุ้น : DR 1,000 หน่วย'); issuer KTB. Reviewed 2026-07-15.",
         "liquidity_rank": 1
       }
     ]
@@ -1075,11 +1084,12 @@
     "alternatives": [
       {
         "dr_ticker": "SINGTEL80.BK",
-        "ratio": 999,
+        "ratio": 10,
         "avg_volume_30d": 49212,
         "listing_date": "2024-04-02",
         "history_rows": 554,
-        "verified": false,
+        "verified": true,
+        "verified_note": "Ratio 1:10 confirmed on krungthai.com's own SINGTEL80 product page ('แปลงอัตราส่วน 1 หุ้น Singtel : 10 DR'); issuer KTB. Reviewed 2026-07-15.",
         "liquidity_rank": 1
       }
     ]
