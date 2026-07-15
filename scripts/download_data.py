@@ -42,6 +42,18 @@ def _check_price_sanity(tickers: list[str]) -> list[str]:
 
 
 tickers = get_all_tickers_including_features()
+try:
+    from kth_dr.universe_dr import get_verified_dr_tickers, get_dr_underlying_tickers, DR_MAP, _ensure_loaded
+    _ensure_loaded()
+    dr_tickers = get_verified_dr_tickers()
+    dr_underlyings = get_dr_underlying_tickers()
+    dr_fx_tickers = list({DR_MAP[u].get("fx_ticker", "THB=X") for u in dr_underlyings if u in DR_MAP})
+    tickers = tickers + dr_tickers + dr_underlyings + dr_fx_tickers
+except ImportError:
+    pass
+except Exception as e:
+    print(f"WARN: DR ticker wiring skipped: {e}")
+
 print(f"Downloading {len(tickers)} tickers (10 years each)...")
 report = download_universe(tickers, period="10y", cache_dir=str(CACHE_DIR))
 print("\nDownload complete.")
