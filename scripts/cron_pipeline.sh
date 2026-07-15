@@ -1,9 +1,22 @@
 #!/bin/bash
 # Kronos-TH daily pipeline — retry wrapper for cron
-# Recommended: run in the EVENING after SET closes (17:30 BKK) so tomorrow's
-# forecast uses today's close prices. Alternative: run at 06:30 BKK (morning).
+# Recommended: run LATE EVENING at 23:45 BKK, not right after SET's 16:30
+# close. The universe now includes DR (Depositary Receipt) underlyings on
+# European exchanges (Hermès, L'Oréal, LVMH, Sanofi, Ferrari, Novo Nordisk —
+# Euronext Paris/Amsterdam/Milan, Nasdaq Copenhagen), which close ~22:30 BKK
+# (CEST, summer) to ~23:30 BKK (CET, winter) — LATER than Asian exchanges
+# (SET/HKEX/TSE/SGX all close by ~16:30 BKK). A run at 17:30 BKK (the old
+# recommendation) would silently forecast those 6 DRs off YESTERDAY's
+# European close, breaking the "tomorrow's forecast uses today's close"
+# guarantee just for them. 23:45 BKK clears Europe's close with margin in
+# both DST seasons while staying on the SAME calendar day — run_pipeline.py
+# derives `today` from Asia/Bangkok wall-clock date, so crossing midnight
+# would roll the pipeline onto the wrong trading day. Do NOT push this past
+# 23:59 BKK for that reason.
+# Alternative: run at 06:30 BKK (morning, before SET opens) if same-day
+# European DR freshness doesn't matter for your use case.
 # Crontab examples:
-#   30 17 * * 1-5  → evening (recommended)
+#   45 23 * * 1-5  → late evening (recommended — clears Europe's close)
 #   30  6 * * 1-5  → morning (alternative)
 set -e
 
