@@ -132,7 +132,7 @@
       "display_name": "China Merchants Bank",
       "underlying_exchange": "HK",
       "underlying_currency": "HKD",
-      "ratio": 999
+      "ratio": 90
     }
   ],
   "0857.HK": [
@@ -159,7 +159,7 @@
       "display_name": "SenseTime",
       "underlying_exchange": "HK",
       "underlying_currency": "HKD",
-      "ratio": 999
+      "ratio": 4
     }
   ],
   "1347.HK": [
@@ -177,7 +177,7 @@
       "display_name": "Horizon Robotics",
       "underlying_exchange": "HK",
       "underlying_currency": "HKD",
-      "ratio": 999
+      "ratio": 16
     }
   ],
   "3888.HK": [
@@ -186,7 +186,7 @@
       "display_name": "Kingsoft Corporation",
       "underlying_exchange": "HK",
       "underlying_currency": "HKD",
-      "ratio": 999
+      "ratio": 60
     }
   ],
   "9880.HK": [
@@ -195,7 +195,7 @@
       "display_name": "UBTECH Robotics",
       "underlying_exchange": "HK",
       "underlying_currency": "HKD",
-      "ratio": 999
+      "ratio": 250
     }
   ],
   "9633.HK": [
@@ -231,7 +231,7 @@
       "display_name": "SoftBank Group",
       "underlying_exchange": "JP",
       "underlying_currency": "JPY",
-      "ratio": 999
+      "ratio": 527.5
     }
   ],
   "8035.T": [
@@ -240,7 +240,7 @@
       "display_name": "Tokyo Electron",
       "underlying_exchange": "JP",
       "underlying_currency": "JPY",
-      "ratio": 999
+      "ratio": 2710
     }
   ],
   "6861.T": [
@@ -249,7 +249,7 @@
       "display_name": "Keyence Corp",
       "underlying_exchange": "JP",
       "underlying_currency": "JPY",
-      "ratio": 999
+      "ratio": 5650
     }
   ],
   "9983.T": [
@@ -267,7 +267,7 @@
       "display_name": "Sanrio",
       "underlying_exchange": "JP",
       "underlying_currency": "JPY",
-      "ratio": 999
+      "ratio": 136
     }
   ],
   "3563.T": [
@@ -276,7 +276,7 @@
       "display_name": "Food & Life Companies (Sushiro)",
       "underlying_exchange": "JP",
       "underlying_currency": "JPY",
-      "ratio": 999
+      "ratio": 332
     }
   ],
   "RMS.PA": [

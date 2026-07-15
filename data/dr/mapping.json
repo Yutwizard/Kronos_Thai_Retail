@@ -1,10 +1,10 @@
 {
   "_meta": {
-    "generated": "2026-07-15T07:23:37+07:00",
+    "generated": "2026-07-15T09:07:57+07:00",
     "dr_count": 39,
     "underlying_count": 39,
-    "status": "partially_reviewed",
-    "status_note": "ISSUER POLICY (2026-07-15): seed_list.json now only carries DRs issued by a Thai bank or a securities-firm subsidiary of a Thai bank -- KTB (Krungthai Bank, ticker suffix '80'), BLS (Bualuang Securities/Bangkok Bank subsidiary, suffix '01'), INVX (InnovestX/SCBX-Siam Commercial Bank subsidiary, suffix '23'). 32 candidates issued by Yuanta Securities (Thailand) (suffix '19', subsidiary of Taiwan's Yuanta Financial Holdings) or KGI Securities (suffix '13', also Taiwan-affiliated) were removed -- see data/dr/seed_list.json's _note for the full list and reasoning. This did not touch any already-verified DR (all 26 verified entries are '80'/'01' suffix, i.e. KTB/BLS). 26 verified against primary sources as of 2026-07-15: TENCENT80, TOYOTA80, ASML01, NOVOB80, BABA80, BIDU80, BYDCOM80, MEITUAN80, XIAOMI80, KUAISH80, PETROCN80, ZIJIN80, JD80, NONGFU80, SONY80, FERRARI80, POPMART80, NETEASE80, GEELY80, CATL80, UNIQLO80, HERMES80, LOREAL80, LVMH01, SANOFI80, SINGTEL80 -- all confirmed via the issuer's own product page (krungthai.com for KTB, bualuang.co.th for BLS) or an official SET/factsheet document, EXCEPT MEITUAN80/XIAOMI80/KUAISH80/BYDCOM80 which used TradingView's 'Repr X Sh' tag (see methodology warning). METHODOLOGY WARNING: the 'Repr X Sh' TradingView tag is NOT reliable as a sole source -- confirmed correct for MEITUAN80/KUAISH80 ('Repr 0.01 Sh'=100, correct) but WRONG for PETROCN80/ZIJIN80 (same tag, real ratio is 10 for both, confirmed on krungthai.com). Never trust it without an independent explicit statement or a primary-source page. 10 more discovered real+liquid (history_rows>=60), all issued by INVX (suffix '23', Thai-bank-affiliated via SCBX -- kept, unlike Yuanta/KGI) but ratio still an unconfirmed placeholder (999): CMBANK23, SENSE23, HORIZON23, KINGSOFT23, UBTECH23, SOFTBANK23, TEL23, KEYENCE23, SANRIO23, SUSHI23. All of INVX's ratio data sits behind a JS-rendered SPA (dr23.innovestx.co.th) this session's fetch tool could not read -- needs a human with a browser, or a headless-browser tool, to unblock. SOFTBANK23.BK specifically also has three conflicting ratio numbers found in search results (2110:1 / ~527.5:1 / 100:1) even before hitting the JS wall. 005930.KS (Samsung) and 2330.TW (TSMC): no real SET DR ticker found, both 404 on Yahoo. HUAHONG23.BK (Hua Hong Semiconductor, INVX) real but only 26 history_rows, below MIN_DR_HISTORY=60."
+    "status": "reviewed",
+    "status_note": "36 of 39 candidates verified against primary sources as of 2026-07-15 -- 26 KTB/BLS (see prior notes) plus 10 InnovestX (CMBANK23, SENSE23, HORIZON23, KINGSOFT23, UBTECH23, SOFTBANK23, TEL23, KEYENCE23, SANRIO23, SUSHI23), all confirmed by rendering dr23.innovestx.co.th's product pages with headless Chrome ('google-chrome --headless=new --dump-dom --virtual-time-budget=8000 <url>') since the SPA returns an empty shell to a plain HTTP fetch -- the ratio lives in a field labeled 'อัตราแปลงสภาพ'. Every one of the 10 was cross-checked against live DR/underlying/FX prices (implied ratio within 0.1-3.6% of the scraped value, all within normal DR premium/discount range) before being trusted. This also resolved SOFTBANK23's earlier three-way ratio conflict: the live page shows 527.5:1, matching the previously-unconfirmed secondary claim and the DR's own listing_date (2026-01-05), so 2110:1 (the original Nov-2025 announcement) was superseded by a ratio adjustment on that date. Remaining unresolved: 005930.KS (Samsung) and 2330.TW (TSMC) -- no real SET DR ticker found, both 404 on Yahoo, not an InnovestX/KTB/BLS product at all. HUAHONG23.BK (Hua Hong Semiconductor, InnovestX) -- real DR, ratio could be fetched the same way if needed, but currently excluded for a different reason: only 26 history_rows, below MIN_DR_HISTORY=60 (too newly listed)."
   },
   "005930.KS": {
     "display_name": "Samsung Electronics",
@@ -280,11 +280,12 @@
     "alternatives": [
       {
         "dr_ticker": "CMBANK23.BK",
-        "ratio": 999,
+        "ratio": 90,
         "avg_volume_30d": 72929,
         "listing_date": "2025-11-13",
         "history_rows": 159,
-        "verified": false,
+        "verified": true,
+        "verified_note": "Ratio 1:90 read directly from dr23.innovestx.co.th's own product page ('อัตราแปลงสภาพ' field = '90:1'), fetched via headless Chrome since the page is JS-rendered; cross-checked against live DR/underlying/FX prices (implied ratio 90.1, 0.1% diff). Issuer InnovestX (INVX). Reviewed 2026-07-15.",
         "liquidity_rank": 1
       }
     ]
@@ -336,11 +337,12 @@
     "alternatives": [
       {
         "dr_ticker": "SENSE23.BK",
-        "ratio": 999,
+        "ratio": 4,
         "avg_volume_30d": 178057,
         "listing_date": "2025-11-13",
         "history_rows": 160,
-        "verified": false,
+        "verified": true,
+        "verified_note": "Ratio 1:4 read directly from dr23.innovestx.co.th's own product page (field 'อัตราแปลงสภาพ' = '4:1'), fetched via headless Chrome; cross-checked against live prices (implied ratio 3.9, 2.8% diff). Issuer InnovestX (INVX). Reviewed 2026-07-15.",
         "liquidity_rank": 1
       }
     ]
@@ -372,11 +374,12 @@
     "alternatives": [
       {
         "dr_ticker": "HORIZON23.BK",
-        "ratio": 999,
+        "ratio": 16,
         "avg_volume_30d": 403343,
         "listing_date": "2025-11-13",
         "history_rows": 160,
-        "verified": false,
+        "verified": true,
+        "verified_note": "Ratio 1:16 read directly from dr23.innovestx.co.th's own product page, fetched via headless Chrome; cross-checked against live prices (implied ratio 16.1, 0.4% diff). Issuer InnovestX (INVX). Reviewed 2026-07-15.",
         "liquidity_rank": 1
       }
     ]
@@ -390,11 +393,12 @@
     "alternatives": [
       {
         "dr_ticker": "KINGSOFT23.BK",
-        "ratio": 999,
+        "ratio": 60,
         "avg_volume_30d": 53049,
         "listing_date": "2025-11-13",
         "history_rows": 158,
-        "verified": false,
+        "verified": true,
+        "verified_note": "Ratio 1:60 read directly from dr23.innovestx.co.th's own product page, fetched via headless Chrome; cross-checked against live prices (implied ratio 59.3, 1.2% diff). Issuer InnovestX (INVX). Reviewed 2026-07-15.",
         "liquidity_rank": 1
       }
     ]
@@ -408,11 +412,12 @@
     "alternatives": [
       {
         "dr_ticker": "UBTECH23.BK",
-        "ratio": 999,
+        "ratio": 250,
         "avg_volume_30d": 8502276,
         "listing_date": "2025-11-13",
         "history_rows": 160,
-        "verified": false,
+        "verified": true,
+        "verified_note": "Ratio 1:250 read directly from dr23.innovestx.co.th's own product page, fetched via headless Chrome since the SPA doesn't render for a plain HTML fetch; cross-checked against live DR/underlying/FX prices (implied ratio 253.6, 1.4% diff -- normal DR premium/discount range). Issuer InnovestX (INVX). Reviewed 2026-07-15.",
         "liquidity_rank": 1
       }
     ]
@@ -483,11 +488,12 @@
     "alternatives": [
       {
         "dr_ticker": "SOFTBANK23.BK",
-        "ratio": 999,
+        "ratio": 527.5,
         "avg_volume_30d": 1504688,
         "listing_date": "2026-01-05",
         "history_rows": 132,
-        "verified": false,
+        "verified": true,
+        "verified_note": "Ratio 1:527.5 read directly from dr23.innovestx.co.th's own current product page, fetched via headless Chrome; cross-checked against live prices (implied ratio 511.5, 3.0% diff). Resolves the earlier three-way conflict (2110:1 original Nov-2025 listing vs ~527.5:1 unconfirmed secondary claim vs 100:1 tag-guess) in favor of 527.5 -- matches the listing_date of 2026-01-05, consistent with a ratio adjustment on that date. Issuer InnovestX (INVX). Reviewed 2026-07-15.",
         "liquidity_rank": 1
       }
     ]
@@ -501,11 +507,12 @@
     "alternatives": [
       {
         "dr_ticker": "TEL23.BK",
-        "ratio": 999,
+        "ratio": 2710,
         "avg_volume_30d": 299253,
         "listing_date": "2025-11-13",
         "history_rows": 160,
-        "verified": false,
+        "verified": true,
+        "verified_note": "Ratio 1:2710 read directly from dr23.innovestx.co.th's own product page, fetched via headless Chrome; cross-checked against live prices (implied ratio 2754.8, 1.7% diff). Issuer InnovestX (INVX). Reviewed 2026-07-15.",
         "liquidity_rank": 1
       }
     ]
@@ -519,11 +526,12 @@
     "alternatives": [
       {
         "dr_ticker": "KEYENCE23.BK",
-        "ratio": 999,
+        "ratio": 5650,
         "avg_volume_30d": 274182,
         "listing_date": "2025-11-13",
         "history_rows": 160,
-        "verified": false,
+        "verified": true,
+        "verified_note": "Ratio 1:5650 read directly from dr23.innovestx.co.th's own product page, fetched via headless Chrome; cross-checked against live prices (implied ratio 5555.3, 1.7% diff). Issuer InnovestX (INVX). Reviewed 2026-07-15.",
         "liquidity_rank": 1
       }
     ]
@@ -556,11 +564,12 @@
     "alternatives": [
       {
         "dr_ticker": "SANRIO23.BK",
-        "ratio": 999,
+        "ratio": 136,
         "avg_volume_30d": 156729,
         "listing_date": "2025-11-13",
         "history_rows": 160,
-        "verified": false,
+        "verified": true,
+        "verified_note": "Ratio 1:136 read directly from dr23.innovestx.co.th's own product page, fetched via headless Chrome; cross-checked against live prices (implied ratio 131.2, 3.6% diff). Issuer InnovestX (INVX). Reviewed 2026-07-15.",
         "liquidity_rank": 1
       }
     ]
@@ -574,11 +583,12 @@
     "alternatives": [
       {
         "dr_ticker": "SUSHI23.BK",
-        "ratio": 999,
+        "ratio": 332,
         "avg_volume_30d": 1001492,
         "listing_date": "2025-11-13",
         "history_rows": 160,
-        "verified": false,
+        "verified": true,
+        "verified_note": "Ratio 1:332 read directly from dr23.innovestx.co.th's own product page, fetched via headless Chrome; cross-checked against live prices (implied ratio 331.0, 0.3% diff). Issuer InnovestX (INVX). Reviewed 2026-07-15.",
         "liquidity_rank": 1
       }
     ]
