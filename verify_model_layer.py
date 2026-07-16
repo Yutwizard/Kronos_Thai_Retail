@@ -19,18 +19,37 @@ mock_kronos.Kronos = MagicMock()
 mock_kronos.KronosTokenizer.from_pretrained = MagicMock(side_effect=lambda *a, **kw: MagicMock())
 mock_kronos.Kronos.from_pretrained = MagicMock(side_effect=lambda *a, **kw: MagicMock())
 
-# KronosPredictor: each constructor returns a unique mock with predict() configured
+# KronosPredictor: each constructor returns a unique mock with predict() and
+# predict_batch() configured. predict_batch returns List[pd.DataFrame], one
+# per input series (see kronos_repo/model/kronos.py:562) -- forecast_batch()
+# in kth/models/kronos_wrapper.py depends on that shape.
 def _make_predictor(*args, **kwargs):
     p = MagicMock()
-    def _mock_predict(df, x_timestamp, y_timestamp, pred_len, T=1.0, top_k=0, top_p=0.9, sample_count=1, verbose=False):
-        max_len = len(y_timestamp)
-        rng = np.random.default_rng(42)
-        base_price = df["close"].iloc[-1] if len(df) > 0 else 100.0
+
+    def _random_walk_path(base_price, max_len, seed):
+        rng = np.random.default_rng(seed)
         path = np.zeros(max_len)
         drift = rng.normal(0.0005, 0.01, max_len)
         path[:] = base_price * np.exp(np.cumsum(drift))
+        return path
+
+    def _mock_predict(df, x_timestamp, y_timestamp, pred_len, T=1.0, top_k=0, top_p=0.9, sample_count=1, verbose=False):
+        max_len = len(y_timestamp)
+        base_price = df["close"].iloc[-1] if len(df) > 0 else 100.0
+        path = _random_walk_path(base_price, max_len, seed=42)
         return pd.DataFrame({"close": path, "open": path, "high": path, "low": path, "volume": np.zeros(max_len), "amount": np.zeros(max_len)})
+
+    def _mock_predict_batch(df_list, x_timestamp_list, y_timestamp_list, pred_len, T=1.0, top_k=0, top_p=0.9, sample_count=1, verbose=False):
+        results = []
+        for i, (df, y_timestamp) in enumerate(zip(df_list, y_timestamp_list)):
+            max_len = len(y_timestamp)
+            base_price = df["close"].iloc[-1] if len(df) > 0 else 100.0
+            path = _random_walk_path(base_price, max_len, seed=42 + i)
+            results.append(pd.DataFrame({"close": path, "open": path, "high": path, "low": path, "volume": np.zeros(max_len), "amount": np.zeros(max_len)}))
+        return results
+
     p.predict.side_effect = _mock_predict
+    p.predict_batch.side_effect = _mock_predict_batch
     return p
 
 mock_kronos.KronosPredictor = MagicMock(side_effect=_make_predictor)
@@ -58,9 +77,7 @@ def make_synthetic_yf(ticker: str, n_days: int = 1260, seed: int = 0) -> pd.Data
     rng = np.random.default_rng(seed)
     cls = get_ticker_class(ticker)
     vol_per_day = {
-        "thai_equity": 0.015, "thai_index": 0.010, "us_equity": 0.018,
-        "etf_global": 0.010, "commodity": 0.012, "crypto": 0.045,
-        "bond_proxy": 0.005, "reit": 0.013, "fx_macro": 0.005,
+        "thai_equity": 0.015, "thai_index": 0.010,
     }.get(cls, 0.015)
     drift_per_day = 0.0003
     dates = pd.bdate_range(end=pd.Timestamp.today().normalize(),
@@ -88,7 +105,11 @@ def make_synthetic_yf(ticker: str, n_days: int = 1260, seed: int = 0) -> pd.Data
 # ---------------------------------------------------------------------------
 # Ensure cache dir exists with synthetic data
 # ---------------------------------------------------------------------------
-cache_dir = Path("./data/raw")
+import tempfile
+
+# Isolated tmp dir, never the real ./data/raw -- this synthetic data must
+# never be able to clobber real cached prices (see incident 2026-07-16).
+cache_dir = Path(tempfile.mkdtemp(prefix="kth_verify_model_layer_"))
 cache_dir.mkdir(parents=True, exist_ok=True)
 all_tickers = get_all_tickers_including_features()
 for i, t in enumerate(all_tickers, 1):
@@ -117,16 +138,16 @@ print("  PASS - different models get separate cache entries")
 
 
 # ---------------------------------------------------------------------------
-# Test 2: String input — forecast("AAPL")
+# Test 2: String input — forecast("KBANK.BK")
 # ---------------------------------------------------------------------------
 print("\n" + "=" * 70)
 print("TEST 2: forecast() with string ticker input")
 print("=" * 70)
 
 k = KronosTH.from_pretrained("NeoQuasar/Kronos-small", cache_dir=str(cache_dir))
-result = k.forecast("AAPL", pred_lens=[5, 20], n_samples=20, lookback=400)
+result = k.forecast("KBANK.BK", pred_lens=[5, 20], n_samples=20, lookback=400)
 assert isinstance(result, ForecastResult), "should return ForecastResult"
-assert result.ticker == "AAPL", f"expected ticker 'AAPL', got '{result.ticker}'"
+assert result.ticker == "KBANK.BK", f"expected ticker 'KBANK.BK', got '{result.ticker}'"
 assert result.horizons is not None, "horizons should not be None"
 print(f"  ticker: {result.ticker}")
 print(f"  generated_at: {result.generated_at}")
@@ -198,9 +219,9 @@ print("\n" + "=" * 70)
 print("TEST 7: lookback_end invariant")
 print("=" * 70)
 
-k_df = to_kronos_format(make_synthetic_yf("AAPL", n_days=600, seed=42), "AAPL")
+k_df = to_kronos_format(make_synthetic_yf("KBANK.BK", n_days=600, seed=42), "KBANK.BK")
 last_x = k_df.tail(400)["timestamps"].iloc[-1]
-r = k.forecast("AAPL", pred_lens=[20], n_samples=20, lookback=400)
+r = k.forecast("KBANK.BK", pred_lens=[20], n_samples=20, lookback=400)
 assert r.lookback_end == last_x, f"lookback_end {r.lookback_end} != last x_ts {last_x}"
 print("  PASS - lookback_end matches last context timestamp")
 
@@ -212,9 +233,9 @@ print("\n" + "=" * 70)
 print("TEST 8: forecast_batch")
 print("=" * 70)
 
-batch_results = k.forecast_batch(["AAPL", "PTT.BK"], pred_lens=[5, 20], n_samples=20, lookback=400)
+batch_results = k.forecast_batch(["KBANK.BK", "PTT.BK"], pred_lens=[5, 20], n_samples=20, lookback=400)
 assert len(batch_results) == 2, f"expected 2 results, got {len(batch_results)}"
-assert "AAPL" in batch_results, "AAPL missing from batch results"
+assert "KBANK.BK" in batch_results, "KBANK.BK missing from batch results"
 assert "PTT.BK" in batch_results, "PTT.BK missing from batch results"
 for tkr, res in batch_results.items():
     assert isinstance(res, ForecastResult), f"{tkr}: should be ForecastResult"

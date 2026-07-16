@@ -234,7 +234,14 @@ def pipeline_status(gc: FakeGspreadClient) -> str:
 CACHE_SLUG = "NeoQuasar_Kronos-small"
 THAI_TICKERS = [t for t, _, _ in UNIVERSE["thai_equity"]]
 
-
+# Deliberately a RELATIVE path, not an absolute tempfile.mkdtemp() dir. Every
+# caller of run_daily_pipeline() in this file passes work_dir=<tmp dir>, and
+# run_daily_pipeline() os.chdir()s into it as its first action -- so this
+# relative path resolves inside that isolated tmp dir, never the real repo's
+# data/forecast_cache. (Confirmed 2026-07-16: an earlier attempt to "isolate"
+# this further with an absolute tempfile.mkdtemp() path actually broke
+# isolation, by writing to a *different* tmp dir than the one work_dir points
+# relative paths at downstream in daily.py/trade_gen.py.)
 class FakeModel:
     def __init__(self, raise_on_forecast: bool = False):
         self.raise_on_forecast = raise_on_forecast
@@ -268,6 +275,9 @@ class FakeModel:
             df.to_parquet(parquet, index=False)
 
 
+# Deliberately a RELATIVE path -- see FakeModel.forecast() note above. This
+# resolves inside the work_dir every caller passes to run_daily_pipeline(),
+# never the real repo's data/raw.
 class FakeLoader:
     def ensure(self, tickers: list[str]) -> dict:
         raw_dir = Path('data/raw')

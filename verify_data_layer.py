@@ -76,7 +76,11 @@ print("\n" + "=" * 70)
 print("TEST 3: Cache write -> read round-trip integrity")
 print("=" * 70)
 
-cache_dir = Path("./data/raw")
+import tempfile
+
+# Isolated tmp dir, never the real ./data/raw -- this synthetic data must
+# never be able to clobber real cached prices (see incident 2026-07-16).
+cache_dir = Path(tempfile.mkdtemp(prefix="kth_verify_data_layer_"))
 cache_dir.mkdir(parents=True, exist_ok=True)
 
 # Write directly (skip the yf download step)
