@@ -16,8 +16,6 @@ from kth.data.universe import UNIVERSE
 
 MODEL_TICKERS = {
     "thai_equity": [t for t,_,_ in UNIVERSE["thai_equity"]],
-    "us_equity":   [t for t,_,_ in UNIVERSE["us_equity"]],
-    "crypto":      [t for t,_,_ in UNIVERSE["crypto"]],
 }
 
 

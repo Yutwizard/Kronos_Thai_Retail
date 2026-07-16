@@ -68,20 +68,32 @@ def test_hysteresis_new_position_needs_buffer_above_threshold():
     assert "Y" not in sigs
 
 
-def test_mixed_class_rejected():
-    """L2: mixed crypto + equity ticker lists must raise ValueError."""
+def test_mixed_class_rejected(monkeypatch):
+    """L2: mixed crypto + equity ticker lists must raise ValueError.
+
+    crypto was archived from UNIVERSE 2026-07-16 (see archive/other-asset-classes/),
+    so no real ticker resolves to "crypto" anymore. This branch is intentionally kept
+    alive as dead code in case crypto is reactivated later -- monkeypatch simulates
+    that reactivation so the guard logic itself still gets exercised."""
     from kth.backtest.walkforward import _validate_single_calendar
+    import kth.data.universe as universe
+    fake_classes = {"BTC-USD": "crypto", "PTT.BK": "thai_equity"}
+    monkeypatch.setattr(universe, "get_ticker_class", fake_classes.get)
     with pytest.raises(ValueError, match="mixed-asset-class"):
-        _validate_single_calendar(["BTC-USD", "AAPL"])
+        _validate_single_calendar(["BTC-USD", "PTT.BK"])
 
 
-def test_single_crypto_ok():
-    """L2: crypto-only list passes validation."""
+def test_single_crypto_ok(monkeypatch):
+    """L2: crypto-only list passes validation. See test_mixed_class_rejected docstring
+    for why this needs monkeypatching now that crypto is archived."""
     from kth.backtest.walkforward import _validate_single_calendar
+    import kth.data.universe as universe
+    fake_classes = {"BTC-USD": "crypto", "ETH-USD": "crypto"}
+    monkeypatch.setattr(universe, "get_ticker_class", fake_classes.get)
     _validate_single_calendar(["BTC-USD", "ETH-USD"])
 
 
 def test_single_equity_ok():
-    """L2: equity-only list (including Thai + US) passes validation."""
+    """L2: equity-only list passes validation."""
     from kth.backtest.walkforward import _validate_single_calendar
-    _validate_single_calendar(["AAPL", "PTT.BK"])
+    _validate_single_calendar(["PTT.BK", "KBANK.BK"])

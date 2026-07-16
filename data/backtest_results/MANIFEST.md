@@ -27,7 +27,10 @@
 | `thai_equity_2026_ytd/` | YTD only, not canonical |
 | `test_2024q2/` | Early test run |
 
-## Fine-tune vs zero-shot comparisons
+## Fine-tune vs zero-shot comparisons (archived 2026-07-16)
+
+Project scope narrowed to SET equities + DR only; crypto and us_equity
+backtests moved to `archive/other-asset-classes/data/backtest_results/`.
 
 | Directory | Verdict |
 |-----------|---------|

@@ -288,8 +288,11 @@ def test_rank_alternatives_sorts_by_volume():
 
 
 def test_is_already_in_universe_known():
+    """AAPL (formerly a hardcoded us_equity ticker) was archived 2026-07-16 along
+    with the rest of us_equity -- use a thai_equity ticker instead, which is
+    also the more representative case for this DR-discovery guard anyway."""
     from kth_dr.discover_drs import is_already_in_universe
-    assert is_already_in_universe("AAPL") is True
+    assert is_already_in_universe("PTT.BK") is True
     print("PASS test_is_already_in_universe_known")
 
 

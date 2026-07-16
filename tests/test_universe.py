@@ -1,10 +1,10 @@
-"""Tests for kth.data.universe — friction, sector, ticker-class lookup, fx_macro exclusion."""
+"""Tests for kth.data.universe — friction, sector, ticker-class lookup, SET+DR-only scope."""
 from pathlib import Path
 
 from kth.data.universe import (
     _TICKER_CLASS_MAP,
-    get_all_tickers,
-    get_all_tickers_including_features,
+    FRICTION,
+    UNIVERSE,
     get_friction,
     get_one_way_friction_rate,
     get_sector,
@@ -42,20 +42,25 @@ def test_mega_bk_sector_is_healthcare():
         f"MEGA.BK should be Healthcare, got {get_sector('MEGA.BK')}"
 
 
-def test_fx_macro_excluded_from_investable():
-    """fx_macro tickers must not appear in get_all_tickers()."""
-    tickers = get_all_tickers()
-    fx = [t for t in tickers if get_ticker_class(t) == "fx_macro"]
-    assert len(fx) == 0, f"fx_macro leaked into investable: {fx}"
-    all_t = get_all_tickers_including_features()
-    assert len(all_t) == 100, \
-        f"get_all_tickers_including_features should return 100, got {len(all_t)}"
-    assert "THB=X" in all_t, "THB=X should be in including_features"
+def test_universe_is_set_only():
+    """UNIVERSE must contain only thai_equity and thai_index -- DR lives in the
+    separate kth_dr plugin (register_asset_class()), never in UNIVERSE itself.
+    Other asset classes (us_equity, etf_global, commodity, crypto, bond_proxy,
+    reit, fx_macro) were archived 2026-07-16 -- see archive/other-asset-classes/."""
+    assert set(UNIVERSE.keys()) == {"thai_equity", "thai_index"}, UNIVERSE.keys()
+    assert set(FRICTION.keys()) == {"thai_equity", "thai_index"}, FRICTION.keys()
+
+
+def test_cpnreit_folded_into_thai_equity():
+    """CPNREIT.BK (formerly a standalone 'reit' class with VNQ) now inherits
+    thai_equity's friction and is sector-mapped to Property."""
+    assert get_ticker_class("CPNREIT.BK") == "thai_equity"
+    assert get_friction("CPNREIT.BK") == get_friction("PTT.BK")
+    assert get_sector("CPNREIT.BK") == "Property"
 
 
 def test_get_ticker_class_o1_lookup():
     """get_ticker_class must use O(1) dict lookup."""
     assert "AOT.BK" in _TICKER_CLASS_MAP, "Reverse-lookup map not built"
     assert _TICKER_CLASS_MAP["AOT.BK"] == "thai_equity"
-    assert get_ticker_class("BTC-USD") == "crypto"
     assert get_ticker_class("NONEXISTENT") is None

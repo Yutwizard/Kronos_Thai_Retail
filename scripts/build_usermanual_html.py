@@ -15,32 +15,21 @@ import numpy as np
 import pandas as pd
 plt.ioff()
 
+# Scope narrowed to SET + DR 2026-07-16. us_equity/crypto backtests were run
+# when those classes were in scope -- archived alongside their raw data at
+# archive/other-asset-classes/data/backtest_results/, not fabricated here.
 BACKTEST_RESULTS = {
     "thai_equity": {
         "cagr": 0.3144, "sharpe": 1.40, "sortino": 2.28, "calmar": 1.75,
         "max_dd": -0.1797, "trade_win_rate": 0.0251, "turnover": 11.8,
         "friction_drag": 0.063, "p_value": 0.02,
-        "benchmarks": {"SET Index": -0.0529, "SPY": 0.0833, "60/40": -0.0027, "Equal-Weight": 0.0144}
-    },
-    "us_equity": {
-        "cagr": 0.3034, "sharpe": 0.97, "sortino": 1.45, "calmar": 0.69,
-        "max_dd": -0.4377, "trade_win_rate": 0.0278, "turnover": 9.2,
-        "friction_drag": 0.064, "p_value": 0.46,
-        "benchmarks": {"SET Index": -0.0529, "SPY": 0.0833, "60/40": -0.0027, "Equal-Weight": 0.1439}
-    },
-    "crypto": {
-        "cagr": 0.1645, "sharpe": 0.52, "sortino": 0.70, "calmar": 0.24,
-        "max_dd": -0.6858, "trade_win_rate": 0.0148, "turnover": 6.7,
-        "friction_drag": 0.060, "p_value": 0.64,
-        "benchmarks": {"SET Index": -0.0529, "SPY": 0.0833, "60/40": -0.0027, "Equal-Weight": -0.0516}
+        "benchmarks": {"SET Index": -0.0529, "Equal-Weight": 0.0144}
     },
 }
 
 FRICTION = {
     "Thai Equity": {"commission": 0.00168, "slippage": 0.0010, "total_rt": 0.00536},
-    "US Equity": {"commission": 0.0030, "slippage": 0.0005, "total_rt": 0.0070},
-    "Crypto": {"commission": 0.0025, "slippage": 0.0020, "total_rt": 0.0090},
-    "Crypto (BTC)": {"commission": 0.0025, "slippage": 0.0010, "total_rt": 0.0070},
+    "DR": {"commission": 0.00168, "slippage": 0.0010, "total_rt": 0.00536},
 }
 
 
@@ -64,9 +53,10 @@ def chart_cagr_comparison():
     """Bar chart: CAGR for each market vs its benchmarks."""
     c = _color_palette()
     markets = list(BACKTEST_RESULTS.keys())
-    labels = {"thai_equity": "Thai Equity", "us_equity": "US Equity", "crypto": "Crypto"}
+    labels = {"thai_equity": "Thai Equity"}
 
-    fig, axes = plt.subplots(1, 3, figsize=(14, 4.5), facecolor="white")
+    fig, axes = plt.subplots(1, len(markets), figsize=(14 / 3 * len(markets), 4.5), facecolor="white")
+    axes = np.atleast_1d(axes)
 
     for ax, mk in zip(axes, markets):
         d = BACKTEST_RESULTS[mk]
@@ -100,7 +90,7 @@ def chart_sharpe_comparison():
     """Grouped bar chart: Sharpe by market."""
     c = _color_palette()
     markets = list(BACKTEST_RESULTS.keys())
-    labels = {"thai_equity": "Thai Equity", "us_equity": "US Equity", "crypto": "Crypto"}
+    labels = {"thai_equity": "Thai Equity"}
 
     fig, ax = plt.subplots(1, 1, figsize=(10, 4.5), facecolor="#fafafa")
 
@@ -134,14 +124,15 @@ def chart_max_drawdown():
     """Bar chart: Max DD for strategy vs benchmarks."""
     c = _color_palette()
     markets = list(BACKTEST_RESULTS.keys())
-    labels = {"thai_equity": "Thai Equity", "us_equity": "US Equity", "crypto": "Crypto"}
+    labels = {"thai_equity": "Thai Equity"}
 
-    fig, axes = plt.subplots(1, 3, figsize=(14, 4.5), facecolor="#fafafa")
+    fig, axes = plt.subplots(1, len(markets), figsize=(14 / 3 * len(markets), 4.5), facecolor="#fafafa")
+    axes = np.atleast_1d(axes)
 
     for ax, mk in zip(axes, markets):
         d = BACKTEST_RESULTS[mk]
-        names = ["Strategy", "SPY", "Equal-Wt"]
-        vals = [d["max_dd"], d["benchmarks"].get("SPY", 0), d["benchmarks"].get("Equal-Weight", 0)]
+        names = ["Strategy", "SET Index", "Equal-Wt"]
+        vals = [d["max_dd"], d["benchmarks"].get("SET Index", 0), d["benchmarks"].get("Equal-Weight", 0)]
         colors_list = [c["red"], c["bh"], c["bh"]]
 
         bars = ax.barh(names, [v * 100 for v in vals], color=colors_list, edgecolor="white", height=0.5)
@@ -164,7 +155,7 @@ def chart_friction_cost():
 
     classes = list(FRICTION.keys())
     vals = [FRICTION[k]["total_rt"] * 100 for k in classes]
-    colors_bar = ["#1a5276", "#2e86c1", "#f39c12", "#d35400"]
+    colors_bar = ["#1a5276", "#2e86c1"]
 
     bars = ax.barh(classes, vals, color=colors_bar, edgecolor="white", height=0.5)
     for bar, v in zip(bars, vals):
@@ -181,7 +172,7 @@ def chart_annual_turnover():
     """Bar: turnover and friction drag."""
     c = _color_palette()
     markets = list(BACKTEST_RESULTS.keys())
-    labels = {"thai_equity": "Thai Equity", "us_equity": "US Equity", "crypto": "Crypto"}
+    labels = {"thai_equity": "Thai Equity"}
 
     fig, ax1 = plt.subplots(1, 1, figsize=(8, 4.5), facecolor="#fafafa")
 
@@ -215,10 +206,10 @@ def chart_allocation_donut():
     """Donut chart: recommended class allocation."""
     fig, ax = plt.subplots(1, 1, figsize=(7, 5), facecolor="#fafafa")
 
-    sizes = [40, 30, 5, 5, 5, 15]
-    labels_explode = ["Thai Equity", "US Equity", "Crypto", "ETF Global", "Other", "Cash"]
-    colors_donut = ["#1a5276", "#2e86c1", "#f39c12", "#7f8c8d", "#d35400", "#ecf0f1"]
-    explode = (0.03, 0.03, 0.03, 0.03, 0.03, 0.03)
+    sizes = [65, 15, 20]
+    labels_explode = ["Thai Equity", "DR (Foreign via SET)", "Cash"]
+    colors_donut = ["#1a5276", "#2e86c1", "#ecf0f1"]
+    explode = (0.03, 0.03, 0.03)
 
     wedges, texts, autotexts = ax.pie(
         sizes, labels=None, autopct="%1.0f%%", startangle=90, pctdistance=0.78,
@@ -388,25 +379,20 @@ document.addEventListener('DOMContentLoaded', function(){{
   <p>Kronos-TH wraps the <strong>Kronos foundation model</strong> — a transformer trained on millions of daily K-lines across global markets — to produce <strong>probabilistic 20-day forecasts</strong> for the assets a Thai retail investor can actually buy.</p>
   <p><strong>The output is not orders.</strong> It is a daily report answering: given everything Kronos has learned about global financial patterns, and given a backtest on the assets available in Thailand, what does the model expect over the next 20 trading days and how confident is it?</p>
 
-  <h4>Supported Assets (100 tickers, 9 classes)</h4>
+  <h4>Supported Assets (52 tickers, 2 classes, + DR plugin)</h4>
   <table>
     <tr><th>Class</th><th>Tickers</th><th>What It Covers</th></tr>
-    <tr><td>Thai equity</td><td>50</td><td>SET50 + mid-caps every Thai broker</td></tr>
-    <tr><td>US equity</td><td>17</td><td>Mega-cap US stocks via DIME/Liberator</td></tr>
-    <tr><td>Crypto</td><td>12</td><td>BTC + alts via Bitkub/Binance TH</td></tr>
-    <tr><td>ETF global</td><td>9</td><td>SPY QQQ VTI VWO VEA IEMG EWY EWJ FXI</td></tr>
-    <tr><td>Commodity</td><td>4</td><td>GLD GC=F SLV USO</td></tr>
-    <tr><td>Bond proxy</td><td>3</td><td>TLT IEF HYG</td></tr>
-    <tr><td>REIT</td><td>2</td><td>VNQ CPNREIT.BK</td></tr>
+    <tr><td>Thai equity</td><td>51</td><td>SET50 + mid-caps every Thai broker (incl. CPNREIT.BK)</td></tr>
     <tr><td>Thai index</td><td>1</td><td>^SET.BK benchmark only</td></tr>
-    <tr><td>FX macro</td><td>2</td><td>THB=X DX-Y.NYB features only</td></tr>
+    <tr><td>DR (plugin)</td><td>see <code>data/dr/mapping.json</code></td><td>SET-listed Depositary Receipts of major foreign stocks (Tencent, Toyota, ASML…), forecast on the foreign underlying, traded/priced in THB on the SET</td></tr>
   </table>
+  <p style="font-size:0.85rem;">Other asset classes (US equity, global ETF, commodity, crypto, bond proxy, FX macro — 47 tickers total) were explored and backtested but archived 2026-07-16 to keep scope unambiguously SET + DR. See <code>archive/other-asset-classes/</code>.</p>
 
   <h4>What It Does NOT Do</h4>
   <ul>
-    <li><strong>No order execution.</strong> Kronos-TH does not connect to Settrade, Bitkub, or any broker. It generates forecasts; you decide whether to act.</li>
+    <li><strong>No order execution.</strong> Kronos-TH does not connect to Settrade or any broker. It generates forecasts; you decide whether to act.</li>
     <li><strong>No intraday.</strong> Daily bars only. yfinance free intraday is 60-day rolling — not enough to train on.</li>
-    <li><strong>No tax optimization.</strong> Capital gains treatment varies by asset class (crypto tax-exempt in Thailand 2025-2029). Consult a tax advisor.</li>
+    <li><strong>No tax optimization.</strong> Capital gains treatment varies by instrument. Consult a tax advisor.</li>
     <li><strong>No survivorship bias adjustment.</strong> The universe includes only currently-listed tickers. Delisted tickers are absent from backtests which overstates returns.</li>
   </ul>
 </div>
@@ -456,19 +442,19 @@ print(f'Forecasts cached at data/forecast_cache/{{slug}}/{{today}}/')
 
   <h3>Class Allocation Caps</h3>
   <div class="chart">{c7}</div>
-  <div class="highlight-red" style="font-size:0.85rem;"><strong>&#9888; Crypto risk warning:</strong> Crypto had &minus;69% maximum drawdown and p=0.64 (not statistically significant). The 5% cap in the recommended allocation is the <strong>absolute maximum</strong>. Consider 0-2% if you cannot tolerate a two-thirds portfolio loss.</div>
+  <div class="highlight-red" style="font-size:0.85rem;"><strong>&#9888; DR premium/discount risk:</strong> A Thai DR's SET price can drift from its foreign underlying's fair value (FX lag, thin DR-side liquidity, market-hours mismatch). Check <code>data/dr/mapping.json</code>'s premium_pct before sizing a DR position — a wide premium erodes the forecast edge even if the underlying's direction call is right.</div>
 
   <h3>Example Portfolios</h3>
   <div class="two-col">
     <div class="stat">
       <div class="number" style="color:#27ae60;">10–15%</div>
       <div class="label">Conservative CAGR</div>
-      <div style="margin-top:6px;font-size:0.82rem;">5 positions, equal-weight, monthly rebalance. Thai 40% + bonds 20% + cash 40%. 🟢 only.</div>
+      <div style="margin-top:6px;font-size:0.82rem;">5 positions, equal-weight, monthly rebalance. Thai equity 60% + cash 40%. 🟢 only.</div>
     </div>
     <div class="stat">
       <div class="number" style="color:#2e86c1;">15–25%</div>
       <div class="label">Balanced CAGR</div>
-      <div style="margin-top:6px;font-size:0.82rem;">8 positions, inv_vol, monthly. Thai 30% + US 20% + ETF 10% + crypto 5% + cash.</div>
+      <div style="margin-top:6px;font-size:0.82rem;">8 positions, equal-weight, monthly. Thai equity 65% + DR 15% + cash 20%.</div>
     </div>
   </div>
 </div>
@@ -497,9 +483,7 @@ print(f'Forecasts cached at data/forecast_cache/{{slug}}/{{today}}/')
   <table>
     <tr><th>Class</th><th>Commission</th><th>Slippage</th><th>Round-Trip</th></tr>
     <tr><td>Thai Equity</td><td>0.168%</td><td>0.10%</td><td><strong>0.536%</strong></td></tr>
-    <tr><td>US Equity</td><td>0.30%</td><td>0.05%</td><td><strong>0.70%</strong></td></tr>
-    <tr><td>Crypto</td><td>0.25%</td><td>0.20%</td><td><strong>0.90%</strong></td></tr>
-    <tr><td>Crypto (BTC)</td><td>0.25%</td><td>0.10%</td><td><strong>0.70%</strong></td></tr>
+    <tr><td>DR</td><td>0.168%</td><td>0.10%</td><td><strong>0.536%</strong></td></tr>
   </table>
 </div>
 
@@ -508,11 +492,7 @@ print(f'Forecasts cached at data/forecast_cache/{{slug}}/{{today}}/')
 <div class="card">
   <div class="two-col">
     <div class="stat"><div class="number" style="color:#27ae60;">+31.44%</div><div class="label">Thai Equity CAGR</div></div>
-    <div class="stat"><div class="number" style="color:#2e86c1;">+30.34%</div><div class="label">US Equity CAGR</div></div>
-  </div>
-  <div class="two-col">
-    <div class="stat"><div class="number" style="color:#f39c12;">+16.45%</div><div class="label">Crypto CAGR</div></div>
-    <div class="stat"><div class="number" style="color:#1a5276;">15–30pp</div><div class="label">Alpha over Equal-Weight</div></div>
+    <div class="stat"><div class="number" style="color:#1a5276;">+30.0pp</div><div class="label">Alpha over Equal-Weight</div></div>
   </div>
 </div>
 
@@ -521,15 +501,13 @@ print(f'Forecasts cached at data/forecast_cache/{{slug}}/{{today}}/')
 <div class="chart">{c4}</div>
 
 <div class="card">
-  <h3>Fine-Tuning Verdict — Zero-Shot Wins Everywhere</h3>
-  <div class="highlight">We spent 65 GPU-hours training 9 models across 3 markets. <strong>None beat zero-shot.</strong></div>
+  <h3>Fine-Tuning Verdict — Zero-Shot Wins</h3>
+  <div class="highlight">We fine-tuned Thai equity across 3 folds. <strong>None beat zero-shot.</strong></div>
   <div class="highlight-yellow"><strong>Why fine-tuning failed:</strong> The training data distribution (2016-2022) differs from the holdout period (2025). Fine-tuning teaches the model to predict the token distribution of the training period. When market regimes shift — which they always do — a fine-tuned model's predictions degrade faster than the zero-shot model's generalist knowledge. This is a known phenomenon in time-series foundation models.</div>
   <ul>
     <li>Thai equity: ZS 1.40 Sharpe — no FT model exceeded this</li>
-    <li>US equity: ZS 0.97 Sharpe — FT F2 achieved 0.94 (−0.03)</li>
-    <li>Crypto: ZS 0.52 Sharpe — FT F0 achieved 0.46 (−0.06)</li>
   </ul>
-  <p>All 9 checkpoints saved at <code>./checkpoints/{{model}}/fold{{f}}/best/</code> but not deployed.</p>
+  <p>All checkpoints saved at <code>./checkpoints/thai_equity/fold{{f}}/best/</code> but not deployed. (Fine-tuning results for the archived US equity / crypto classes live at <code>archive/other-asset-classes/data/backtest_results/</code>.)</p>
 </div>
 
 <div class="chart">{c5}</div>
@@ -542,9 +520,7 @@ print(f'Forecasts cached at data/forecast_cache/{{slug}}/{{today}}/')
   <ul>
     <li><strong>Survivorship bias:</strong> Only currently-listed tickers are in the universe. Delisted stocks are absent — backtests overstate returns.</li>
     <li><strong>Regime risk:</strong> The 2022-2024 period had unique macro conditions (QE unwind, AI boom, SET underperformance). Different regimes produce different results.</li>
-    <li><strong>Crypto calendar mismatch:</strong> Backtests use 5-day business calendar; crypto trades 7 days. Sharpe overstated ~20–30% for crypto. Delta between ZS and FT is valid.</li>
-    <li><strong>ETF proxy:</strong> ETF class (9 tickers) uses SPY as backtest proxy. Performance on VWO, EWJ, FXI, etc. is untested.</li>
-    <li><strong>4 untested classes:</strong> Commodity, bond_proxy, reit, fx_macro show <code>—</code> in metrics. Do not trade these based solely on model forecasts.</li>
+    <li><strong>DR is forecast on the underlying, not the DR itself:</strong> The model's signal comes from the foreign underlying's price action. A DR's own premium/discount to fair value is not part of the forecast — check it separately (see §3 caution above).</li>
     <li><strong>Trade win rate 2–5%:</strong> This does not mean the model is 95% wrong. It means the portfolio churns positions monthly (11.8× turnover) producing many small losing trades around winning core longs.</li>
     <li><strong>GPU required:</strong> CPU inference is hours vs 15 min on GPU. Use Colab free T4 if you don't have a GPU.</li>
   </ul>
@@ -553,31 +529,30 @@ print(f'Forecasts cached at data/forecast_cache/{{slug}}/{{today}}/')
 <h2 id="s8">Performance Tables</h2>
 <div class="card">
   <table>
-    <tr><th>Metric</th><th>Thai Equity</th><th>US Equity</th><th>Crypto</th></tr>
-    <tr><td>CAGR</td><td><strong>+31.44%</strong></td><td><strong>+30.34%</strong></td><td><strong>+16.45%</strong></td></tr>
-    <tr><td>Sharpe</td><td><strong>1.40</strong></td><td><strong>0.97</strong></td><td><strong>0.52</strong></td></tr>
-    <tr><td>Sortino</td><td>2.28</td><td>1.45</td><td>0.70</td></tr>
-    <tr><td>Max DD</td><td>−17.97%</td><td>−43.77%</td><td>−68.58%</td></tr>
-    <tr><td>Calmar</td><td>1.75</td><td>0.69</td><td>0.24</td></tr>
-    <tr><td>Trade Win Rate</td><td>2.51%</td><td>2.78%</td><td>1.48%</td></tr>
-    <tr><td>Annual Turnover</td><td>11.8×</td><td>9.2×</td><td>6.7×</td></tr>
-    <tr><td>Friction Drag (annual)</td><td>6.3%</td><td>6.4%</td><td>6.0%</td></tr>
-    <tr><td>p-value</td><td>&lt;0.05*</td><td>0.46</td><td>0.64</td></tr>
+    <tr><th>Metric</th><th>Thai Equity</th></tr>
+    <tr><td>CAGR</td><td><strong>+31.44%</strong></td></tr>
+    <tr><td>Sharpe</td><td><strong>1.40</strong></td></tr>
+    <tr><td>Sortino</td><td>2.28</td></tr>
+    <tr><td>Max DD</td><td>−17.97%</td></tr>
+    <tr><td>Calmar</td><td>1.75</td></tr>
+    <tr><td>Trade Win Rate</td><td>2.51%</td></tr>
+    <tr><td>Annual Turnover</td><td>11.8×</td></tr>
+    <tr><td>Friction Drag (annual)</td><td>6.3%</td></tr>
+    <tr><td>p-value</td><td>&lt;0.05*</td></tr>
   </table>
   <div class="highlight-green">Thai equity Max DD (−17.97%) is nearly identical to equal-weight (−18.07%). The model does NOT increase tail risk over passive allocation. Alpha is "free" from a risk perspective.</div>
   <div class="highlight">Annual friction drag = Turnover × round-trip friction. Thai: 11.8 × 0.536% = 6.3% of AUM lost to costs annually. CAGR reported is net of these costs.</div>
   <p style="font-size:0.82rem;color:#7f8c8d;margin-top:6px;">* p &lt; 0.05 = statistically significant. p > 0.05 = not distinguishable from random noise.</p>
+  <p style="font-size:0.82rem;color:#7f8c8d;margin-top:6px;">Backtests for the archived US equity / crypto classes live at <code>archive/other-asset-classes/data/backtest_results/</code>.</p>
 </div>
 
-<h4>Benchmark Comparison — CAGR vs SPY, SET, and Equal-Weight</h4>
+<h4>Benchmark Comparison — CAGR vs SET Index and Equal-Weight</h4>
 <div class="card">
   <table>
-    <tr><th>Market</th><th>Strategy CAGR</th><th>SET Index</th><th>SPY</th><th>Equal-Weight</th><th>Alpha (over eq-wt)</th></tr>
-    <tr><td><strong>Thai Equity</strong></td><td><strong>+31.44%</strong></td><td>−5.29%</td><td>+8.33%</td><td>+1.44%</td><td><strong>+30.0pp</strong></td></tr>
-    <tr><td><strong>US Equity</strong></td><td><strong>+30.34%</strong></td><td>−5.29%</td><td>+8.33%</td><td>+14.39%</td><td><strong>+15.9pp</strong></td></tr>
-    <tr><td><strong>Crypto</strong></td><td><strong>+16.45%</strong></td><td>−5.29%</td><td>+8.33%</td><td>−5.16%</td><td><strong>+21.6pp</strong></td></tr>
+    <tr><th>Market</th><th>Strategy CAGR</th><th>SET Index</th><th>Equal-Weight</th><th>Alpha (over eq-wt)</th></tr>
+    <tr><td><strong>Thai Equity</strong></td><td><strong>+31.44%</strong></td><td>−5.29%</td><td>+1.44%</td><td><strong>+30.0pp</strong></td></tr>
   </table>
-  <p style="font-size:0.82rem;color:#555;margin-top:6px;">All returns net of frictions. SET Index was down 5.29% over 2022-2024. The strategy beats SET, SPY, and equal-weight in all 3 markets.</p>
+  <p style="font-size:0.82rem;color:#555;margin-top:6px;">All returns net of frictions. SET Index was down 5.29% over 2022-2024. The strategy beats both SET Index and equal-weight.</p>
 </div>
 
 
@@ -585,7 +560,8 @@ print(f'Forecasts cached at data/forecast_cache/{{slug}}/{{today}}/')
 <div class="card" style="font-size:0.85rem;">
   <table>
     <tr><th>File</th><th>Purpose</th></tr>
-    <tr><td><code>kth/data/universe.py</code></td><td>100 tickers, 9 classes, friction costs</td></tr>
+    <tr><td><code>kth/data/universe.py</code></td><td>52 tickers, 2 classes, friction costs</td></tr>
+    <tr><td><code>kth_dr/</code></td><td>DR plugin — universe_dr.py, discover_drs.py, trade_gen_dr.py</td></tr>
     <tr><td><code>kth/data/loader.py</code></td><td>yfinance → parquet cache, Kronos format</td></tr>
     <tr><td><code>kth/models/kronos_wrapper.py</code></td><td>KronosTH forecast / forecast_batch</td></tr>
     <tr><td><code>kth/models/finetune.py</code></td><td>Dataset prep, evaluate, checkpoint loader</td></tr>

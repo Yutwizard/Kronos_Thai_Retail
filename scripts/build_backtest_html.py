@@ -27,10 +27,10 @@ def _fig_to_b64(fig) -> str:
 def chart_cagr_comparison():
     """Localized CAGR comparison chart."""
     fig, ax = plt.subplots(1, 1, figsize=(8, 4.5), facecolor="white")
-    c = {"strat": "#27ae60", "set": "#7f8c8d", "spy": "#2e86c1", "eq": "#e74c3c"}
-    names = ["Strategy", "SET Index", "SPY", "Equal-Weight"]
-    vals = [31.44, -5.29, 8.33, 1.44]
-    colors = [c["strat"], c["set"], c["spy"], c["eq"]]
+    c = {"strat": "#27ae60", "set": "#7f8c8d", "eq": "#e74c3c"}
+    names = ["Strategy", "SET Index", "Equal-Weight"]
+    vals = [31.44, -5.29, 1.44]
+    colors = [c["strat"], c["set"], c["eq"]]
     bars = ax.bar(names, vals, color=colors, edgecolor="white", width=0.5)
     ax.axhline(0, color="gray", linewidth=0.5)
     ax.grid(True, axis="y", alpha=0.3)
@@ -69,9 +69,9 @@ def chart_metrics_radar():
 def chart_friction_waterfall():
     """Horizontal bar: friction costs by class."""
     fig, ax = plt.subplots(1, 1, figsize=(7, 3.5), facecolor="white")
-    classes = ["Thai Equity", "US Equity", "Crypto", "Crypto (BTC only)"]
-    vals = [0.536, 0.70, 0.90, 0.70]
-    colors = ["#1a5276", "#2e86c1", "#f39c12", "#d35400"]
+    classes = ["Thai Equity", "DR"]
+    vals = [0.536, 0.536]
+    colors = ["#1a5276", "#2e86c1"]
     bars = ax.barh(classes, vals, color=colors, edgecolor="white", height=0.5)
     for bar, v in zip(bars, vals):
         ax.text(bar.get_width() + 0.02, bar.get_y() + bar.get_height()/2, f"{v:.2f}%", ha="left", va="center", fontweight="bold")
@@ -300,9 +300,7 @@ window.addEventListener('scroll', function(){{ var b=document.querySelector('.bt
   <table>
     <tr><th>Asset Class</th><th>Commission</th><th>Slippage</th><th>Round-Trip</th></tr>
     <tr><td>Thai Equity</td><td>0.168%</td><td>0.10%</td><td><strong>0.536%</strong></td></tr>
-    <tr><td>US Equity</td><td>0.30%</td><td>0.05%</td><td><strong>0.70%</strong></td></tr>
-    <tr><td>Crypto</td><td>0.25%</td><td>0.20%</td><td><strong>0.90%</strong></td></tr>
-    <tr><td>Crypto (BTC only)</td><td>0.25%</td><td>0.10%</td><td><strong>0.70%</strong></td></tr>
+    <tr><td>DR</td><td>0.168%</td><td>0.10%</td><td><strong>0.536%</strong></td></tr>
   </table>
 
   <p><strong>Impact:</strong> 11.8&times; annual turnover &times; 0.536% = <strong>6.3% of AUM per year</strong> consumed by friction. CAGR of +31.44% is <strong>net</strong> of these costs. Gross returns were ~+38% before friction.</p>
@@ -316,21 +314,19 @@ window.addEventListener('scroll', function(){{ var b=document.querySelector('.bt
 <h2 id="benchmarks">4. Benchmarks</h2>
 
 <div class="card">
-  <p>Every backtest report compares the strategy against 4 benchmarks, all normalised to 1.0 at start:</p>
+  <p>Every backtest report compares the strategy against 2 benchmarks, all normalised to 1.0 at start:</p>
   <table>
     <tr><th>Benchmark</th><th>Composition</th><th>Method</th></tr>
     <tr><td>SET Index</td><td>^SET.BK buy-and-hold</td><td>Normalised to 1.0 at start</td></tr>
-    <tr><td>SPY</td><td>SPY buy-and-hold</td><td>Normalised to 1.0 at start</td></tr>
-    <tr><td>60/40 SPY/TLT</td><td>60% SPY + 40% TLT, monthly rebalance</td><td>Portfolio normalised to 1.0</td></tr>
     <tr><td>Equal-Weight Universe</td><td>All eligible tickers, no model</td><td>Average of individual ticker returns</td></tr>
   </table>
+  <p style="font-size:0.82rem;color:#7f8c8d;">SPY and 60/40 SPY/TLT benchmarks were dropped when us_equity/bond_proxy were archived 2026-07-16 — those tickers' cached data no longer exists, so <code>_compute_benchmarks()</code> would otherwise degrade silently to a flat line. See <code>archive/other-asset-classes/</code>.</p>
 
   <div class="chart">{c1}</div>
 
   <div class="stat-grid">
     <div class="stat-card up"><div class="num" style="color:#27ae60;">+31.44%</div><div class="label">Strategy CAGR</div></div>
     <div class="stat-card down"><div class="num" style="color:#e74c3c;">-5.29%</div><div class="label">SET Index CAGR</div></div>
-    <div class="stat-card neutral"><div class="num" style="color:#2e86c1;">+8.33%</div><div class="label">SPY CAGR</div></div>
     <div class="stat-card down"><div class="num" style="color:#7f8c8d;">+1.44%</div><div class="label">Equal-Weight Universe</div></div>
   </div>
 
@@ -382,14 +378,12 @@ window.addEventListener('scroll', function(){{ var b=document.querySelector('.bt
     <tr><th>Benchmark</th><th>CAGR</th><th>Sharpe</th><th>Max DD</th></tr>
     <tr><td><strong>Strategy</strong></td><td><strong>+31.44%</strong></td><td><strong>1.40</strong></td><td>-17.97%</td></tr>
     <tr><td>SET Index</td><td>-5.29%</td><td>-0.63</td><td>-25.64%</td></tr>
-    <tr><td>SPY</td><td>+8.33%</td><td>0.44</td><td>-24.50%</td></tr>
-    <tr><td>60/40 SPY/TLT</td><td>-0.27%</td><td>-0.11</td><td>-27.18%</td></tr>
     <tr><td>Equal-weight</td><td>+1.44%</td><td>0.00</td><td>-18.07%</td></tr>
   </table>
 
   <h4>Fine-Tuning Verdict</h4>
   <div class="highlight" style="margin:0;">
-    <strong>Zero improvement across 9 models.</strong> We trained 3 markets &times; 3 folds with SGDR and 21-month windows. None beat zero-shot: Thai FT &le; ZS 1.40 Sharpe, US FT 0.94 vs ZS 0.97, Crypto FT 0.46 vs ZS 0.52. All markets deploy zero-shot.
+    <strong>Zero improvement.</strong> We trained thai_equity across 3 folds with SGDR and 21-month windows. FT did not beat zero-shot (ZS 1.40 Sharpe). Deploys zero-shot. (Fine-tuning results for the archived US equity / crypto classes live at <code>archive/other-asset-classes/data/backtest_results/</code>.)
   </div>
 </div>
 
@@ -398,24 +392,20 @@ window.addEventListener('scroll', function(){{ var b=document.querySelector('.bt
 <div class="card">
   <div class="stat-grid">
     <div class="stat-card up"><div class="num" style="color:#27ae60;">High</div><div class="label">Thai Equity Trust</div></div>
-    <div class="stat-card neutral"><div class="num" style="color:#2e86c1;">Medium</div><div class="label">US Equity Trust</div></div>
-    <div class="stat-card down"><div class="num" style="color:#e74c3c;">Low</div><div class="label">Crypto Trust</div></div>
-    <div class="stat-card neutral"><div class="num" style="color:#7f8c8d;">Not Tested</div><div class="label">ETF, Bond, REIT</div></div>
+    <div class="stat-card neutral"><div class="num" style="color:#7f8c8d;">Not Tested</div><div class="label">DR Trust</div></div>
   </div>
   <ul>
     <li><strong>Thai equity:</strong> Deploy full allocation (30-40% of portfolio). Model is significant (p=0.013) with 1.40 Sharpe. Overweight per the Morning Brief's bullish signals.</li>
-    <li><strong>US equity:</strong> Use for direction signals but size conservatively (15-20%). Model is not significant (p=0.46) but beats SPY by 22pp CAGR.</li>
-    <li><strong>Crypto:</strong> Max 5% allocation. Model not significant (p=0.64). Use for BTC exposure, not for alt-coin signals.</li>
-    <li><strong>Untested classes:</strong> Do not trade ETF global, commodity, bond proxy, REIT, or FX based solely on model forecasts. Wait for backtest results.</li>
+    <li><strong>DR:</strong> No dedicated walk-forward backtest yet — DR is a 2026-07-12 plugin, forecast on the foreign underlying. Size conservatively (10-20%) until a DR-specific backtest exists. See the DR premium/discount caution in the user manual.</li>
   </ul>
-  <p style="font-size:0.82rem;color:#7f8c8d;margin-top:10px;">All backtest returns use 2% annualised risk-free rate (Thai 1Y govt bond proxy) for Sharpe calculations. The 60/40 benchmark returned -0.27% CAGR due to 2022's bond sell-off (TLT fell ~30% that year).</p>
+  <p style="font-size:0.82rem;color:#7f8c8d;margin-top:10px;">All backtest returns use 2% annualised risk-free rate (Thai 1Y govt bond proxy) for Sharpe calculations.</p>
 </div>
 
 <!-- ============================================================ -->
 <h2 id="limitations">6. Known Limitations</h2>
 <div class="card">
   <ul>
-    <li><strong>Only 3 of 9 classes backtested.</strong> Thai equity, US equity, and crypto have walk-forward backtests. ETF global, commodity, bond, REIT, FX are untested. Half the universe has no backtest validation.</li>
+    <li><strong>Only thai_equity has a walk-forward backtest.</strong> DR (the plugin universe) is not yet backtested. Other classes previously backtested (US equity, crypto) were archived 2026-07-16 — see <code>archive/other-asset-classes/data/backtest_results/</code>.</li>
     <li><strong>Survivorship bias.</strong> Only currently-listed tickers are in the universe. Delisted SET stocks are absent, inflating returns.</li>
     <li><strong>Free data quality.</strong> Yahoo Thai stock prices can have stale data, gaps, and bad ticks. Extreme moves are flagged but not corrected.</li>
     <li><strong>No capacity constraints.</strong> Assumes ~200K THB positions fill at open. Real large orders could move the market.</li>

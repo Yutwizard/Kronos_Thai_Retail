@@ -35,18 +35,14 @@ REPORT_DATE = pd.Timestamp.now().strftime("%Y-%m-%d")
 if MODEL_TYPE == "zero-shot":
     CACHE_SLUG = "NeoQuasar_Kronos-small"
 else:
-    CACHE_SLUG = "./checkpoints/us_equity/fold2/best".replace("/", "_")
+    # thai_equity stays zero-shot per research decision (fine-tuning did not
+    # beat zero-shot in backtest) -- this branch is a placeholder for a future
+    # checkpoint, not a recommended default. Substitute your own path.
+    CACHE_SLUG = "./checkpoints/thai_equity/fold2/best".replace("/", "_")
 
 BACKTEST_METRICS = {
     "thai_equity": {"sharpe": 1.40, "cagr": 0.3144, "max_dd": -0.1797},
-    "crypto":      {"sharpe": 0.52, "cagr": 0.1645, "max_dd": -0.6858},
-    "us_equity":   {"sharpe": 0.97, "cagr": 0.3034, "max_dd": -0.4377},
     "thai_index":  {"sharpe": -0.63,"cagr": -0.0529,"max_dd": -0.2564},
-    "etf_global":  {"sharpe": 0.44, "cagr": 0.0833, "max_dd": -0.2450},
-    "commodity":   {"sharpe": None, "cagr": None, "max_dd": None},
-    "bond_proxy":  {"sharpe": None, "cagr": None, "max_dd": None},
-    "reit":        {"sharpe": None, "cagr": None, "max_dd": None},
-    "fx_macro":    {"sharpe": None, "cagr": None, "max_dd": None},
 }"""
 
 CELL_1 = """\
@@ -54,8 +50,8 @@ if MODEL_TYPE == "zero-shot":
     th = KronosTH.from_pretrained("NeoQuasar/Kronos-small", device="cuda")
 else:
     from kth.models.finetune import load_finetuned_checkpoint
-    th = load_finetuned_checkpoint("./checkpoints/us_equity/fold2/best", device="cuda")
-    FT_ONLY_CLASS = "us_equity"
+    th = load_finetuned_checkpoint("./checkpoints/thai_equity/fold2/best", device="cuda")
+    FT_ONLY_CLASS = "thai_equity"
 
 print(f"Model: {MODEL_TYPE} | Device: cuda")"""
 

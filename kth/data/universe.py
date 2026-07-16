@@ -1,27 +1,26 @@
 """
 The investable universe for a Thai retail investor (as of 2025-2026).
 
-Each asset class lists what a Thai retail investor can realistically buy
-through Thai-licensed brokers/exchanges, with the corresponding yfinance
-ticker.
+Scope: SET-listed Thai equities (thai_equity, thai_index) plus DR
+(Depositary Receipts) of major foreign stocks — DR is a separate plugin
+package (kth_dr/) that extends this file via register_asset_class(),
+never touching UNIVERSE directly.
 
 Notes:
 - Thai stocks (.BK): full retail access via any Thai broker.
-- US stocks/ETFs: accessible since 2022 via DIME!, Liberator, Jitta Wealth,
-  Phillip, Kim Eng, Bualuang, etc. Fractional shares legal.
-- Crypto: Thailand has approved 5-year capital gains tax exemption
-  (2025-2029) for trades via licensed exchanges (Bitkub, Binance TH,
-  Orbix, etc.). yfinance prices are vs USD; investors trade vs THB.
-- Gold: Thai gold savings accounts at BBL/KBank track international spot.
-  GLD ETF is the cleanest proxy. GC=F is futures.
 - Thai mutual funds: most popular retail vehicle BUT no clean free API.
   We exclude them from the model and instead use their underlying
-  benchmarks as proxies (e.g. for a "global gold equity fund" -> use GDX).
+  benchmarks as proxies where relevant.
 
 Excluded by design:
 - Thai mutual funds: NAV-only, no free API, daily-lagged data
 - Bonds: thin retail secondary market, irregular prices
 - TFEX derivatives: outside retail scope for forecasting tool
+
+Other asset classes (US equity, global ETF, commodity, crypto, bond
+proxy, FX macro) were explored and backtested but archived 2026-07-16
+to refocus the project on SET + DR — see archive/other-asset-classes/
+for the original code, cached data, and backtest results.
 """
 
 # Asset class -> list of (yfinance_ticker, display_name, notes)
@@ -77,80 +76,11 @@ UNIVERSE = {
         ("TRUE.BK",    "True Corp",          "Telecom"),
         ("JMART.BK",   "J Mart",             "Tech"),
         ("HANA.BK",    "Hana Microelectronic","Tech"),
+        ("CPNREIT.BK", "CPN Retail Growth REIT","Property"),
     ],
 
     "thai_index": [
         ("^SET.BK",    "SET Index",          "Thailand benchmark"),
-    ],
-
-    "us_equity": [
-        ("AAPL",  "Apple",     "Mega-cap tech"),
-        ("MSFT",  "Microsoft", "Mega-cap tech"),
-        ("NVDA",  "NVIDIA",    "AI"),
-        ("GOOGL", "Alphabet",  "Mega-cap tech"),
-        ("AMZN",  "Amazon",    "Mega-cap tech"),
-        ("META",  "Meta",      "Mega-cap tech"),
-        ("TSLA",  "Tesla",     "EV/auto"),
-        ("BRK-B", "Berkshire", "Diversified"),
-        ("JPM",   "JPMorgan",  "Bank"),
-        ("V",     "Visa",      "Payments"),
-        ("COST",  "Costco",    "Retail/warehouse"),
-        ("WMT",   "Walmart",   "Retail"),
-        ("NFLX",  "Netflix",   "Streaming"),
-        ("AMD",   "AMD",       "Semiconductor"),
-        ("DIS",   "Disney",    "Media"),
-        ("KO",    "Coca-Cola", "Beverage"),
-        ("PEP",   "PepsiCo",   "Beverage"),
-    ],
-
-    "etf_global": [
-        ("SPY", "S&P 500",                  "US large-cap"),
-        ("QQQ", "Nasdaq 100",               "US tech-heavy"),
-        ("VTI", "Vanguard Total Mkt",       "US whole market"),
-        ("VWO", "Vanguard Emerging",        "EM exposure"),
-        ("VEA", "Vanguard Developed ex-US", "DM ex-US"),
-        ("IEMG","iShares EM",               "EM alt"),
-        ("EWY", "iShares S.Korea",          "Korea single-country"),
-        ("EWJ", "iShares Japan",            "Japan single-country"),
-        ("FXI", "iShares China L-Cap",      "China A-shares proxy"),
-    ],
-
-    "commodity": [
-        ("GLD",  "SPDR Gold ETF",     "Cleanest gold daily price"),
-        ("GC=F", "Gold Futures",      "Backup gold series"),
-        ("SLV",  "Silver ETF",        "Silver"),
-        ("USO",  "US Oil Fund ETF",   "Crude oil proxy"),
-    ],
-
-    "crypto": [
-        ("BTC-USD",  "Bitcoin",   "Largest cap"),
-        ("ETH-USD",  "Ethereum",  "Smart contracts"),
-        ("SOL-USD",  "Solana",    "High-performance L1"),
-        ("ADA-USD",  "Cardano",   "Proof-of-stake L1"),
-        ("AVAX-USD", "Avalanche", "Subnet L1"),
-        ("LINK-USD", "Chainlink", "Oracle network"),
-        ("DOGE-USD", "Dogecoin",  "Meme coin"),
-        ("DOT-USD",  "Polkadot",  "Parachain L0"),
-        ("LTC-USD",  "Litecoin",  "OG payment coin"),
-        ("NEAR-USD", "NEAR",      "Sharded L1"),
-        ("VET-USD",  "VeChain",   "Supply chain L1"),
-        ("MATIC-USD","Polygon",   "Ethereum L2"),
-    ],
-
-    "bond_proxy": [
-        ("TLT",  "20Y+ Treasury ETF", "Long-duration safe-haven"),
-        ("IEF",  "7-10Y Treasury",    "Mid-duration"),
-        ("HYG",  "High-yield bonds",  "Credit risk proxy"),
-    ],
-
-    "reit": [
-        ("VNQ",       "US REITs ETF",  "US property"),
-        ("CPNREIT.BK","CPN Retail Growth REIT", "Thai retail REIT"),
-    ],
-
-    "fx_macro": [
-        ("THB=X", "USDTHB",        "FX exposure on USD assets"),
-        ("DX-Y.NYB", "DXY",        "USD strength index"),
     ],
 }
 
@@ -184,14 +114,21 @@ def register_asset_class(
 
 
 def get_all_tickers():
-    """Flat list of every INVESTABLE ticker in the universe (excludes fx_macro)."""
+    """Flat list of every INVESTABLE ticker in the universe.
+
+    The `cls != "fx_macro"` filter is now permanently a no-op (fx_macro was
+    archived 2026-07-16, see archive/other-asset-classes/) but is left in
+    place rather than removed — harmless, and matches the same
+    leave-dead-code-in-place call made for other now-unreachable
+    asset-class branches (e.g. crypto handling in kth/backtest/walkforward.py).
+    """
     return [t for cls, items in UNIVERSE.items()
             for (t, _, _) in items
             if cls != "fx_macro"]
 
 
 def get_all_tickers_including_features():
-    """All tickers including fx_macro features. Use for data download only."""
+    """All tickers, including any future features-only class. Use for data download only."""
     return [t for cls, items in UNIVERSE.items()
             for (t, _, _) in items]
 
@@ -213,23 +150,11 @@ def get_display_name(ticker):
 FRICTION = {
     # Thai equity: ~0.157% commission online + 7% VAT on commission + 0.001% SET fee
     #             = ~0.168% one-way, ~0.336% round-trip. Plus 0.1% slippage assumed.
+    # CPNREIT.BK (folded in from the archived standalone "reit" class 2026-07-16)
+    # uses this rate too; the old reit-specific slippage of 0.0015 (vs 0.0010 here)
+    # was intentionally dropped — see archive/other-asset-classes/.
     "thai_equity":  {"commission_oneway": 0.00168, "slippage_oneway": 0.0010},
     "thai_index":   {"commission_oneway": 0.00168, "slippage_oneway": 0.0010},
-    "reit":         {"commission_oneway": 0.00168, "slippage_oneway": 0.0015},
-
-    # US stocks via Thai brokers: ~0.20%-0.30% commission, FX spread baked in.
-    # Use 0.30% one-way as conservative.
-    "us_equity":    {"commission_oneway": 0.0030, "slippage_oneway": 0.0005},
-    "etf_global":   {"commission_oneway": 0.0030, "slippage_oneway": 0.0005},
-    "bond_proxy":   {"commission_oneway": 0.0030, "slippage_oneway": 0.0005},
-    "commodity":    {"commission_oneway": 0.0030, "slippage_oneway": 0.0010},
-
-    # Crypto via Thai licensed exchanges: 0.25% maker/taker typical (Bitkub).
-    # Capital gains tax-exempt 2025-2029.
-    "crypto":       {"commission_oneway": 0.0025, "slippage_oneway": 0.0020},
-
-    # FX: not directly investable, used only as feature/benchmark
-    "fx_macro":     {"commission_oneway": 0.0000, "slippage_oneway": 0.0000},
 }
 
 
@@ -243,9 +168,9 @@ SECTOR: dict[str, str] = {
     "PTT.BK":   "Energy",  "PTTEP.BK":"Energy",   "BGRIM.BK": "Energy",  "GPSC.BK": "Energy",
     "TOP.BK":   "Energy",  "IRPC.BK": "Energy",   "BANPU.BK": "Energy",  "BCP.BK":  "Energy",
     "RATCH.BK": "Energy",  "GULF.BK": "Energy",
-    # Property (7)
+    # Property (8)
     "LH.BK":    "Property","QH.BK":   "Property", "AP.BK":    "Property","ORI.BK":  "Property",
-    "SIRI.BK":  "Property","PSH.BK":  "Property", "CPN.BK":   "Property",
+    "SIRI.BK":  "Property","PSH.BK":  "Property", "CPN.BK":   "Property","CPNREIT.BK":"Property",
     # Healthcare (5)
     "BDMS.BK":  "Healthcare","BH.BK": "Healthcare","BCH.BK":  "Healthcare",
     "CHG.BK":   "Healthcare","MEGA.BK":"Healthcare",

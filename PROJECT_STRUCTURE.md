@@ -58,7 +58,7 @@ These were debated and chosen earlier:
 
 | Decision | Choice | Why |
 |---|---|---|
-| **Asset universe** | Broad — everything a Thai retail investor can actually buy | Most realistic use case; not just SET |
+| **Asset universe** | SET-listed Thai equities + Thai DRs of foreign stocks | Narrowed 2026-07-16 from a 9-class broad universe after determining SET+DR was the defensible, realistically-tradable core; see `archive/other-asset-classes/` for the prior broad-universe code, data, and backtest results |
 | **Time frequency** | Daily | Free data only. Intraday from yfinance is 60-day rolling — useless for training |
 | **Hardware** | Google Colab / Kaggle free tier (T4 16GB) | Fits Kronos-small (24.7M params) and Kronos-base (102.3M) with care |
 | **Delivery format** | Jupyter/Colab notebooks only | Research-first; no UI; reproducible |
@@ -68,26 +68,23 @@ These were debated and chosen earlier:
 
 ## 3. Investable universe
 
-**100 tickers across 9 asset classes.** Defined in `kth/data/universe.py`.
+**52 tickers across 2 asset classes**, plus a separate DR universe. Defined in `kth/data/universe.py`.
 
 | Asset class | # | Example tickers | Why included |
 |---|---|---|---|
-| `thai_equity` | 50 | PTT.BK, KBANK.BK, ... (50 SET stocks, 8 sectors) | Expanded from 15 |
+| `thai_equity` | 51 | PTT.BK, KBANK.BK, ..., CPNREIT.BK (51 SET stocks incl. the former `reit` class, 8 sectors) | Core SET holdings; CPNREIT.BK folded in 2026-07-16 (was a standalone `reit` class) |
 | `thai_index` | 1 | ^SET.BK | Benchmark for Thai equity strategies |
-| `us_equity` | 17 | AAPL, MSFT, NVDA, GOOGL, AMZN, META, TSLA, BRK-B, JPM, V, COST, WMT, NFLX, AMD, DIS, KO, PEP | Expanded from 10 |
-| `etf_global` | 9 | SPY, QQQ, VTI, VWO, VEA, IEMG, EWY, EWJ, FXI | Same brokers as US stocks; global/regional exposure |
-| `commodity` | 4 | GLD, GC=F, SLV, USO | Gold is huge in Thai retail; GLD is the cleanest daily price; GC=F is futures backup |
-| `crypto` | 12 | BTC-USD, ETH-USD, SOL-USD, ADA-USD, AVAX-USD, LINK-USD, DOGE-USD, DOT-USD, LTC-USD, NEAR-USD, VET-USD, MATIC-USD | Trimmed from 5 (BNB, XRP dropped) |
-| `bond_proxy` | 3 | TLT, IEF, HYG | Duration risk + credit risk benchmarks |
-| `reit` | 2 | VNQ, CPNREIT.BK | Property exposure (US + Thai) |
-| `fx_macro` | 2 | THB=X, DX-Y.NYB | Features only, not investable directly |
+
+**DR (Depositary Receipts)**: a separate plugin package, `kth_dr/`, extends the universe via `register_asset_class()` — never a hardcoded `UNIVERSE` key. SET-listed DRs of major foreign stocks (Tencent, Toyota, ASML, Alibaba, etc.), forecast on the foreign underlying but priced/traded in THB on the SET. See `data/dr/README.md` for the verification workflow.
 
 **Explicitly excluded** (with reasons):
 
-- **Thai mutual funds**: most popular retail vehicle BUT no clean free API; NAV updates are daily-lagged and scattered across AMC websites. Workaround: use the underlying global benchmark as a proxy (e.g. for "global gold equity fund" → use GDX or GLD signal).
+- **Thai mutual funds**: most popular retail vehicle BUT no clean free API; NAV updates are daily-lagged and scattered across AMC websites.
 - **TFEX derivatives**: outside retail forecasting scope; leverage changes the math.
 - **Individual bonds**: thin retail secondary market in Thailand; irregular prices.
 - **Real estate / private equity**: not in scope for a K-line model.
+
+**Archived 2026-07-16** (47 tickers across 7 classes — `us_equity`, `etf_global`, `commodity`, `crypto`, `bond_proxy`, `fx_macro`, and `reit` minus CPNREIT.BK): the project originally covered the full multi-asset universe a Thai retail investor can access (not just SET), including US stocks/ETFs, gold/commodities, crypto, and FX. Scope was narrowed to SET + DR; the original code, cached OHLCV, and backtest results for those classes live at `archive/other-asset-classes/` (see its `README.md` for how to reactivate a class via the same `register_asset_class()` plugin hook DR uses).
 
 ---
 
@@ -98,12 +95,10 @@ These were debated and chosen earlier:
 | Asset class | yfinance coverage | History depth | Notes |
 |---|---|---|---|
 | Thai stocks `.BK` | ✅ Full | ~20+ years for blue chips | Some mid-caps shorter (recent IPOs) |
-| US stocks | ✅ Full | 20+ years | Best-covered class |
-| Global ETFs | ✅ Full | Since ETF launch | SPY: since 1993; QQQ: since 1999 |
-| Gold (GLD) | ✅ Full | Since 2004 | Cleanest gold daily price; GC=F futures as backup |
-| Crypto | ✅ Full | BTC since 2014, ETH since 2017 | 7-day trading week (no business-day gaps) |
-| FX | ✅ Full | Decades | THB=X = USDTHB |
 | SET Index | ⚠️ Quirky | Recent only via `^SET.BK` | May need alternative symbol; tested in Notebook 01 |
+| DR underlyings (foreign) | ✅ Full | Varies by exchange | HK/Japan/Europe/Singapore — see `data/dr/README.md` |
+
+Archived 2026-07-16 (US stocks, global ETFs, gold/commodities, crypto, FX) — coverage notes preserved in `archive/other-asset-classes/README.md` for anyone reactivating a class.
 
 ### Hard limits of free data
 
@@ -166,13 +161,14 @@ These were debated and chosen earlier:
 │    amount + timestamps). Quality checks. Parquet cache.        │
 ├────────────────────────────────────────────────────────────────┤
 │  LAYER 1: Universe definition (kth/data/universe.py)           │
-│    100 tickers, 9 asset classes, FRICTION per class            │
+│    52 tickers, 2 asset classes, FRICTION per class,            │
+│    + DR plugin (kth_dr/) via register_asset_class()            │
 └────────────────────────────────────────────────────────────────┘
 ```
 
 LAYER 5: Dashboard / Report   google_suite/                          ✅ built (Google Suite dashboard)
                                  scripts/dashboard.py                    ✅ built (Flask dashboard — local GPU option)
-                                 scripts/start_dashboard.sh              ✅ built (one-command launcher: venv + data + pipeline + serve)
+                                 scripts/start_dashboard.sh              ✅ built (one-command launcher: venv + serve; data/forecasts generated on demand via UI or --generate)
                                  kth/trading/portfolio.py                ✅ built
                                  kth/trading/trade_gen.py                ✅ built
                                  kth/trading/sheets.py                   ✅ built
@@ -395,15 +391,11 @@ Encoded in `FRICTION` dict in `universe.py`. Values are **one-way** percentages.
 
 | Asset class | Commission one-way | Slippage one-way | Round-trip total | Rationale |
 |---|---|---|---|---|
-| `thai_equity` | 0.168% | 0.10% | 0.536% | 0.157% online commission + 7% VAT on commission (= 0.168%) + 0.001% SET fee. Slippage modest because we focus on liquid stocks |
+| `thai_equity` | 0.168% | 0.10% | 0.536% | 0.157% online commission + 7% VAT on commission (= 0.168%) + 0.001% SET fee. Slippage modest because we focus on liquid stocks. CPNREIT.BK (folded in from the archived standalone `reit` class 2026-07-16) uses this rate too — the old reit-specific slippage of 0.15% was intentionally dropped |
 | `thai_index` | 0.168% | 0.10% | 0.536% | Treated as if traded via TDEX ETF; same as equity |
-| `reit` | 0.168% | 0.15% | 0.636% | Same commission, slightly higher slippage due to thinner books |
-| `us_equity` | 0.30% | 0.05% | 0.70% | Thai brokers charge ~0.20–0.30% for US stocks + FX spread; we use 0.30% conservatively |
-| `etf_global` | 0.30% | 0.05% | 0.70% | Same as US equity |
-| `bond_proxy` | 0.30% | 0.05% | 0.70% | Same as US equity (these are ETFs) |
-| `commodity` | 0.30% | 0.10% | 0.80% | ETF route via Thai broker |
-| `crypto` | 0.25% | 0.20% | 0.90% | Bitkub maker/taker is 0.25%; slippage on smaller-cap alts can be real. **Cap gains tax-exempt 2025–2029** for licensed-exchange trades |
-| `fx_macro` | 0% | 0% | 0% | Not actually traded; used as feature/benchmark only |
+| DR (`kth_dr/` plugin) | 0.168% | 0.10% | 0.536% | Same as thai_equity — DRs settle/trade on the SET like any other listed security |
+
+Archived 2026-07-16 (`us_equity`, `etf_global`, `bond_proxy`, `commodity`, `crypto`, `fx_macro` friction rates): see `archive/other-asset-classes/README.md`.
 
 **These values matter.** A strategy that looks like it earns 8% annualized with paper costs may earn 2% or be negative after frictions. We will show **gross vs. net** in every backtest.
 
@@ -431,11 +423,11 @@ For each ticker, for the held-out test period:
 
 Every strategy result must be compared to:
 1. **Buy-and-hold SET Index** — the do-nothing Thai option
-2. **Buy-and-hold SPY** — the do-nothing US option
-3. **60/40 SPY/TLT** — classic balanced portfolio
-4. **Equal-weight on the same universe** — the "no model" portfolio
+2. **Equal-weight on the same universe** — the "no model" portfolio
 
-If our strategy doesn't beat all four after frictions, we say so plainly.
+If our strategy doesn't beat both after frictions, we say so plainly.
+
+**Note on SPY/60-40 benchmarks**: `kth/backtest/walkforward.py::_compute_benchmarks()` still computes buy-and-hold SPY and a 60/40 SPY/TLT benchmark (a holdover from the pre-2026-07-16 broad universe) — this code was deliberately left in place rather than removed (see `archive/other-asset-classes/README.md`), but since `SPY.parquet`/`TLT.parquet` are now archived out of `data/raw/`, these two benchmark lines will render as flat (no-data) curves rather than crash. This is expected, not a bug — SET Index and equal-weight remain the two benchmarks that actually matter for this universe.
 
 ---
 
@@ -480,11 +472,11 @@ If our strategy doesn't beat all four after frictions, we say so plainly.
 
 ### ✅ Built and tested
 
-- `kth/data/universe.py` — 100-ticker universe (50 Thai, 17 US, 12 crypto, rest unchanged), FRICTION dict, SECTOR mapping, O(1) reverse-lookup dict
+- `kth/data/universe.py` — 52-ticker SET universe (51 thai_equity incl. CPNREIT.BK, 1 thai_index), FRICTION dict, SECTOR mapping, O(1) reverse-lookup dict, `register_asset_class()` plugin hook (used by `kth_dr/`). Scope narrowed 2026-07-16 from 100 tickers/9 classes — see `archive/other-asset-classes/`
 - `kth/data/loader.py` — yfinance loader, Kronos-format conversion, parquet cache, quality checks
 - `verify_data_layer.py` — 5 offline tests, all pass against synthetic data
-- `verify_fixes.py` — 17 regression tests for stats fixes (PSR, alignment, bootstrap, cash guard, etc.) — all pass
-- `verify_kaggle_runtime.py` — 19 tests for Kaggle auth + pipeline orchestration (idempotency, capital reset, trade edits, BKK clock, failure path) — all pass
+- `verify_fixes.py` — 25 regression tests for stats fixes (PSR, alignment, bootstrap, cash guard, SET+DR-only universe invariant, etc.) — all pass
+- `verify_kaggle_runtime.py` — 20 tests for Kaggle auth + pipeline orchestration (idempotency, capital reset, trade edits, BKK clock, failure path) — all pass
 - `notebooks/01_data_layer.ipynb` — Colab notebook for verifying real yfinance access
 - `kth/models/kronos_wrapper.py` — KronosTH wrapper (zero-shot inference)
 - `kth/models/finetune.py` — Dataset preparation, tokenizer caching, evaluate_model
@@ -498,14 +490,15 @@ If our strategy doesn't beat all four after frictions, we say so plainly.
 - `run_pipeline.py` — Thin entrypoint, `--dry-run` for offline smoke tests
 - `kth/testing/synthetic.py` — Shared synthetic OHLCV generator for offline tests
 - `data/backtest_results/MANIFEST.md` — Marks authoritative (n50) vs stale (pre-n50, invvol) runs
-- `scripts/train_per_market.py` — SGDR fine-tuning (3 markets × 3 folds)
-- `scripts/eval_holdout.py` — Holdout evaluation on 2025 data
-- `scripts/compare_finetune.py` — Fine-tuned vs zero-shot backtest comparison
+- `scripts/train_per_market.py` — SGDR fine-tuning (thai_equity × 3 folds; us_equity/crypto branches archived 2026-07-16)
+- `scripts/eval_holdout.py` — Holdout evaluation on 2025 data (thai_equity only)
+- `scripts/compare_finetune.py` — Fine-tuned vs zero-shot backtest comparison (thai_equity only)
 - `kth_dr/universe_dr.py` — DR_MAP loading, get_dr_for_underlying(), get_dr_underlying_tickers(), get_verified_dr_tickers()
 - `kth_dr/loader_dr.py` — load_dr_bundle() for 3-series OHLCV bundle
 - `kth_dr/discover_drs.py` — seed list -> mapping.json (SET-wide scan is a stubbed follow-up, not implemented)
 - `kth_dr/trade_gen_dr.py` — execution ticker/price/name resolution, same-underlying guard
-- `verify_dr.py` — 34 integration tests for DR plugin hook, mapping, trade-gen wiring
+- `verify_dr.py` — 40 integration tests for DR plugin hook, mapping, trade-gen wiring
+- `archive/other-asset-classes/` — us_equity/crypto training scripts, cached OHLCV, and backtest results descoped 2026-07-16
 - `README.md` — project overview
 - `requirements.txt` — minimal pinned deps
 - `docs/user-manual.md` — full user manual with methodology, backtest results, and usage instructions
@@ -516,15 +509,15 @@ If our strategy doesn't beat all four after frictions, we say so plainly.
 - `docs/superpowers/specs/2026-05-24-expanded-backtest-design.md` — design spec for 2020-2024 Thai equity expansion
 - `docs/superpowers/plans/2026-05-24-expanded-backtest.md` — implementation plan (~10.5 hrs GPU, regime decomposition)
 
-### Backtest Results (2022-2024, 3 markets × 4 benchmarks)
+### Backtest Results (2022-2024, Thai equity)
 
 | Market | Strategy CAGR | Sharpe | Max DD | Alpha over equal-wt | Verdict |
 |--------|--------------|--------|--------|---------------------|---------|
 | Thai equity (49 tkrs) | +31.44% | 1.40 | −17.97% | **+30pp** | ✅ ZS Deploy |
-| US equity (17 tkrs) | +30.34% | 0.97 | −43.77% | +16pp | ✅ ZS Deploy |
-| Crypto (12 tkrs) | +16.45% | 0.52 | −68.58% | +22pp | ✅ ZS Deploy |
 
-**Zero-shot beats fine-tuning in all 3 markets.** The 9 fine-tuned checkpoints are saved but not deployed.
+**Zero-shot beats fine-tuning.** Fine-tuned checkpoints are saved but not deployed.
+
+US equity and crypto backtests (both also zero-shot-wins) were run when those classes were in scope — archived 2026-07-16, see `archive/other-asset-classes/data/backtest_results/`.
 
 See full results in `docs/user-manual.md` §6.
 

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project overview
 
-Kronos-TH is a **research-first, Kaggle-scheduled** forecasting tool for Thai retail investors. It wraps the [Kronos](https://github.com/shiyu-coder/Kronos) financial foundation model to produce probabilistic daily-bar forecasts across the assets a Thai retail investor can actually buy (SET stocks, US stocks/ETFs, crypto, gold, FX).
+Kronos-TH is a **research-first, Kaggle-scheduled** forecasting tool for Thai retail investors. It wraps the [Kronos](https://github.com/shiyu-coder/Kronos) financial foundation model to produce probabilistic daily-bar forecasts for SET-listed Thai equities and DR (Depositary Receipts) of major foreign stocks tradable on the SET in Thai baht. (Scope narrowed 2026-07-16 from a broader multi-asset universe — see `archive/other-asset-classes/`.)
 
 **Primary runtime is Kaggle Notebooks (T4 GPU, scheduled daily).** Colab is the backup runtime. Local scripts exist for offline verification — yfinance is often blocked in sandboxes. Code review fixes applied 2026-06-21 (PSR, equity curve alignment, open_trades blending); stored backtest numbers are stale pending GPU re-run (see `data/backtest_results/MANIFEST.md`).
 
@@ -14,11 +14,11 @@ Kronos-TH is a **research-first, Kaggle-scheduled** forecasting tool for Thai re
 ```bash
 pip install -r requirements.txt          # data layer only
 pip install -r requirements-ml.txt      # ML stack (torch etc.)
-pip install -e .                         # make kth importable as a package
+pip install -e .                         # make kth AND kth_dr importable — re-run after every pull that touches either package, editable installs don't auto-pick-up new top-level packages
 python verify_data_layer.py             # data layer: 5 tests
-python verify_fixes.py                  # review fixes: stats + pipeline + universe (24 tests)
+python verify_fixes.py                  # review fixes: stats + pipeline + universe (25 tests)
 python verify_kaggle_runtime.py         # Kaggle pipeline: auth + orchestration (20 tests)
-python verify_dr.py                     # DR integration: plugin hook, mapping, trade-gen wiring (39 tests)
+python verify_dr.py                     # DR integration: plugin hook, mapping, trade-gen wiring (40 tests)
 python run_pipeline.py --dry-run        # full pipeline smoke test, offline
 ```
 
@@ -87,12 +87,12 @@ columns: timestamps, open, high, low, close, volume, amount
 - One `.parquet` file per ticker in `./data/raw/` — never a merged file (date ranges differ across markets).
 - Filename sanitization: `^` → `_`, `=` → `_` (e.g. `^SET.BK` → `_SET.BK.parquet`, `THB=X` → `THB_X.parquet`).
 - `auto_adjust=True` so splits/dividends are baked in.
-- Gaps are **preserved**, not forward-filled — crypto trades 7 days/week, equities don't.
+- Gaps are **preserved**, not forward-filled — this matters for any asset class that doesn't trade on a 5-day business calendar (a holdover design decision from when the universe included crypto; no current SET/DR ticker actually needs it, but the loader stays calendar-agnostic).
 
 ### Universe
-- Hardcoded 100 tickers across 9 asset classes in [kth/data/universe.py](kth/data/universe.py) — not a CSV. Adding a ticker is an intentional code change for version control.
-- `FRICTION` costs are per-class, not per-ticker. `fx_macro` is features-only (not investable, zero friction).
-- `SECTOR` dict + `get_sector()` map all 50 thai_equity tickers to 10 SET sectors for the sector concentration guard (max 2 positions/sector).
+- Hardcoded 52 tickers across 2 asset classes (`thai_equity`, `thai_index`) in [kth/data/universe.py](kth/data/universe.py) — not a CSV. Adding a ticker is an intentional code change for version control. Plus a separate DR universe via the `kth_dr/` plugin (`register_asset_class()`), never a hardcoded `UNIVERSE` key. Scope narrowed 2026-07-16 from 100 tickers/9 classes — see `archive/other-asset-classes/`.
+- `FRICTION` costs are per-class, not per-ticker — currently `thai_equity`/`thai_index` share one rate; DR inherits it too via `kth_dr`'s `register_asset_class()` call.
+- `SECTOR` dict + `get_sector()` map all 51 thai_equity tickers (incl. `CPNREIT.BK`, folded into the existing `Property` bucket) to 10 SET sectors for the sector concentration guard (max 2 positions/sector).
 - Key helpers: `get_all_tickers()`, `get_ticker_class(ticker)`, `get_display_name(ticker)`, `get_sector(ticker)`.
 
 ### yfinance download behavior
@@ -102,7 +102,7 @@ columns: timestamps, open, high, low, close, volume, amount
 ## Research decisions that constrain code (do not relitigate without GPU re-run)
 
 - **Position sizing: equal-weight only.** `inv_vol` was backtested and lost badly (it over-allocates to low-vol stocks where the Kronos signal is weakest). Do not switch to inv_vol.
-- **Fine-tuning: crypto and us_equity stay zero-shot** — fine-tuning did not beat zero-shot in backtest for either. thai_equity also stays zero-shot.
+- **Fine-tuning: thai_equity stays zero-shot** — fine-tuning did not beat zero-shot in backtest. (crypto and us_equity fine-tuning results are archived alongside their backtests, `archive/other-asset-classes/` — those classes are no longer in scope at all, not merely "staying zero-shot".)
 - **Alpha is regime-conditional.** The strategy crushes flat/down SET regimes but underperforms in broad bull markets (2023-style). In bull regimes, reduce to BEAR allocation.
 - **Bootstrap p-value distinction — do not confuse:**
   - `compute_bootstrap_pvalue()` → live dashboard `/api/risk` only, centered resampling, edge in live paper trading.
@@ -114,7 +114,7 @@ columns: timestamps, open, high, low, close, volume, amount
 ## Known quirks
 
 - Real yfinance access works only on Colab/Kaggle/local — `verify_data_layer.py` uses synthetic data because yfinance is blocked in most sandboxes.
-- For real data, run `notebooks/01_data_layer.ipynb` on Colab (downloads ~10y daily OHLCV for all 100 tickers to `./data/raw/*.parquet`).
+- For real data, run `notebooks/01_data_layer.ipynb` on Colab (downloads ~10y daily OHLCV for all 52 universe tickers plus DR/underlying/FX tickers to `./data/raw/*.parquet`).
 
 ## Hard scope limits
 

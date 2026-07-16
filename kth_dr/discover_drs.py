@@ -82,10 +82,12 @@ def compute_dr_stats(dr_ticker: str) -> dict:
 
 
 def is_already_in_universe(ticker: str) -> bool:
-    """Only catches exact matches against universe.py's hardcoded 100 tickers.
-    Does NOT know that "any US-listed stock" is directly investable — that
-    judgment call is why Task 4's seed list uses home-market tickers instead of
-    US ADRs. Don't rely on this function alone when adding new seed entries."""
+    """Only catches exact matches against universe.py's hardcoded UNIVERSE
+    tickers (thai_equity + thai_index as of 2026-07-16 — us_equity and other
+    non-SET classes were archived, see archive/other-asset-classes/). Does NOT
+    know that "any US-listed stock" is directly investable — that judgment
+    call is why Task 4's seed list uses home-market tickers instead of US
+    ADRs. Don't rely on this function alone when adding new seed entries."""
     all_tickers = get_all_tickers()
     return ticker in all_tickers
 

@@ -1,7 +1,8 @@
 """
 Train per-market model fold N locally on GTX 1060 (6GB VRAM).
 Usage: venv/bin/python scripts/train_per_market.py <model_name> [fold_number]
-       model_name: thai_equity, us_equity, crypto
+       model_name: thai_equity (us_equity/crypto archived 2026-07-16, see
+       archive/other-asset-classes/scripts/train_crypto_fold0.py)
 """
 import time
 import sys
@@ -19,7 +20,7 @@ from kth.data.universe import UNIVERSE
 from kth.data.loader import load_cached
 from kth.models._kronos_bridge import KronosTokenizer, Kronos
 
-MODEL_NAME = sys.argv[1] if len(sys.argv) > 1 else "crypto"
+MODEL_NAME = sys.argv[1] if len(sys.argv) > 1 else "thai_equity"
 FOLD = int(sys.argv[2]) if len(sys.argv) > 2 else 0
 CACHE_DIR = "./data/raw"
 OUTPUT_DIR = f"./checkpoints/{MODEL_NAME}/fold{FOLD}"
@@ -29,8 +30,6 @@ FOLD_STEP_MONTHS = 21  # val/test need ≥420 rows; 21 mo × 21 bdays/mo = 441 �
 
 MODEL_TICKERS = {
     "thai_equity": [t for t, _, _ in UNIVERSE["thai_equity"]],
-    "us_equity":   [t for t, _, _ in UNIVERSE["us_equity"]],
-    "crypto":      [t for t, _, _ in UNIVERSE["crypto"]],
 }
 TICKERS = MODEL_TICKERS[MODEL_NAME]
 

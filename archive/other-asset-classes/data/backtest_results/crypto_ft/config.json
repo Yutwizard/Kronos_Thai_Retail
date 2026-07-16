@@ -1,0 +1,1 @@
+{"start_date": "2022-01-01", "end_date": "2024-12-31", "lookback": 400, "pred_len": 20, "n_samples": 10, "long_threshold": 0.01, "entry_buffer": 0.005, "min_holding_days": 5, "max_positions": 5, "position_sizing": "equal", "inv_vol_window": 20, "trading_calendar": "NYSE", "min_ticker_history": 252, "forecast_cache_dir": "./data/forecast_cache", "cache_dir": "./data/raw"}

@@ -1,5 +1,6 @@
 """
-Holdout evaluation on 2025 data for all 3 fine-tuned models.
+Holdout evaluation on 2025 data for the thai_equity fine-tuned model
+(us_equity/crypto archived 2026-07-16, see archive/other-asset-classes/).
 Usage: venv/bin/python scripts/eval_holdout.py [model_name]
 """
 import sys
@@ -18,12 +19,10 @@ from kth.models.finetune import load_finetuned_checkpoint
 LOOKBACK = 400; PRED_LEN = 20; CACHE_DIR = "./data/raw"
 MODEL_TICKERS = {
     "thai_equity": [t for t,_,_ in UNIVERSE["thai_equity"]],
-    "us_equity":   [t for t,_,_ in UNIVERSE["us_equity"]],
-    "crypto":      [t for t,_,_ in UNIVERSE["crypto"]],
 }
 
 
-HOLDOUT_START = {"thai_equity": "2024-07-01", "us_equity": "2024-07-01", "crypto": "2025-01-01"}
+HOLDOUT_START = {"thai_equity": "2024-07-01"}
 
 
 def evaluate(th, tickers, model_name):
@@ -57,7 +56,7 @@ def evaluate(th, tickers, model_name):
 
 def main():
     model_name = sys.argv[1] if len(sys.argv) > 1 else "all"
-    models = [model_name] if model_name != "all" else ["crypto", "us_equity", "thai_equity"]
+    models = [model_name] if model_name != "all" else ["thai_equity"]
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Device: {device}\n")
 

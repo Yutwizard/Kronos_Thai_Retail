@@ -198,18 +198,24 @@ def test_mega_bk_sector_is_healthcare():
     print("PASS test_mega_bk_sector_is_healthcare")
 
 
-# ---- Task 12: fx_macro exclusion ----
-def test_fx_macro_excluded_from_investable():
-    """fx_macro tickers must not appear in get_all_tickers()."""
-    from kth.data.universe import get_all_tickers, get_ticker_class
-    tickers = get_all_tickers()
-    fx = [t for t in tickers if get_ticker_class(t) == "fx_macro"]
-    assert len(fx) == 0, f"fx_macro leaked into investable: {fx}"
-    from kth.data.universe import get_all_tickers_including_features
-    all_t = get_all_tickers_including_features()
-    assert len(all_t) == 100, f"get_all_tickers_including_features should return 100, got {len(all_t)}"
-    assert "THB=X" in all_t, "THB=X should be in including_features"
-    print("PASS test_fx_macro_excluded_from_investable")
+# ---- Task 15: SET+DR-only scope (2026-07-16 refocus; fx_macro/us_equity/etc archived) ----
+def test_universe_is_set_only():
+    """UNIVERSE must contain only thai_equity and thai_index -- DR lives in the
+    separate kth_dr plugin (register_asset_class()), never in UNIVERSE itself."""
+    from kth.data.universe import UNIVERSE, FRICTION
+    assert set(UNIVERSE.keys()) == {"thai_equity", "thai_index"}, UNIVERSE.keys()
+    assert set(FRICTION.keys()) == {"thai_equity", "thai_index"}, FRICTION.keys()
+    print("PASS test_universe_is_set_only")
+
+
+def test_cpnreit_folded_into_thai_equity():
+    """CPNREIT.BK (formerly a standalone 'reit' class with VNQ) now inherits
+    thai_equity's friction and is sector-mapped to Property."""
+    from kth.data.universe import get_ticker_class, get_friction, get_sector
+    assert get_ticker_class("CPNREIT.BK") == "thai_equity"
+    assert get_friction("CPNREIT.BK") == get_friction("PTT.BK")
+    assert get_sector("CPNREIT.BK") == "Property"
+    print("PASS test_cpnreit_folded_into_thai_equity")
 
 
 # ---- Task 14: reduce only on bearish-yellow ----
@@ -228,7 +234,7 @@ def test_get_ticker_class_o1_lookup():
     from kth.data.universe import get_ticker_class, _TICKER_CLASS_MAP
     assert "AOT.BK" in _TICKER_CLASS_MAP, "Reverse-lookup map not built"
     assert _TICKER_CLASS_MAP["AOT.BK"] == "thai_equity"
-    assert get_ticker_class("BTC-USD") == "crypto"
+    assert get_ticker_class("CPNREIT.BK") == "thai_equity"
     assert get_ticker_class("NONEXISTENT") is None
     print("PASS test_get_ticker_class_o1_lookup")
 

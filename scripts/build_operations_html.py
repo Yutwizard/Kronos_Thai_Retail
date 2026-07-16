@@ -121,7 +121,7 @@ document.addEventListener('DOMContentLoaded', function(){
 <!-- ============================================================ -->
 <h2 id="daily">1. Daily Morning Routine</h2>
 <div class="card">
-  <p><strong>Objective:</strong> Generate fresh forecasts for all 100 tickers and identify actionable signals for the day ahead.</p>
+  <p><strong>Objective:</strong> Generate fresh forecasts for all 52 universe tickers plus DR tickers and identify actionable signals for the day ahead.</p>
   <p><strong>Prerequisites:</strong> GPU (GTX 1060 or better), <code>data/raw/*.parquet</code> files up to date.</p>
 
   <div class="step-box">
@@ -148,7 +148,7 @@ MODEL_TYPE  = "zero-shot"  # always "zero-shot"</pre>
     <table>
       <tr><th>Cell</th><th>What it does</th><th>Time</th></tr>
       <tr><td>Cell 1</td><td>Loads Kronos-small model into GPU memory</td><td>~5 seconds</td></tr>
-      <tr><td>Cell 2</td><td>Deletes yesterday's cache, generates fresh forecasts for 100 tickers</td><td><strong>~12 min on GTX 1060</strong> (~3 min on T4)</td></tr>
+      <tr><td>Cell 2</td><td>Deletes yesterday's cache, generates fresh forecasts for 52 universe tickers plus DR tickers</td><td><strong>~12 min on GTX 1060</strong> (~3 min on T4)</td></tr>
       <tr><td>Cell 3</td><td>Builds a 25-column DataFrame from forecast cache + universe + backtest metrics</td><td>~3 seconds</td></tr>
       <tr><td>Cell 4</td><td>Renders the morning brief with disclaimers appended</td><td>~2 seconds</td></tr>
     </table>
@@ -164,8 +164,7 @@ BULLISH (top 10 by conviction):
   Ticker      Name                Class         Close    P50%   Band Flag Dir
   PTT.BK      PTT                 thai_equity   32.50  +2.31%  6.50%  O   up
   SCC.BK      Siam Cement         thai_equity  248.00  +1.80%  8.20%  O   up
-  AAPL        Apple               us_equity    180.20  +1.20%  7.10%  O   up
-  BTC-USD     Bitcoin             crypto     67200.00  +3.50% 12.50%  =   up
+  TENCENT80.BK Tencent (DR)       dr            25.40  +1.20%  7.10%  O   up
 
 BEARISH (bottom 10 by conviction):
   KBANK.BK    Kasikornbank        thai_equity  142.00  -1.80%  5.20%  O  down
@@ -186,13 +185,13 @@ BEARISH (bottom 10 by conviction):
     <h4>Example walkthrough</h4>
     <p><strong>PTT.BK at 32.50 THB:</strong> +2.31% P50, 6.5% band. Net return: 2.31% - 0.536% = <strong>+1.77%</strong>. Beats "enter if > 2x friction" (1.07%). <span style="color:#27ae60;font-weight:600;">Consider a position.</span></p>
     <p><strong>KBANK.BK at 142.00 THB:</strong> -1.80% P50, 5.2% band. Net return: -1.80% - 0.536% = <strong>-2.34%</strong>. Confidently bearish. <span style="color:#e74c3c;font-weight:600;">If you hold KBANK, consider exiting.</span></p>
-    <p><strong>BTC-USD:</strong> +3.50% P50, yellow band (12.5%). Strong net return (+2.60%) but wide uncertainty. <span style="color:#d4ac0d;font-weight:600;">Allocate 50% of normal BTC position.</span></p>
+    <p><strong>TENCENT80.BK:</strong> +3.50% P50, yellow band (12.5%). Strong net return (+2.96%) but wide uncertainty. <span style="color:#d4ac0d;font-weight:600;">Allocate 50% of normal DR position.</span></p>
   </div>
 
   <div class="step-box">
     <div class="step-num">Step 1.5</div>
     <div class="step-title">Check your holdings against the bearish list</div>
-    <div class="trade-grid">Your holdings: PTT, SCC, KBANK, AAPL, BTC
+    <div class="trade-grid">Your holdings: PTT, SCC, KBANK, TENCENT80, ASML01
 Bearish list:  KBANK, DELTA, BBL, ...
 -> KBANK is in the bearish list. You hold it. Consider reducing or exiting.</div>
   </div>
@@ -245,8 +244,7 @@ drwxrwxr-x 100 Dec 31 23:59 .
     <table>
       <tr><th>Class</th><th>Normal Vol Range</th><th>Warning Threshold</th></tr>
       <tr><td>Thai equity</td><td>12-20%</td><td>>30%</td></tr>
-      <tr><td>US equity</td><td>18-28%</td><td>>40%</td></tr>
-      <tr><td>Crypto</td><td>40-70%</td><td>>80%</td></tr>
+      <tr><td>DR</td><td>15-25%</td><td>>35%</td></tr>
     </table>
     <div class="highlight-red" style="margin-bottom:0;"><strong>If HistVol > warning threshold:</strong> halve that class's allocation until vol normalizes.</div>
   </div>
@@ -280,7 +278,7 @@ for i in range(5, 15):
     total += 1
     print(f'{d}: Pred {pred_dir}, Actual {actual_dir} -> {\"HIT\" if hit else \"MISS\"}')
 print(f'Accuracy: {hits}/{total} = {hits/max(total,1):.0%}')"</pre>
-    <div class="highlight" style="margin-bottom:0;"><strong>If accuracy < 50%:</strong> the model may be degrading for this ticker. <strong>Repeat for each major holding</strong> (AAPL, BTC, etc.).</div>
+    <div class="highlight" style="margin-bottom:0;"><strong>If accuracy < 50%:</strong> the model may be degrading for this ticker. <strong>Repeat for each major holding</strong> (thai_equity and DR tickers).</div>
   </div>
 
   <div class="step-box">
@@ -289,11 +287,8 @@ print(f'Accuracy: {hits}/{total} = {hits/max(total,1):.0%}')"</pre>
     <p>Open the Trader's Desk view. Check if any class has drifted >5% from target:</p>
     <table>
       <tr><th>Class</th><th>Target</th><th>Allowable Range</th></tr>
-      <tr><td>Thai equity</td><td>40%</td><td>35-45%</td></tr>
-      <tr><td>US equity</td><td>20%</td><td>15-25%</td></tr>
-      <tr><td>ETF global</td><td>10%</td><td>5-15%</td></tr>
-      <tr><td>Crypto</td><td>5%</td><td>2-8% (hard max 10%)</td></tr>
-      <tr><td>Other</td><td>5%</td><td>0-10%</td></tr>
+      <tr><td>Thai equity</td><td>65%</td><td>55-75%</td></tr>
+      <tr><td>DR</td><td>15%</td><td>5-25%</td></tr>
       <tr><td>Cash</td><td>20%</td><td>10-30%</td></tr>
     </table>
     <p>If any class is outside its range, add it to the monthly rebalancing plan.</p>
@@ -333,11 +328,11 @@ print(f'Accuracy: {hits}/{total} = {hits/max(total,1):.0%}')"</pre>
     <div class="trade-grid">Ticker            Action        Size   NetRet   Rationale
 PTT.BK (hold)    Hold + add    +1%    +1.77%   green + NetRet
 KBANK.BK (hold)  Exit          -2%    -2.34%   green-down bearish
-AAPL             Enter         +1%    +0.50%   green + thin band
-BTC-USD (hold)   Reduce        -0.5%  +2.61%   yellow half size
+TENCENT80.BK     Enter         +1%    +0.50%   green + thin band
+ASML01.BK (hold) Reduce        -0.5%  +2.61%   yellow half size
 Cash             --            +2.5%  --       --</div>
     <p style="font-size:0.85rem;color:#555;">Each full ticker = 20% of portfolio if max_positions=5. Confidence scaling: green = 100%, yellow = 50%, red = 0%.</p>
-    <div class="highlight-blue" style="margin-bottom:0;"><strong>Example:</strong> 4 positions -> 25% each. Confidence scaling: PTT green 25%, AAPL green 25%, BTC yellow 12.5%. Cash = 100 - 25 - 25 - 12.5 = <strong>37.5%</strong>.</div>
+    <div class="highlight-blue" style="margin-bottom:0;"><strong>Example:</strong> 4 positions -> 25% each. Confidence scaling: PTT green 25%, TENCENT80 green 25%, ASML01 yellow 12.5%. Cash = 100 - 25 - 25 - 12.5 = <strong>37.5%</strong>.</div>
     <div class="highlight" style="margin-top:8px;margin-bottom:0;"><strong>Note on cash drag:</strong> The backtest deploys 100% of capital. Confidence-based sizing leaves 50-80% deployed -- intentional. Sitting in cash when conviction is low prevents trading on noise. Expect 1-3% CAGR drag from cash allocation.</div>
   </div>
 
@@ -345,10 +340,10 @@ Cash             --            +2.5%  --       --</div>
     <div class="step-num">Step 4.4</div>
     <div class="step-title">Execute over 2-3 days</div>
     <div class="trade-grid">Day 1: Sell KBANK (bearish, urgent)
-Day 2: Buy AAPL (bullish, not urgent)
+Day 2: Buy TENCENT80 (bullish, not urgent)
 Day 3: Buy PTT (bullish, adjust size)</div>
     <div class="highlight-red" style="margin-bottom:0;"><strong>Exits for existing positions are same-day urgent.</strong> New entries wait for the monthly rebalance.</div>
-    <div class="highlight" style="margin-top:8px;margin-bottom:0;"><strong>Signal reversal:</strong> Forecasts update daily. If the signal flips direction between execution days (e.g., AAPL showed bullish on Monday but bearish on Tuesday), defer the remaining trades and re-evaluate next week. Do not blindly execute a plan when the model disagrees.</div>
+    <div class="highlight" style="margin-top:8px;margin-bottom:0;"><strong>Signal reversal:</strong> Forecasts update daily. If the signal flips direction between execution days (e.g., TENCENT80 showed bullish on Monday but bearish on Tuesday), defer the remaining trades and re-evaluate next week. Do not blindly execute a plan when the model disagrees.</div>
   </div>
 
   <div class="step-box">
@@ -358,7 +353,7 @@ Day 3: Buy PTT (bullish, adjust size)</div>
 with open('data/trade_log.csv', 'a', newline='') as f:
     w = csv.writer(f)
     w.writerow(['2026-05-30', 'KBANK', 'sell', '142.00', '1.0', 'monthly rebalance'])
-    w.writerow(['2026-06-01', 'AAPL', 'buy', '181.50', '0.5', 'monthly signal'])</pre>
+    w.writerow(['2026-06-01', 'TENCENT80.BK', 'buy', '25.40', '0.5', 'monthly signal'])</pre>
   </div>
 </div>
 
@@ -410,7 +405,6 @@ print(f'Portfolio value: {total:,.0f} THB  CAGR: {cagr:+.2%}')"</pre>
       <tr><th>Benchmark</th><th>CAGR (backtest)</th><th>1-sigma Range (68% of outcomes)</th></tr>
       <tr><td>Strategy (backtest)</td><td>+31.44%</td><td>14% to 48%</td></tr>
       <tr><td>SET Index</td><td>-5.29%</td><td>-28% to +18%</td></tr>
-      <tr><td>SPY</td><td>+8.33%</td><td>-16% to +33%</td></tr>
       <tr><td>Equal-weight</td><td>+1.44%</td><td>-19% to +22%</td></tr>
     </table>
     <p style="font-size:0.85rem;color:#555;">Ranges: backtest CAGR +/- 1.5 x annualized vol.</p>
@@ -425,7 +419,7 @@ print(f'Portfolio value: {total:,.0f} THB  CAGR: {cagr:+.2%}')"</pre>
       <tr><td>Trades per month</td><td>10 or fewer</td></tr>
       <tr><td>Average position size</td><td>20% or less</td></tr>
       <tr><td>Friction per trade</td><td>0.5-0.9%</td></tr>
-      <tr><td>Win rate</td><td>1.5-3% (matches backtest: Thai 2.5%, US 2.8%, Crypto 1.5%)</td></tr>
+      <tr><td>Win rate</td><td>1.5-3% (matches backtest: Thai equity 2.5%)</td></tr>
     </table>
   </div>
 </div>
@@ -438,16 +432,16 @@ print(f'Portfolio value: {total:,.0f} THB  CAGR: {cagr:+.2%}')"</pre>
 <div class="card">
   <h3>Scenario A: Normal Day</h3>
   <div class="trade-grid">Morning Brief:
-  Green BULLISH: PTT (+2.3%), SCC (+1.8%), AAPL (+1.2%)
+  Green BULLISH: PTT (+2.3%), SCC (+1.8%), TENCENT80 (+1.2%)
   Red BEARISH:   KBANK (-1.8%), DELTA (-2.1%)
-  HistVol: Thai 18% (normal), BTC 52% (normal)
+  HistVol: Thai 18% (normal), DR 22% (normal)
 
-  Your holdings: PTT (2%), KBANK (1.5%), AAPL (1%), cash (balance)</div>
+  Your holdings: PTT (2%), KBANK (1.5%), TENCENT80 (1%), cash (balance)</div>
   <p><strong>Decision:</strong></p>
   <ul>
     <li><span style="color:#27ae60;">PTT: Hold.</span> Net return +1.77% > friction. Green flag.</li>
     <li><span style="color:#e74c3c;">KBANK: Exit.</span> Confidently bearish (-1.8% P50, green). Reduce by 1%.</li>
-    <li><span style="color:#27ae60;">AAPL: Hold.</span> Net return +0.50% > US friction (0.35%). Keep.</li>
+    <li><span style="color:#27ae60;">TENCENT80: Hold.</span> Net return +0.66% > DR friction (0.536%). Keep.</li>
     <li>Cash: Slightly increase from exit proceeds.</li>
   </ul>
   <div class="highlight-red"><strong>Exits for existing positions are same-day urgent.</strong> Sell KBANK at market open. New entries wait for monthly rebalance.</div>
@@ -461,7 +455,7 @@ print(f'Portfolio value: {total:,.0f} THB  CAGR: {cagr:+.2%}')"</pre>
   Green BULLISH: (none - all flags are yellow or red)
   Median band width: 38%
   # red-flagged: 42</div>
-  <p><strong>Decision:</strong> <span style="color:#e74c3c;font-weight:600;">Stay in cash.</span> The model's confidence is low across all 100 tickers. Trading in this environment is gambling.</p>
+  <p><strong>Decision:</strong> <span style="color:#e74c3c;font-weight:600;">Stay in cash.</span> The model's confidence is low across the universe. Trading in this environment is gambling.</p>
   <p>Exception: If a position you hold shows <code>green-down</code> with a band narrower than the median, consider reducing.</p>
 
   <div class="highlight-red" style="margin-top:12px;">
@@ -496,7 +490,6 @@ print(f'Portfolio value: {total:,.0f} THB  CAGR: {cagr:+.2%}')"</pre>
     <tr><td>GPU out of memory</td><td>Model + batch too large</td><td>Reduce <code>n_samples = 5</code> in Cell 0</td></tr>
     <tr><td>Forecasts looking stale</td><td>Cache not refreshed</td><td>Delete <code>data/forecast_cache/NeoQuasar_Kronos-small/</code> and re-run</td></tr>
     <tr><td><code>pd.bdate_range</code> error</td><td>Old cached file</td><td>Delete forecast cache and re-run</td></tr>
-    <tr><td>60/40 benchmark = 0.00</td><td>TLT.parquet not cached</td><td>Run <code>python -c "from kth.data.loader import download_universe; download_universe(['TLT'], period='max')"</code></td></tr>
     <tr><td>Missing tickers in Morning Brief</td><td>Ticker has < 400 rows of history</td><td>Check "skipped" list in Cell 3 output -- some tickers need more data</td></tr>
     <tr><td>All signals yellow</td><td>Typical on volatile days</td><td>Accept it. The model produces green signals on ~30% of days</td></tr>
   </table>

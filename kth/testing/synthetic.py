@@ -9,9 +9,7 @@ def make_synthetic_yf(ticker: str, n_days: int = 1260, seed: int = 0) -> pd.Data
     rng = np.random.default_rng(seed)
     cls = get_ticker_class(ticker)
     vol_per_day = {
-        "thai_equity": 0.015, "thai_index": 0.010, "us_equity": 0.018,
-        "etf_global": 0.010, "commodity": 0.012, "crypto": 0.045,
-        "bond_proxy": 0.005, "reit": 0.013, "fx_macro": 0.005,
+        "thai_equity": 0.015, "thai_index": 0.010,
     }.get(cls, 0.015)
     drift_per_day = 0.0003
     dates = pd.bdate_range(end=pd.Timestamp.today().normalize(),

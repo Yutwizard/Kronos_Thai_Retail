@@ -55,8 +55,8 @@ def test_cross_asset_universe_generation(tmp_cache):
         rpt = quality_report(k_df, t)
         asset_classes.add(get_ticker_class(t))
         assert rpt["rows"] > 0, f"{t}: no rows generated"
-    assert len(all_tickers) == 100, f"Universe should be 100 tickers, got {len(all_tickers)}"
-    assert len(asset_classes) == 9, f"Expected 9 asset classes, got {asset_classes}"
+    assert len(all_tickers) == 52, f"Universe should be 52 tickers, got {len(all_tickers)}"
+    assert len(asset_classes) == 2, f"Expected 2 asset classes, got {asset_classes}"
 
 
 def test_kronos_input_format_check(tmp_cache):

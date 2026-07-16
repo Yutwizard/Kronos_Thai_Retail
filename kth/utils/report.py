@@ -13,13 +13,6 @@ from kth.data.universe import get_ticker_class, get_display_name
 BAND_THRESHOLDS = {
     "thai_equity":   (0.15, 0.30),
     "thai_index":    (0.15, 0.30),
-    "us_equity":     (0.15, 0.30),
-    "etf_global":    (0.15, 0.30),
-    "commodity":     (0.20, 0.35),
-    "crypto":        (0.30, 0.50),
-    "bond_proxy":    (0.10, 0.20),
-    "reit":          (0.10, 0.20),
-    "fx_macro":      (0.05, 0.15),
 }
 DEFAULT_THRESHOLD = (0.15, 0.30)
 
