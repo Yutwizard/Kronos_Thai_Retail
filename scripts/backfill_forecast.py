@@ -1,14 +1,21 @@
 #!/usr/bin/env python3
-"""Backfill a single missed forecast date.
+"""Backfill missed forecast dates for thai_equity + DR underlyings.
 
-Re-generates the daily forecast cache for an as-of date by slicing each
-ticker's raw parquet to timestamps <= AS_OF, so the forecast uses only the
-close data that would have been available that day (matches the evening-run
-methodology). Writes into data/forecast_cache/{slug}/{AS_OF}/ in the same
-format as precompute_forecasts.
+Re-generates the daily forecast cache for one or more as-of dates by slicing
+each ticker's raw parquet to timestamps <= AS_OF, so the forecast uses only
+the close data that would have been available that day (matches the evening-
+run methodology, avoids look-ahead bias). Writes into
+data/forecast_cache/{slug}/{AS_OF}/ in the same format as precompute_forecasts.
+
+DR positions are forecast on their underlying (e.g. 0700.HK for Tencent), not
+the DR ticker itself (e.g. TENCENT80.BK) -- the DR's own SET listing history
+is short/irrelevant here; the underlying has ~10y of real history regardless
+of how recently the DR itself started trading. See kth_dr/universe_dr.py's
+get_dr_underlying_tickers() docstring for why this matters.
 
 Usage:
-    python scripts/backfill_forecast.py 2026-06-15
+    python scripts/backfill_forecast.py 2026-06-15                # single date
+    python scripts/backfill_forecast.py 2026-01-01 2026-06-15      # date range (business days)
 """
 import json
 import sys
@@ -27,13 +34,28 @@ LOOKBACK = 400
 MODEL = "NeoQuasar/Kronos-small"
 
 
-def main(as_of: str) -> int:
+def _tickers_to_forecast() -> list[str]:
+    tickers = [t for t, _, _ in UNIVERSE["thai_equity"]]
+    try:
+        from kth_dr.universe_dr import get_dr_underlying_tickers
+        dr_underlyings = get_dr_underlying_tickers()
+        tickers = tickers + [t for t in dr_underlyings if t not in tickers]
+    except ImportError:
+        pass
+    except Exception as e:
+        print(f"[warn] DR underlyings skipped: {e}")
+    return tickers
+
+
+def backfill_one_date(as_of: str, th: "KronosTH | None") -> "KronosTH | None":
+    """Backfill a single date. Returns the (possibly newly-loaded) model so
+    callers looping over a range only pay the HF/GPU load cost once."""
     as_of_ts = pd.Timestamp(as_of)
     slug = _model_slug(MODEL)
     out_dir = Path(f"data/forecast_cache/{slug}/{as_of}")
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    tickers = [t for t, _, _ in UNIVERSE["thai_equity"]]
+    tickers = _tickers_to_forecast()
 
     # Slice each ticker's parquet to <= as_of and keep those with enough history.
     sliced: dict[str, pd.DataFrame] = {}
@@ -52,8 +74,8 @@ def main(as_of: str) -> int:
         sliced[t] = df
 
     if not sliced:
-        print("Nothing to forecast.")
-        return 1
+        print(f"[{as_of}] Nothing to forecast.")
+        return th
 
     # Skip tickers already cached for this day.
     pending_keys = []
@@ -66,11 +88,12 @@ def main(as_of: str) -> int:
         pending_dfs.append(df)
 
     if not pending_dfs:
-        print(f"All {len(sliced)} tickers already cached for {as_of}.")
-        return 0
+        print(f"[{as_of}] All {len(sliced)} tickers already cached.")
+        return th
 
     print(f"[backfill] {as_of}: forecasting {len(pending_dfs)} tickers (slug={slug})")
-    th = KronosTH.from_pretrained(MODEL, device="cuda")
+    if th is None:
+        th = KronosTH.from_pretrained(MODEL, device="cuda")
     results = th.forecast_batch(
         pending_dfs, pred_lens=[PRED_LEN], n_samples=N_SAMPLES,
         lookback=LOOKBACK, calendar_freq="B",
@@ -97,12 +120,30 @@ def main(as_of: str) -> int:
             json.dump(meta, f)
         written += 1
 
-    print(f"[backfill] wrote {written} forecasts to {out_dir}")
+    print(f"[backfill] {as_of}: wrote {written} forecasts to {out_dir}")
+    return th
+
+
+def main(start: str, end: str | None) -> int:
+    dates = [start] if end is None else [
+        d.strftime("%Y-%m-%d") for d in pd.bdate_range(start=start, end=end)
+    ]
+    if not dates:
+        print(f"No business days between {start} and {end}.")
+        return 1
+
+    th = None
+    total_dates = len(dates)
+    for i, as_of in enumerate(dates, 1):
+        print(f"=== [{i}/{total_dates}] {as_of} ===")
+        th = backfill_one_date(as_of, th)
     return 0
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python scripts/backfill_forecast.py YYYY-MM-DD")
+    if len(sys.argv) not in (2, 3):
+        print("Usage: python scripts/backfill_forecast.py YYYY-MM-DD [YYYY-MM-DD]")
         sys.exit(2)
-    sys.exit(main(sys.argv[1]))
+    start_arg = sys.argv[1]
+    end_arg = sys.argv[2] if len(sys.argv) == 3 else None
+    sys.exit(main(start_arg, end_arg))
