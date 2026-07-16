@@ -55,7 +55,7 @@ Defined in `kth/data/universe.py`. 52 tickers across 2 asset classes:
 - ✅ **Daily decision report** (`notebooks/05_decision_report.ipynb`): 3 toggleable views (morning/trader/quant), 22 columns.
 - ✅ **User manual** (`docs/user-manual.md` — text, `docs/user-manual.html` — interactive with charts): complete methodology, usage, cautions, and results.
 - ✅ **Monthly walkthrough** (`docs/monthly-walkthrough.md` — text, `docs/monthly-walkthrough.html` — visual with timeline): 21-day simulation with real allocations, exits, and rebalancing.
-- ✅ **Verification suite** (`verify_data_layer.py` 5 tests, `verify_fixes.py` 25 tests, `verify_kaggle_runtime.py` 20 tests, `verify_dr.py` 40 tests): offline regression tests using synthetic data — all pass.
+- ✅ **Verification suite** (`verify_data_layer.py` 5 tests, `verify_fixes.py` 25 tests, `verify_kaggle_runtime.py` 20 tests, `verify_dr.py` 42 tests): offline regression tests using synthetic data — all pass.
 - ✅ **Backtest manifest** (`data/backtest_results/MANIFEST.md`): marks authoritative (n50) vs stale (pre-n50, invvol) runs.
 - 🔨 **Google Suite dashboard** (`google_suite/`): Colab/Kaggle daily pipeline + Google Sheets data store + Apps Script web app. **Now with:** Trade Log inline edit/delete, Reset Capital modal, Signal Health banner, Position row colors, 60s auto-refresh. See [spec](docs/superpowers/specs/2026-06-04-google-suite-dashboard-design.md), [Kaggle pipeline spec](docs/superpowers/specs/2026-06-18-kaggle-scheduled-pipeline-design.md).
 
@@ -69,7 +69,7 @@ pip install -e .                 # makes kth AND kth_dr importable — re-run af
 python verify_data_layer.py      # runs offline synthetic tests (5)
 python verify_fixes.py           # review-fix regression tests (25)
 python verify_kaggle_runtime.py  # Kaggle pipeline tests (20)
-python verify_dr.py              # DR integration tests (40)
+python verify_dr.py              # DR integration tests (42)
 python run_pipeline.py --dry-run # full pipeline smoke test
 python scripts/check_data_sanity.py  # sanity sweep over data/raw/ -- run after every real download
 ```
@@ -130,7 +130,7 @@ kronos-th/
 ├── verify_data_layer.py     # offline tests (5)
 ├── verify_fixes.py          # review-fix regression tests (25)
 ├── verify_kaggle_runtime.py # Kaggle pipeline tests (20)
-├── verify_dr.py             # DR integration tests (40)
+├── verify_dr.py             # DR integration tests (42)
 ├── run_pipeline.py          # thin entrypoint (--dry-run for offline smoke)
 └── requirements.txt
 ```

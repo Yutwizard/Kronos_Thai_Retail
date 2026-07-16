@@ -1,6 +1,6 @@
 {
   "_meta": {
-    "generated": "2026-07-15T09:16:27+07:00",
+    "generated": "2026-07-16T12:28:05+07:00",
     "dr_count": 37,
     "underlying_count": 37,
     "status": "reviewed",
@@ -16,9 +16,9 @@
       {
         "dr_ticker": "TENCENT80.BK",
         "ratio": 100,
-        "avg_volume_30d": 1496602,
+        "avg_volume_30d": 1432981,
         "listing_date": "2022-06-10",
-        "history_rows": 992,
+        "history_rows": 994,
         "verified": true,
         "verified_note": "Ratio 1:100 confirmed via SET Information Memorandum (issuer KTB, 'General Document Number 7'); ticker/issuer confirmed on set.or.th company-profile. Reviewed 2026-07-14.",
         "liquidity_rank": 1
@@ -35,9 +35,9 @@
       {
         "dr_ticker": "TOYOTA80.BK",
         "ratio": 100,
-        "avg_volume_30d": 81712,
+        "avg_volume_30d": 75179,
         "listing_date": "2024-06-21",
-        "history_rows": 500,
+        "history_rows": 502,
         "verified": true,
         "verified_note": "Ratio 1:100 ('1 Toyota share : DR 100 units') confirmed on krungthai.com's own TOYOTA80 product page; ticker/issuer confirmed on set.or.th company-profile. Reviewed 2026-07-14.",
         "liquidity_rank": 1
@@ -54,9 +54,9 @@
       {
         "dr_ticker": "ASML01.BK",
         "ratio": 1200,
-        "avg_volume_30d": 192033,
+        "avg_volume_30d": 214851,
         "listing_date": "2023-11-17",
-        "history_rows": 645,
+        "history_rows": 647,
         "verified": true,
         "verified_note": "Ratio 1:1200 confirmed on bualuang.co.th's own ASML01 product page (first trading date 16 Nov 2023, matches discovered listing_date); ticker/issuer confirmed on set.or.th quote page. Reviewed 2026-07-14.",
         "liquidity_rank": 1
@@ -73,9 +73,9 @@
       {
         "dr_ticker": "BABA80.BK",
         "ratio": 100,
-        "avg_volume_30d": 16455948,
+        "avg_volume_30d": 17370595,
         "listing_date": "2025-04-30",
-        "history_rows": 294,
+        "history_rows": 296,
         "verified": true,
         "verified_note": "Ratio 1:100 ('1 Alibaba share to 100 DR units') confirmed via SET's own listing news release (set.or.th mediacenter, article BABA80); issuer KTB. Reviewed 2026-07-14.",
         "liquidity_rank": 1
@@ -92,9 +92,9 @@
       {
         "dr_ticker": "BIDU80.BK",
         "ratio": 100,
-        "avg_volume_30d": 6262594,
+        "avg_volume_30d": 6458587,
         "listing_date": "2023-08-15",
-        "history_rows": 711,
+        "history_rows": 713,
         "verified": true,
         "verified_note": "Ratio 1:100 ('1 Baidu share to 100 DR units') confirmed via search of krungthai.com's BIDU80 product page; issuer KTB. Reviewed 2026-07-14.",
         "liquidity_rank": 1
@@ -111,9 +111,9 @@
       {
         "dr_ticker": "JD80.BK",
         "ratio": 100,
-        "avg_volume_30d": 296175,
+        "avg_volume_30d": 287189,
         "listing_date": "2025-03-11",
-        "history_rows": 323,
+        "history_rows": 325,
         "verified": true,
         "verified_note": "Ratio 1:100 confirmed via official KTB factsheet PDF table ('อัตราอ้างอิงของตราสาร (สินทรัพย์อ้างอิง : DR) = 1 : 100'). Reviewed 2026-07-14.",
         "liquidity_rank": 1
@@ -130,9 +130,9 @@
       {
         "dr_ticker": "MEITUAN80.BK",
         "ratio": 100,
-        "avg_volume_30d": 1946236,
+        "avg_volume_30d": 1105853,
         "listing_date": "2025-03-11",
-        "history_rows": 323,
+        "history_rows": 325,
         "verified": true,
         "verified_note": "Ratio 1:100 inferred from TradingView security description 'Units Thailand Depositery Receipts Repr 0.01 Sh' (0.01 share/unit = 100 units/share), issuer KTB confirmed via krungthai.com product page. Reviewed 2026-07-14. Note: TradingView-tag inference is a weaker source than an explicit SET/issuer ratio statement — worth a follow-up spot-check.",
         "liquidity_rank": 1
@@ -149,9 +149,9 @@
       {
         "dr_ticker": "NETEASE80.BK",
         "ratio": 100,
-        "avg_volume_30d": 94987,
+        "avg_volume_30d": 92496,
         "listing_date": "2023-03-15",
-        "history_rows": 805,
+        "history_rows": 807,
         "verified": true,
         "verified_note": "Ratio 1:100 confirmed on krungthai.com's own NETEASE80 product page ('1 หุ้น : DR 100 หน่วย', cross-checked against its own price-example table); issuer KTB. Reviewed 2026-07-15.",
         "liquidity_rank": 1
@@ -168,9 +168,9 @@
       {
         "dr_ticker": "BYDCOM80.BK",
         "ratio": 1000,
-        "avg_volume_30d": 16245579,
+        "avg_volume_30d": 15827756,
         "listing_date": "2022-07-26",
-        "history_rows": 961,
+        "history_rows": 963,
         "verified": true,
         "verified_note": "Ratio 1:1000 confirmed via two independent search hits: explicit '1 underlying share to 1,000 DR units' statement and TradingView tag 'Repr 0.001 Sh'; issuer KTB. Reviewed 2026-07-14.",
         "liquidity_rank": 1
@@ -187,9 +187,9 @@
       {
         "dr_ticker": "XIAOMI80.BK",
         "ratio": 10,
-        "avg_volume_30d": 1836122,
+        "avg_volume_30d": 1955507,
         "listing_date": "2025-04-30",
-        "history_rows": 294,
+        "history_rows": 296,
         "verified": true,
         "verified_note": "Ratio 1:10 inferred from TradingView security description 'Repr 0.1 Sh' (0.1 share/unit = 10 units/share); issuer KTB. Reviewed 2026-07-14. Note: an earlier search snippet said 'conversion ratio of 10 to 1' which is ambiguous phrasing for the same fact -- flag for a follow-up spot-check against the factsheet PDF if this DR is ever sized heavily.",
         "liquidity_rank": 1
@@ -206,9 +206,9 @@
       {
         "dr_ticker": "ZIJIN80.BK",
         "ratio": 10,
-        "avg_volume_30d": 335942,
+        "avg_volume_30d": 203561,
         "listing_date": "2025-11-11",
-        "history_rows": 166,
+        "history_rows": 168,
         "verified": true,
         "verified_note": "Ratio 1:10 confirmed on krungthai.com's own ZIJIN80 product page ('1 หุ้น : DR 10 หน่วย'); issuer KTB. Reviewed 2026-07-14. This directly contradicts the naive 'Repr 0.01 Sh' TradingView-tag guess (which would imply 1:100) -- do not trust that tag alone, see mapping.json _meta.status_note.",
         "liquidity_rank": 1
@@ -225,9 +225,9 @@
       {
         "dr_ticker": "KUAISH80.BK",
         "ratio": 100,
-        "avg_volume_30d": 4446254,
+        "avg_volume_30d": 4529196,
         "listing_date": "2025-09-11",
-        "history_rows": 203,
+        "history_rows": 205,
         "verified": true,
         "verified_note": "Ratio 1:100 inferred from TradingView security description 'Repr 0.01 Sh'; issuer KTB. Reviewed 2026-07-14.",
         "liquidity_rank": 1
@@ -244,9 +244,9 @@
       {
         "dr_ticker": "GEELY80.BK",
         "ratio": 10,
-        "avg_volume_30d": 63889,
+        "avg_volume_30d": 57904,
         "listing_date": "2025-09-11",
-        "history_rows": 202,
+        "history_rows": 204,
         "verified": true,
         "verified_note": "Ratio 1:10 confirmed on krungthai.com's own GEELY80 product page ('1 หุ้น : DR 10 หน่วย'); issuer KTB. Reviewed 2026-07-15.",
         "liquidity_rank": 1
@@ -263,9 +263,9 @@
       {
         "dr_ticker": "CMBANK23.BK",
         "ratio": 90,
-        "avg_volume_30d": 72929,
+        "avg_volume_30d": 71357,
         "listing_date": "2025-11-13",
-        "history_rows": 159,
+        "history_rows": 161,
         "verified": true,
         "verified_note": "Ratio 1:90 read directly from dr23.innovestx.co.th's own product page ('อัตราแปลงสภาพ' field = '90:1'), fetched via headless Chrome since the page is JS-rendered; cross-checked against live DR/underlying/FX prices (implied ratio 90.1, 0.1% diff). Issuer InnovestX (INVX). Reviewed 2026-07-15.",
         "liquidity_rank": 1
@@ -282,9 +282,9 @@
       {
         "dr_ticker": "PETROCN80.BK",
         "ratio": 10,
-        "avg_volume_30d": 555822,
+        "avg_volume_30d": 49654,
         "listing_date": "2025-11-11",
-        "history_rows": 166,
+        "history_rows": 168,
         "verified": true,
         "verified_note": "Ratio 1:10 confirmed on krungthai.com's own PETROCN80 product page ('1 หุ้น : DR 10 หน่วย'); issuer KTB. Reviewed 2026-07-14. This directly contradicts the naive 'Repr 0.01 Sh' TradingView-tag guess (which would imply 1:100) -- do not trust that tag alone, see mapping.json _meta.status_note.",
         "liquidity_rank": 1
@@ -301,9 +301,9 @@
       {
         "dr_ticker": "POPMART80.BK",
         "ratio": 100,
-        "avg_volume_30d": 395458,
+        "avg_volume_30d": 325181,
         "listing_date": "2025-03-11",
-        "history_rows": 323,
+        "history_rows": 325,
         "verified": true,
         "verified_note": "Ratio 1:100 confirmed on krungthai.com's own POPMART80 product page ('1 หุ้น POPMART : DR 100 หน่วย'); issuer KTB. Reviewed 2026-07-15.",
         "liquidity_rank": 1
@@ -320,9 +320,9 @@
       {
         "dr_ticker": "SENSE23.BK",
         "ratio": 4,
-        "avg_volume_30d": 178057,
+        "avg_volume_30d": 164277,
         "listing_date": "2025-11-13",
-        "history_rows": 160,
+        "history_rows": 162,
         "verified": true,
         "verified_note": "Ratio 1:4 read directly from dr23.innovestx.co.th's own product page (field 'อัตราแปลงสภาพ' = '4:1'), fetched via headless Chrome; cross-checked against live prices (implied ratio 3.9, 2.8% diff). Issuer InnovestX (INVX). Reviewed 2026-07-15.",
         "liquidity_rank": 1
@@ -339,9 +339,9 @@
       {
         "dr_ticker": "HUAHONG23.BK",
         "ratio": 999,
-        "avg_volume_30d": 2311236,
+        "avg_volume_30d": 2189874,
         "listing_date": "2026-06-09",
-        "history_rows": 26,
+        "history_rows": 28,
         "verified": false,
         "liquidity_rank": 1
       }
@@ -357,9 +357,9 @@
       {
         "dr_ticker": "HORIZON23.BK",
         "ratio": 16,
-        "avg_volume_30d": 403343,
+        "avg_volume_30d": 372226,
         "listing_date": "2025-11-13",
-        "history_rows": 160,
+        "history_rows": 162,
         "verified": true,
         "verified_note": "Ratio 1:16 read directly from dr23.innovestx.co.th's own product page, fetched via headless Chrome; cross-checked against live prices (implied ratio 16.1, 0.4% diff). Issuer InnovestX (INVX). Reviewed 2026-07-15.",
         "liquidity_rank": 1
@@ -376,9 +376,9 @@
       {
         "dr_ticker": "KINGSOFT23.BK",
         "ratio": 60,
-        "avg_volume_30d": 53049,
+        "avg_volume_30d": 49958,
         "listing_date": "2025-11-13",
-        "history_rows": 158,
+        "history_rows": 160,
         "verified": true,
         "verified_note": "Ratio 1:60 read directly from dr23.innovestx.co.th's own product page, fetched via headless Chrome; cross-checked against live prices (implied ratio 59.3, 1.2% diff). Issuer InnovestX (INVX). Reviewed 2026-07-15.",
         "liquidity_rank": 1
@@ -395,9 +395,9 @@
       {
         "dr_ticker": "UBTECH23.BK",
         "ratio": 250,
-        "avg_volume_30d": 8502276,
+        "avg_volume_30d": 6772651,
         "listing_date": "2025-11-13",
-        "history_rows": 160,
+        "history_rows": 162,
         "verified": true,
         "verified_note": "Ratio 1:250 read directly from dr23.innovestx.co.th's own product page, fetched via headless Chrome since the SPA doesn't render for a plain HTML fetch; cross-checked against live DR/underlying/FX prices (implied ratio 253.6, 1.4% diff -- normal DR premium/discount range). Issuer InnovestX (INVX). Reviewed 2026-07-15.",
         "liquidity_rank": 1
@@ -414,9 +414,9 @@
       {
         "dr_ticker": "NONGFU80.BK",
         "ratio": 100,
-        "avg_volume_30d": 292935,
+        "avg_volume_30d": 281941,
         "listing_date": "2025-03-11",
-        "history_rows": 323,
+        "history_rows": 325,
         "verified": true,
         "verified_note": "Ratio 1:100 confirmed via official KTB factsheet PDF table ('อัตราอ้างอิงของตราสาร (สินทรัพย์อ้างอิง : DR) = 1 : 100'). Reviewed 2026-07-14.",
         "liquidity_rank": 1
@@ -433,9 +433,9 @@
       {
         "dr_ticker": "CATL80.BK",
         "ratio": 100,
-        "avg_volume_30d": 208033,
+        "avg_volume_30d": 185953,
         "listing_date": "2025-09-11",
-        "history_rows": 203,
+        "history_rows": 205,
         "verified": true,
         "verified_note": "Ratio 1:100 confirmed on krungthai.com's own CATL80 product page ('1 หุ้น : DR 100 หน่วย'); issuer KTB. Reviewed 2026-07-15.",
         "liquidity_rank": 1
@@ -452,9 +452,9 @@
       {
         "dr_ticker": "SONY80.BK",
         "ratio": 200,
-        "avg_volume_30d": 378469,
+        "avg_volume_30d": 276575,
         "listing_date": "2024-06-21",
-        "history_rows": 500,
+        "history_rows": 502,
         "verified": true,
         "verified_note": "Ratio 1:200 confirmed on krungthai.com's own SONY80 product page ('1 หุ้น : DR 200 หน่วย'); issuer KTB. Reviewed 2026-07-14.",
         "liquidity_rank": 1
@@ -471,9 +471,9 @@
       {
         "dr_ticker": "SOFTBANK23.BK",
         "ratio": 527.5,
-        "avg_volume_30d": 1504688,
+        "avg_volume_30d": 1291708,
         "listing_date": "2026-01-05",
-        "history_rows": 132,
+        "history_rows": 134,
         "verified": true,
         "verified_note": "Ratio 1:527.5 read directly from dr23.innovestx.co.th's own current product page, fetched via headless Chrome; cross-checked against live prices (implied ratio 511.5, 3.0% diff). Resolves the earlier three-way conflict (2110:1 original Nov-2025 listing vs ~527.5:1 unconfirmed secondary claim vs 100:1 tag-guess) in favor of 527.5 -- matches the listing_date of 2026-01-05, consistent with a ratio adjustment on that date. Issuer InnovestX (INVX). Reviewed 2026-07-15.",
         "liquidity_rank": 1
@@ -490,9 +490,9 @@
       {
         "dr_ticker": "TEL23.BK",
         "ratio": 2710,
-        "avg_volume_30d": 299253,
+        "avg_volume_30d": 292781,
         "listing_date": "2025-11-13",
-        "history_rows": 160,
+        "history_rows": 162,
         "verified": true,
         "verified_note": "Ratio 1:2710 read directly from dr23.innovestx.co.th's own product page, fetched via headless Chrome; cross-checked against live prices (implied ratio 2754.8, 1.7% diff). Issuer InnovestX (INVX). Reviewed 2026-07-15.",
         "liquidity_rank": 1
@@ -509,9 +509,9 @@
       {
         "dr_ticker": "KEYENCE23.BK",
         "ratio": 5650,
-        "avg_volume_30d": 274182,
+        "avg_volume_30d": 278948,
         "listing_date": "2025-11-13",
-        "history_rows": 160,
+        "history_rows": 162,
         "verified": true,
         "verified_note": "Ratio 1:5650 read directly from dr23.innovestx.co.th's own product page, fetched via headless Chrome; cross-checked against live prices (implied ratio 5555.3, 1.7% diff). Issuer InnovestX (INVX). Reviewed 2026-07-15.",
         "liquidity_rank": 1
@@ -528,9 +528,9 @@
       {
         "dr_ticker": "UNIQLO80.BK",
         "ratio": 1000,
-        "avg_volume_30d": 35249,
+        "avg_volume_30d": 37628,
         "listing_date": "2024-06-21",
-        "history_rows": 500,
+        "history_rows": 502,
         "verified": true,
         "verified_note": "Ratio 1:1000 confirmed on krungthai.com's own UNIQLO80 product page ('1 หุ้น Fast Retailing : DR 1,000 หน่วย'); issuer KTB. Reviewed 2026-07-15.",
         "liquidity_rank": 1
@@ -547,9 +547,9 @@
       {
         "dr_ticker": "SANRIO23.BK",
         "ratio": 136,
-        "avg_volume_30d": 156729,
+        "avg_volume_30d": 144394,
         "listing_date": "2025-11-13",
-        "history_rows": 160,
+        "history_rows": 162,
         "verified": true,
         "verified_note": "Ratio 1:136 read directly from dr23.innovestx.co.th's own product page, fetched via headless Chrome; cross-checked against live prices (implied ratio 131.2, 3.6% diff). Issuer InnovestX (INVX). Reviewed 2026-07-15.",
         "liquidity_rank": 1
@@ -566,9 +566,9 @@
       {
         "dr_ticker": "SUSHI23.BK",
         "ratio": 332,
-        "avg_volume_30d": 1001492,
+        "avg_volume_30d": 1002145,
         "listing_date": "2025-11-13",
-        "history_rows": 160,
+        "history_rows": 162,
         "verified": true,
         "verified_note": "Ratio 1:332 read directly from dr23.innovestx.co.th's own product page, fetched via headless Chrome; cross-checked against live prices (implied ratio 331.0, 0.3% diff). Issuer InnovestX (INVX). Reviewed 2026-07-15.",
         "liquidity_rank": 1
@@ -585,9 +585,9 @@
       {
         "dr_ticker": "HERMES80.BK",
         "ratio": 10000,
-        "avg_volume_30d": 189573,
+        "avg_volume_30d": 197902,
         "listing_date": "2024-10-30",
-        "history_rows": 412,
+        "history_rows": 414,
         "verified": true,
         "verified_note": "Ratio 1:10000 confirmed on krungthai.com's own HERMES80 product page ('1 หุ้น : DR 10,000 หน่วย'); issuer KTB. Reviewed 2026-07-15.",
         "liquidity_rank": 1
@@ -604,9 +604,9 @@
       {
         "dr_ticker": "LOREAL80.BK",
         "ratio": 10000,
-        "avg_volume_30d": 56816,
+        "avg_volume_30d": 54758,
         "listing_date": "2024-10-21",
-        "history_rows": 418,
+        "history_rows": 420,
         "verified": true,
         "verified_note": "Ratio 1:10000 confirmed on krungthai.com's own LOREAL80 product page ('1 หุ้น : DR 10,000 หน่วย'); issuer KTB. Reviewed 2026-07-15.",
         "liquidity_rank": 1
@@ -623,9 +623,9 @@
       {
         "dr_ticker": "LVMH01.BK",
         "ratio": 1600,
-        "avg_volume_30d": 113899,
+        "avg_volume_30d": 116144,
         "listing_date": "2023-11-17",
-        "history_rows": 645,
+        "history_rows": 647,
         "verified": true,
         "verified_note": "Ratio 1:1600 confirmed on bualuang.co.th's own LVMH01 product page; issuer BLS. Reviewed 2026-07-15.",
         "liquidity_rank": 1
@@ -642,9 +642,9 @@
       {
         "dr_ticker": "NOVOB80.BK",
         "ratio": 1000,
-        "avg_volume_30d": 4553879,
+        "avg_volume_30d": 4188886,
         "listing_date": "2024-10-21",
-        "history_rows": 418,
+        "history_rows": 420,
         "verified": true,
         "verified_note": "Ratio 1:1000 confirmed via search of krungthai.com's NOVOB80 product page (issuer KTB, underlying listed Nasdaq Copenhagen). Reviewed 2026-07-14.",
         "liquidity_rank": 1
@@ -661,9 +661,9 @@
       {
         "dr_ticker": "SANOFI80.BK",
         "ratio": 1000,
-        "avg_volume_30d": 171742,
+        "avg_volume_30d": 161296,
         "listing_date": "2024-10-18",
-        "history_rows": 419,
+        "history_rows": 421,
         "verified": true,
         "verified_note": "Ratio 1:1000 confirmed on krungthai.com's own SANOFI80 product page ('1 หุ้น : DR 1,000 หน่วย'); issuer KTB. Reviewed 2026-07-15.",
         "liquidity_rank": 1
@@ -680,9 +680,9 @@
       {
         "dr_ticker": "FERRARI80.BK",
         "ratio": 10000,
-        "avg_volume_30d": 293392,
+        "avg_volume_30d": 264323,
         "listing_date": "2024-10-21",
-        "history_rows": 418,
+        "history_rows": 420,
         "verified": true,
         "verified_note": "Ratio 1:10000 confirmed on krungthai.com's own FERRARI80 product page ('1 หุ้น : DR 10,000 หน่วย'); cross-checked against observed DR price range (1.03-1.68 THB vs Ferrari's ~EUR400+ share price, consistent with a ~10000x ratio). Issuer KTB. Reviewed 2026-07-14.",
         "liquidity_rank": 1
@@ -699,9 +699,9 @@
       {
         "dr_ticker": "SINGTEL80.BK",
         "ratio": 10,
-        "avg_volume_30d": 49212,
+        "avg_volume_30d": 45166,
         "listing_date": "2024-04-02",
-        "history_rows": 554,
+        "history_rows": 556,
         "verified": true,
         "verified_note": "Ratio 1:10 confirmed on krungthai.com's own SINGTEL80 product page ('แปลงอัตราส่วน 1 หุ้น Singtel : 10 DR'); issuer KTB. Reviewed 2026-07-15.",
         "liquidity_rank": 1

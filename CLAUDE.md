@@ -18,7 +18,7 @@ pip install -e .                         # make kth AND kth_dr importable — re
 python verify_data_layer.py             # data layer: 5 tests
 python verify_fixes.py                  # review fixes: stats + pipeline + universe (25 tests)
 python verify_kaggle_runtime.py         # Kaggle pipeline: auth + orchestration (20 tests)
-python verify_dr.py                     # DR integration: plugin hook, mapping, trade-gen wiring (40 tests)
+python verify_dr.py                     # DR integration: plugin hook, mapping, trade-gen wiring (42 tests)
 python run_pipeline.py --dry-run        # full pipeline smoke test, offline
 python scripts/check_data_sanity.py     # post-download sanity sweep over data/raw/ — run after every real download (see incident below)
 ```

@@ -182,12 +182,28 @@ def main():
             "alternatives": rank_alternatives([alt]),
         }
 
+    # Carry forward the human-curated review status/summary the same way
+    # per-ticker verified_note is carried forward above -- otherwise every
+    # re-run silently resets a hand-written "reviewed" status_note back to
+    # "needs_review", discarding real verification work. Only safe to carry
+    # forward if the set of underlyings hasn't changed since that review;
+    # new/removed entries genuinely do need re-review.
+    existing_meta = existing.get("_meta", {})
+    existing_underlyings = {k for k in existing if not k.startswith("_")}
+    new_underlyings = set(mapping.keys())
+    if existing_meta.get("status") and existing_underlyings == new_underlyings:
+        review_meta = {"status": existing_meta["status"]}
+        if "status_note" in existing_meta:
+            review_meta["status_note"] = existing_meta["status_note"]
+    else:
+        review_meta = {"status": "needs_review"}
+
     output = {
         "_meta": {
             "generated": time.strftime("%Y-%m-%dT%H:%M:%S+07:00"),
             "dr_count": len(mapping),
             "underlying_count": len(mapping),
-            "status": "needs_review",
+            **review_meta,
         },
         **excluded,
         **mapping,

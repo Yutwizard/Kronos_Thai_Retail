@@ -274,6 +274,86 @@ def test_main_preserves_verified_note_across_reruns(tmp):
     print("PASS test_main_preserves_verified_note_across_reruns")
 
 
+def test_main_preserves_review_status_across_reruns(tmp):
+    """Bug-fix regression guard: re-running discovery must not silently reset a
+    hand-curated _meta.status/status_note back to 'needs_review' -- same class
+    of note-loss bug as verified_note above, but at the _meta level instead of
+    per-ticker (incident 2026-07-16)."""
+    import json
+    from pathlib import Path
+    from unittest.mock import patch
+    from kth_dr import discover_drs as dd
+
+    seed_path = Path(tmp) / "seed_list.json"
+    mapping_path = Path(tmp) / "mapping.json"
+    seed_path.write_text(json.dumps({
+        "0700.HK": [{"dr_ticker": "TENCENT80.BK", "display_name": "Tencent Holdings",
+                      "underlying_exchange": "HK", "underlying_currency": "HKD", "ratio": 100}],
+    }))
+    mapping_path.write_text(json.dumps({
+        "_meta": {"status": "reviewed", "status_note": "1 of 1 verified as of 2026-07-15"},
+        "0700.HK": {
+            "display_name": "Tencent Holdings", "fx_ticker": "HKDTHB=X", "primary_dr": "TENCENT80.BK",
+            "alternatives": [{"dr_ticker": "TENCENT80.BK", "ratio": 100, "verified": True,
+                               "verified_note": "confirmed via SET IM"}],
+        },
+    }))
+
+    orig_seed, orig_mapping = dd.SEED_PATH, dd.MAPPING_PATH
+    dd.SEED_PATH, dd.MAPPING_PATH = seed_path, mapping_path
+    try:
+        with patch.object(dd, "compute_dr_stats", return_value={"avg_volume_30d": 1000, "history_rows": 500, "listing_date": "2022-01-01"}):
+            dd.main()
+        with open(mapping_path) as f:
+            result = json.load(f)
+        assert result["_meta"]["status"] == "reviewed", \
+            f"expected 'reviewed' to survive a no-op rerun, got {result['_meta']['status']!r}"
+        assert result["_meta"]["status_note"] == "1 of 1 verified as of 2026-07-15"
+    finally:
+        dd.SEED_PATH, dd.MAPPING_PATH = orig_seed, orig_mapping
+    print("PASS test_main_preserves_review_status_across_reruns")
+
+
+def test_main_resets_review_status_when_underlyings_change(tmp):
+    """A carried-forward 'reviewed' status must NOT survive when the underlying
+    set actually changed (new ticker added) -- the new entry was never reviewed,
+    so claiming 'reviewed' would be actively misleading, not just stale."""
+    import json
+    from pathlib import Path
+    from unittest.mock import patch
+    from kth_dr import discover_drs as dd
+
+    seed_path = Path(tmp) / "seed_list.json"
+    mapping_path = Path(tmp) / "mapping.json"
+    seed_path.write_text(json.dumps({
+        "0700.HK": [{"dr_ticker": "TENCENT80.BK", "display_name": "Tencent Holdings",
+                      "underlying_exchange": "HK", "underlying_currency": "HKD", "ratio": 100}],
+        "7203.T": [{"dr_ticker": "TOYOTA80.BK", "display_name": "Toyota Motor",
+                     "underlying_exchange": "T", "underlying_currency": "JPY", "ratio": 100}],
+    }))
+    mapping_path.write_text(json.dumps({
+        "_meta": {"status": "reviewed", "status_note": "1 of 1 verified as of 2026-07-15"},
+        "0700.HK": {
+            "display_name": "Tencent Holdings", "fx_ticker": "HKDTHB=X", "primary_dr": "TENCENT80.BK",
+            "alternatives": [{"dr_ticker": "TENCENT80.BK", "ratio": 100, "verified": True,
+                               "verified_note": "confirmed via SET IM"}],
+        },
+    }))
+
+    orig_seed, orig_mapping = dd.SEED_PATH, dd.MAPPING_PATH
+    dd.SEED_PATH, dd.MAPPING_PATH = seed_path, mapping_path
+    try:
+        with patch.object(dd, "compute_dr_stats", return_value={"avg_volume_30d": 1000, "history_rows": 500, "listing_date": "2022-01-01"}):
+            dd.main()
+        with open(mapping_path) as f:
+            result = json.load(f)
+        assert result["_meta"]["status"] == "needs_review", \
+            f"expected new underlying to force needs_review, got {result['_meta']['status']!r}"
+    finally:
+        dd.SEED_PATH, dd.MAPPING_PATH = orig_seed, orig_mapping
+    print("PASS test_main_resets_review_status_when_underlyings_change")
+
+
 def test_rank_alternatives_sorts_by_volume():
     from kth_dr.discover_drs import rank_alternatives
     alts = [

@@ -498,7 +498,7 @@ If our strategy doesn't beat both after frictions, we say so plainly.
 - `kth_dr/loader_dr.py` — load_dr_bundle() for 3-series OHLCV bundle
 - `kth_dr/discover_drs.py` — seed list -> mapping.json (SET-wide scan is a stubbed follow-up, not implemented)
 - `kth_dr/trade_gen_dr.py` — execution ticker/price/name resolution, same-underlying guard
-- `verify_dr.py` — 40 integration tests for DR plugin hook, mapping, trade-gen wiring
+- `verify_dr.py` — 42 integration tests for DR plugin hook, mapping, trade-gen wiring
 - `archive/other-asset-classes/` — us_equity/crypto training scripts, cached OHLCV, and backtest results descoped 2026-07-16
 - `README.md` — project overview
 - `requirements.txt` — minimal pinned deps
