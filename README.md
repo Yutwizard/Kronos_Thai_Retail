@@ -45,7 +45,7 @@ Defined in `kth/data/universe.py`. 52 tickers across 2 asset classes:
 > **Survivorship bias:** Cited CAGRs are overstated by ~1-3pp/yr. Adjust
 > mentally: "31.4% gross → ~28-30% survivorship-adjusted."
 
-- ✅ **Data layer** (`kth/data/`): universe (52 tickers, 2 classes) + DR plugin (`kth_dr/`), yfinance loader, Kronos-format conversion, caching, quality checks.
+- ✅ **Data layer** (`kth/data/`): universe (52 tickers, 2 classes) + DR plugin (`kth_dr/`), yfinance loader, Kronos-format conversion, caching, quality checks. Run `scripts/check_data_sanity.py` after any real download to catch corrupted/stale cache files.
 - ✅ **Kronos model** (`kth/models/`): wrapper, bridge, finetune with SGDR training, checkpoint loader.
 - ✅ **Backtest engine** (`kth/backtest/`): walk-forward with benchmarks, friction costs, full metrics. PSR, equity curve alignment, and open_trades bugs fixed 2026-06-21 (stored numbers stale pending GPU re-run).
 - ✅ **Backtest results**: Thai equity (CAGR +31%, Sharpe 1.40). US equity/crypto backtests archived — see `archive/other-asset-classes/data/backtest_results/`.
@@ -71,6 +71,7 @@ python verify_fixes.py           # review-fix regression tests (25)
 python verify_kaggle_runtime.py  # Kaggle pipeline tests (20)
 python verify_dr.py              # DR integration tests (40)
 python run_pipeline.py --dry-run # full pipeline smoke test
+python scripts/check_data_sanity.py  # sanity sweep over data/raw/ -- run after every real download
 ```
 
 ### Colab
@@ -111,7 +112,8 @@ kronos-th/
 │       └── Index.html       # 5-tab web app SPA (Flask-parity)
 ├── scripts/
 │   ├── dashboard.py         # Flask dashboard (local GPU option)
-│   └── start_dashboard.sh   # one-command launcher: venv + serve (data/forecasts generated on demand)
+│   ├── start_dashboard.sh   # one-command launcher: venv + serve (data/forecasts generated on demand)
+│   └── check_data_sanity.py # post-download sanity sweep over data/raw/ (row counts, jump/split detection, staleness)
 ├── notebooks/
 │   └── 01_data_layer.ipynb  # Colab: verify real yfinance access
 ├── data/

@@ -20,6 +20,7 @@ python verify_fixes.py                  # review fixes: stats + pipeline + unive
 python verify_kaggle_runtime.py         # Kaggle pipeline: auth + orchestration (20 tests)
 python verify_dr.py                     # DR integration: plugin hook, mapping, trade-gen wiring (40 tests)
 python run_pipeline.py --dry-run        # full pipeline smoke test, offline
+python scripts/check_data_sanity.py     # post-download sanity sweep over data/raw/ — run after every real download (see incident below)
 ```
 
 ### Docker (recommended — consistent across Windows/Linux/macOS)
@@ -27,7 +28,7 @@ python run_pipeline.py --dry-run        # full pipeline smoke test, offline
 make build          # build CPU image
 make verify         # run offline tests inside container
 make notebook       # JupyterLab at http://localhost:8888 (CPU, all platforms)
-make download       # pull 100-ticker universe to ./data/raw/ (needs network)
+make download       # pull 52-ticker universe to ./data/raw/ (needs network)
 
 make build-gpu      # build GPU image (Windows WSL2 / Linux only)
 make notebook-gpu   # JupyterLab with CUDA (Windows WSL2 / Linux only)
@@ -115,6 +116,7 @@ columns: timestamps, open, high, low, close, volume, amount
 
 - Real yfinance access works only on Colab/Kaggle/local — `verify_data_layer.py` uses synthetic data because yfinance is blocked in most sandboxes.
 - For real data, run `notebooks/01_data_layer.ipynb` on Colab (downloads ~10y daily OHLCV for all 52 universe tickers plus DR/underlying/FX tickers to `./data/raw/*.parquet`).
+- **2026-07-16 incident:** `verify_data_layer.py`/`verify_model_layer.py` used to write their synthetic data straight into the real `./data/raw` cache, silently overwriting real prices with random-walk data on every test run (caught via an abnormal AP.BK price). Both now write to isolated `tempfile.mkdtemp()` dirs — safe to run anytime. Run `python scripts/check_data_sanity.py` after any real download to sanity-check the cache (flags missing files, the synthetic-data rowcount fingerprint, oversized single-day jumps, and staleness).
 
 ## Hard scope limits
 
@@ -140,7 +142,7 @@ Priority order: (1) user's explicit instructions, (2) superpowers skills, (3) de
 3. [docs/user-manual.html](docs/user-manual.html), [docs/operations-manual.html](docs/operations-manual.html), [docs/monthly-walkthrough.html](docs/monthly-walkthrough.html) — usage, daily/weekly procedures, simulated month
 4. [docs/superpowers/specs/](docs/superpowers/specs/) — approved design specs (completed ones in [archive/](docs/superpowers/archive/))
 5. [kth/data/loader.py](kth/data/loader.py) — schema conversion and caching
-6. [kth/data/universe.py](kth/data/universe.py) — 100-ticker universe, `FRICTION`, `SECTOR`
+6. [kth/data/universe.py](kth/data/universe.py) — 52-ticker universe, `FRICTION`, `SECTOR`
 7. [kth/pipeline/daily.py](kth/pipeline/daily.py) — daily orchestration, `run_daily_pipeline` function
 8. [kth/io/kaggle_runtime.py](kth/io/kaggle_runtime.py) — Kaggle secrets auth (injectable, offline-testable)
 9. [data/backtest_results/MANIFEST.md](data/backtest_results/MANIFEST.md) — which backtest runs to cite (and which are stale)

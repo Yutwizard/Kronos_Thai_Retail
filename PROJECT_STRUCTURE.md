@@ -188,7 +188,7 @@ LAYER 3: Kronos model         kth/models/kronos_wrapper.py           ✅ built
                                 scripts/eval_holdout.py                 ✅ built
                                 checkpoints/{model}/fold{f}/best/       ✅ 9 trained
 LAYER 2: Feature pipeline     kth/data/loader.py                       ✅ done
-LAYER 1: Universe definition  kth/data/universe.py                     ✅ done (100 tickers)
+LAYER 1: Universe definition  kth/data/universe.py                     ✅ done (52 tickers)
 
 ---
 
@@ -204,7 +204,7 @@ kronos-th/
 │   ├── __init__.py
 │   ├── data/
 │   │   ├── __init__.py
-│   │   ├── universe.py             ✅ 100-ticker universe + FRICTION costs
+│   │   ├── universe.py             ✅ 52-ticker universe + FRICTION costs
 │   │   └── loader.py               ✅ yfinance → Kronos schema + caching
 │   ├── io/                         ✅ built (2026-06-21)
 │   │   ├── __init__.py
@@ -271,7 +271,7 @@ Cells:
 2. Reachability smoke test (download AAPL last 5 days)
 3. Probe each asset class with a few tickers
 4. Visual sanity check (plot 6 representative tickers)
-5. Download full 100-ticker universe to cache
+5. Download full 52-ticker universe to cache
 6. Persist to Google Drive (optional)
 7. Quality report by asset class
 8. Confirm one ticker loads into Kronos-expected schema
@@ -474,7 +474,8 @@ If our strategy doesn't beat both after frictions, we say so plainly.
 
 - `kth/data/universe.py` — 52-ticker SET universe (51 thai_equity incl. CPNREIT.BK, 1 thai_index), FRICTION dict, SECTOR mapping, O(1) reverse-lookup dict, `register_asset_class()` plugin hook (used by `kth_dr/`). Scope narrowed 2026-07-16 from 100 tickers/9 classes — see `archive/other-asset-classes/`
 - `kth/data/loader.py` — yfinance loader, Kronos-format conversion, parquet cache, quality checks
-- `verify_data_layer.py` — 5 offline tests, all pass against synthetic data
+- `scripts/check_data_sanity.py` — post-download sanity sweep over `data/raw/` (missing files, synthetic-data rowcount fingerprint, oversized single-day jumps, staleness). Added 2026-07-16 after an incident where offline verify scripts silently overwrote real cached prices with synthetic data — see `verify_data_layer.py`/`verify_model_layer.py` below.
+- `verify_data_layer.py` — 5 offline tests, all pass against synthetic data (writes to an isolated tmp dir, not `data/raw`, since the 2026-07-16 fix)
 - `verify_fixes.py` — 25 regression tests for stats fixes (PSR, alignment, bootstrap, cash guard, SET+DR-only universe invariant, etc.) — all pass
 - `verify_kaggle_runtime.py` — 20 tests for Kaggle auth + pipeline orchestration (idempotency, capital reset, trade edits, BKK clock, failure path) — all pass
 - `notebooks/01_data_layer.ipynb` — Colab notebook for verifying real yfinance access
