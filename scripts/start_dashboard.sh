@@ -25,7 +25,9 @@ Kronos-TH dashboard launcher
 
 Usage:  $0 [command]
 Commands:
-  start    (default) set up venv, download data, run pipeline, start dashboard
+  start    (default) set up venv, start dashboard (data + forecasts are
+           generated on demand -- click "Run Pipeline" in the UI, or use
+           the CLI: venv/bin/python scripts/dashboard.py --generate)
   stop             stop the running dashboard
   status           show dashboard status
   logs             tail the dashboard log (Ctrl+C to exit)
@@ -78,28 +80,6 @@ check_gpu() {
     fi
 }
 
-data_is_fresh() {
-    local latest
-    latest=$(find data/raw -name "*.parquet" -type f -printf '%T@\n' 2>/dev/null | sort -rn | head -1 | cut -d. -f1)
-    [ -z "$latest" ] && return 1
-    local now=$EPOCHSECONDS
-    [ $((now - latest)) -lt 86400 ]
-}
-
-download_data() {
-    if data_is_fresh; then
-        log "Data fresh (parquet < 24h old), skipping download"
-        return
-    fi
-    log "Downloading universe data (100 tickers, ~2 min) ..."
-    "$VENV_DIR/bin/python" scripts/download_data.py 2>&1 | tee -a "$LOG_DIR/data_download.log"
-}
-
-run_pipeline() {
-    log "Running forecast pipeline (3-12 min on GPU) ..."
-    "$VENV_DIR/bin/python" scripts/dashboard.py --generate 2>&1 | tee -a "$LOG_DIR/pipeline.log"
-}
-
 free_port() {
     if lsof -ti:$PORT >/dev/null 2>&1; then
         warn "Port $PORT in use, killing existing process"
@@ -112,10 +92,9 @@ start_dashboard() {
     require_python
     setup_venv
     check_gpu
-    download_data
-    run_pipeline
     free_port
     log "Starting dashboard on http://localhost:$PORT ..."
+    log "No data/forecasts generated yet -- click \"Run Pipeline\" in the UI, or run: $VENV_DIR/bin/python scripts/dashboard.py --generate"
     nohup "$VENV_DIR/bin/python" scripts/dashboard.py --serve > "$LOG_DIR/dashboard.log" 2>&1 &
     DASH_PID=$!
     echo "$DASH_PID" > "$PID_FILE"
