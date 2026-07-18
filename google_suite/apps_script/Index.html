@@ -806,6 +806,7 @@ function renderPositions(positions, riskMetrics, portfolio, forecasts) {
       _tdNum(fmt.thb(p.avg_cost), p.avg_cost) +
       _td(fmt.date(p.entry_date)) +
       _td(p.sector || '—') +
+      _td(p.currency_group || '—') +
       _tdNum(fmt.thb(p.current_price), p.current_price) +
       '<td class="num" style="' + pctStyle + '" data-val="' + p.pnl_pct + '">' + fmt.pct(p.pnl_pct) + '</td>' +
       '<td class="num" style="' + stopStyle + '" data-val="' + p.pct_to_stoploss + '">' + fmt.pct(p.pct_to_stoploss) + '</td>' +
@@ -822,7 +823,8 @@ function renderPositions(positions, riskMetrics, portfolio, forecasts) {
       '<th scope="col" title="Number of shares held">Shares</th>' +
       '<th scope="col" title="Average entry price per share">Avg Cost</th>' +
       '<th scope="col" title="Date position was opened">Entry Date</th>' +
-      '<th scope="col" title="Stock Exchange of Thailand sector classification">Sector</th>' +
+      '<th scope="col" title="Sector classification: SET sector for thai_equity, global industry taxonomy for DR">Sector</th>' +
+      '<th scope="col" title="DR-only: underlying\'s currency, capturing FX exposure. Not applicable to thai_equity">Currency</th>' +
       '<th scope="col" title="Most recent closing price">Current Price</th>' +
       '<th scope="col" title="Profit/loss as a percentage of cost">P&L %</th>' +
       '<th scope="col" title="Distance from stop-loss level (red if &lt; 3%)">% to Stop</th>' +
@@ -933,7 +935,7 @@ function renderForecasts(forecasts, forecastHistory) {
       '<td>' + confBadge(r.confidence) + '</td>' +
       _tdNum(fmt.pct(r.net_return), r.net_return) +
       _tdNum(r.p50 != null ? fmt.thb(r.p50) : '—', r.p50) +
-      (omitSector ? '' : _td(r.sector)) +
+      (omitSector ? '' : _td(r.sector) + _td(r.currency_group || '—')) +
     '</tr>';
   }
 
@@ -1007,6 +1009,7 @@ function renderForecasts(forecasts, forecastHistory) {
         '<th scope="col" title="Expected return minus round-trip friction costs">Net Return</th>' +
         '<th scope="col" title="Median (p50) price forecast — what the model thinks the price will be in 20 days">P50 Price</th>' +
         '<th scope="col">Sector</th>' +
+        '<th scope="col" title="DR-only: underlying\'s currency, capturing FX exposure. Not applicable to thai_equity">Currency</th>' +
       '</tr></thead>' +
       '<tbody>' + fcRows + '</tbody>' +
       '</table></div>' +
@@ -1139,6 +1142,7 @@ function renderTicket(ticket) {
       _tdNum(fmt.shares(r.shares), r.shares) +
       _tdNum(fmt.thb(r.est_cost_thb), r.est_cost_thb) +
       _td(r.sector) +
+      _td(r.currency_group || '—') +
       '<td>' + (r.confidence ? '<span class="badge badge-' + r.confidence + '">' + r.confidence + '</span>' : '—') + '</td>' +
       '<td>' + fillStatus + '</td>' +
       _td(r.rationale) +
@@ -1163,7 +1167,8 @@ function renderTicket(ticket) {
       '<th scope="col" title="Buy or sell">Action</th>' +
       '<th scope="col" title="Number of shares to trade">Shares</th>' +
       '<th scope="col" title="Estimated cost including friction (THB)">Est. Cost (THB)</th>' +
-      '<th scope="col" title="Stock Exchange of Thailand sector classification">Sector</th>' +
+      '<th scope="col" title="Sector classification: SET sector for thai_equity, global industry taxonomy for DR">Sector</th>' +
+      '<th scope="col" title="DR-only: underlying\'s currency, capturing FX exposure. Not applicable to thai_equity">Currency</th>' +
       '<th scope="col" title="Model confidence: green &lt;10%, yellow 10-30%, red &gt;30%">Confidence</th>' +
       '<th scope="col" title="Confirmed fill price from broker">Fill Status</th>' +
       '<th scope="col" title="Why this trade is recommended">Rationale</th>' +

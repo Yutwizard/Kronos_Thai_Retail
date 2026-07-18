@@ -43,6 +43,7 @@ def promote_staging(sh, staging_map: dict = None, sleep_sec: float = 1.0) -> dic
 
 
 def build_pos_rows(positions: dict, ohlcv_dict: dict, get_sector_fn: Callable[[str], str]) -> list:
+    from kth.data.universe import get_currency_group
     try:
         from kth_dr.universe_dr import get_dr_info_for_display
     except ImportError:
@@ -73,7 +74,8 @@ def build_pos_rows(positions: dict, ohlcv_dict: dict, get_sector_fn: Callable[[s
 
         rows.append([
             p['ticker'], p['shares'], p['avg_cost'], p.get('entry_date', ''),
-            get_sector_fn(p['ticker']), round(close, 2),
+            get_sector_fn(p['ticker']), get_currency_group(p['ticker']) or '',
+            round(close, 2),
             round(pnl, 2), round(pnl_pct, 4), round(pnl_pct + 0.10, 4),
             underlying_ticker, premium_pct,
         ])

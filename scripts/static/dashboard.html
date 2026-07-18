@@ -465,7 +465,8 @@ function _tickerCell(f) {
 // Column header definitions — shown as tooltips on hover
 const COL = {
   ticker:  "Stock symbol",
-  sector:  "For thai_equity: industry sector (Banking, Energy, Property...). For DR: the underlying's currency (HKD, JPY, EUR...) — DR positions are grouped by currency for the sector concentration guard, not by industry.",
+  sector:  "Industry sector. For thai_equity: SET sector (Banking, Energy, Property...). For DR: a separate global industry taxonomy (Tech, Auto, Luxury...). Capped at 2 positions per sector, independently for each asset class.",
+  currency: "DR-only: the underlying's currency (HKD, JPY, EUR...), capturing FX exposure and correlated market-close timing. Capped at 2 DR positions per currency, independently of Sector. Not applicable to thai_equity.",
   close:   "Last known closing price (THB) — from the most recent trading day",
   expRet:  "Expected Return: model's predicted price change over the next 20 trading days (P50 forecast). ↑ = bullish, ↓ = bearish.",
   delta:   "Δ Expected Return vs previous forecast date. ▲ = model more bullish since last run, ▼ = less bullish. Does NOT measure confidence. The ↗↘ badge on the flag shows confidence-level change.",
@@ -489,6 +490,7 @@ function _buildBullBearTable(rows, hasDelta) {
   let html = `<table><thead><tr>
     <th title="${COL.ticker}">Ticker</th>
     <th title="${COL.sector}">Sector</th>
+    <th title="${COL.currency}">Currency</th>
     <th title="${COL.close}">Close</th>
     <th title="${COL.score}">Score (?)</th>
     <th title="${COL.expRet}">Exp Ret (?)</th>`;
@@ -503,6 +505,7 @@ function _buildBullBearTable(rows, hasDelta) {
     const flagChange = _flagDelta(f.prev_confidence, f.confidence);
     html += '<tr>' + _tickerCell(f)
       + '<td class="muted">' + (f.sector||"—") + '</td>'
+      + '<td class="muted">' + (f.currency_group||"—") + '</td>'
       + '<td class="num">' + (f.close?.toFixed(2)||"—") + '</td>'
       + '<td class="num ' + (f.rank_score>=0?"green":"red") + '">' + f.rank_score.toFixed(2) + '</td>'
       + '<td class="num ' + retCls + '">' + dir + ' ' + (f.exp_ret*100).toFixed(2) + '%</td>';
@@ -523,6 +526,7 @@ function _buildRankingTable(forecasts, hasDelta) {
     <th title="${COL.ticker}">Ticker</th>
     <th>Name</th>
     <th title="${COL.sector}">Sector</th>
+    <th title="${COL.currency}">Currency</th>
     <th title="${COL.close}">Close</th>
     <th title="${COL.score}">Score (?)</th>
     <th title="${COL.expRet}">Exp Ret (?)</th>`;
@@ -538,6 +542,7 @@ function _buildRankingTable(forecasts, hasDelta) {
       + '<td>' + (i+1) + '</td>' + _tickerCell(f)
       + '<td class="muted">' + (f.name||"") + '</td>'
       + '<td class="muted">' + (f.sector||"—") + '</td>'
+      + '<td class="muted">' + (f.currency_group||"—") + '</td>'
       + '<td class="num">' + (f.close?.toFixed(2)||"—") + '</td>'
       + '<td class="num ' + (f.rank_score>=0?"green":"red") + '">' + f.rank_score.toFixed(2) + '</td>'
       + '<td class="num ' + retCls + '">' + dir + ' ' + (f.exp_ret*100).toFixed(2) + '%</td>';

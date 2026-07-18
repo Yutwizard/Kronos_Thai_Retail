@@ -23,17 +23,17 @@ MANUAL_TRADES = 'Manual Trades'
 # --- Header schemas ---
 PORTFOLIO_HEADERS = ['cash', 'initial_capital', 'mode', 'model_version', 'forecast_date']
 EQUITY_CURVE_HEADERS = ['date', 'equity', 'cash', 'invested']
-POSITIONS_HEADERS = ['ticker', 'shares', 'avg_cost', 'entry_date', 'sector',
+POSITIONS_HEADERS = ['ticker', 'shares', 'avg_cost', 'entry_date', 'sector', 'currency_group',
                      'current_price', 'pnl', 'pnl_pct', 'pct_to_stoploss',
                      'underlying_ticker', 'premium_pct']
 TRADE_LOG_HEADERS = ['timestamp', 'ticker', 'action', 'shares', 'price', 'rationale',
                      'friction_cost', 'model_version', 'id', 'ref_id']
 FORECASTS_HEADERS = ['date_updated', 'ticker', 'rank_score', 'exp_ret', 'band_width',
-                     'confidence', 'net_return', 'p5', 'p50', 'p95', 'sector', 'tier']
+                     'confidence', 'net_return', 'p5', 'p50', 'p95', 'sector', 'currency_group', 'tier']
 FORECAST_HISTORY_HEADERS = ['date', 'ticker', 'predicted_direction', 'predicted_return',
                             'entry_close', 'actual_return', 'was_correct']
 TRADE_TICKET_HEADERS = ['ticker', 'action', 'shares', 'est_cost_thb', 'rationale',
-                        'sector', 'confidence', 'filled_price', 'filled_shares', 'fill_timestamp']
+                        'sector', 'currency_group', 'confidence', 'filled_price', 'filled_shares', 'fill_timestamp']
 RISK_METRICS_HEADERS = ['date', 'equity', 'cash', 'deployed_pct', 'trailing_sharpe_12w',
                         'max_drawdown_pct', 'mtd_pnl_pct', 'trade_win_rate', 'calmar_ratio',
                         'sortino_ratio', 'drawdown_velocity', 'allocation_band', 'allocation_pct',

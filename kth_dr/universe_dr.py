@@ -9,6 +9,42 @@ DR_PREMIUM_WARN_THRESHOLD = 0.05
 
 DR_MAP: dict = {}
 
+# Hand-curated global industry taxonomy for DR underlyings, independent of
+# SET's 10 thai_equity sector buckets (which are built around the Thai economy
+# and don't map cleanly onto foreign large-caps). Keyed by underlying ticker,
+# not DR ticker, since the underlying identity is stable even if the primary
+# DR alternative changes. See docs/adr/0004-separate-dr-sector-and-currency-group.md.
+# A judgment call, not a verifiable fact like the rest of mapping.json — kept
+# out of mapping.json's verified-data curation workflow deliberately.
+DR_SECTOR: dict[str, str] = {
+    # Tech / Internet / AI
+    "0700.HK": "Tech", "9988.HK": "Tech", "9888.HK": "Tech", "9618.HK": "Tech",
+    "3690.HK": "Tech", "9999.HK": "Tech", "1024.HK": "Tech", "3888.HK": "Tech",
+    "0020.HK": "Tech", "9660.HK": "Tech", "9880.HK": "Tech", "9984.T": "Tech",
+    # Semiconductors
+    "ASML.AS": "Semiconductors", "1347.HK": "Semiconductors",
+    "8035.T": "Semiconductors", "6861.T": "Semiconductors",
+    # Auto
+    "7203.T": "Auto", "1211.HK": "Auto", "0175.HK": "Auto", "RACE.MI": "Auto",
+    # Consumer Electronics
+    "1810.HK": "Consumer Electronics", "6758.T": "Consumer Electronics",
+    # Materials
+    "2899.HK": "Materials", "3750.HK": "Materials",
+    # Financials
+    "3968.HK": "Financials",
+    # Energy
+    "0857.HK": "Energy",
+    # Consumer (retail / staples / food)
+    "9992.HK": "Consumer", "9633.HK": "Consumer", "8136.T": "Consumer",
+    "9983.T": "Consumer", "3563.T": "Consumer",
+    # Luxury
+    "RMS.PA": "Luxury", "OR.PA": "Luxury", "MC.PA": "Luxury",
+    # Healthcare
+    "NOVO-B.CO": "Healthcare", "SAN.PA": "Healthcare",
+    # Telecom
+    "Z74.SI": "Telecom",
+}
+
 
 def _load_dr_mapping() -> dict:
     """mapping.json is hand-edited (a human flips `verified`), so a typo here
@@ -115,27 +151,33 @@ def get_dr_info_for_display(dr_ticker: str) -> dict | None:
     return None
 
 
-def build_registration_dicts() -> tuple[dict[str, str], dict[str, str], dict[str, dict]]:
-    """Build the three dicts needed by register_asset_class() from verified DRs."""
+def build_registration_dicts() -> tuple[dict[str, str], dict[str, str], dict[str, str], dict[str, dict]]:
+    """Build the four dicts needed by register_asset_class() from verified DRs.
+
+    Sector and currency group are independent concentration dimensions — see
+    docs/adr/0004-separate-dr-sector-and-currency-group.md. Sector is real
+    industry classification (DR_SECTOR); currency group is the underlying's
+    currency (HKD/JPY/EUR/...), capturing FX exposure and, for EUR names,
+    correlated late market-close timing (see CLAUDE.md) — a distinct risk from
+    industry correlation. A literal per-exchange split for currency was
+    considered and rejected — NL/DK/IT each have exactly one verified DR
+    today, so an exchange-level cap could never bind for them.
+    """
     _ensure_loaded()
     ticker_class = {}
     sector = {}
+    currency_group = {}
     friction = {"dr": {"commission_oneway": 0.00168, "slippage_oneway": 0.0010}}
     for underlying, entry in DR_MAP.items():
         # _meta is a dict but _unresolved is a list — same guard as the getters above
         if not isinstance(entry, dict) or "excluded_reason" in entry:
             continue
-        currency = entry.get("underlying_currency") or "Global"
+        currency = entry.get("underlying_currency") or "Other"
+        sec = DR_SECTOR.get(underlying, "Other")
         for alt in entry.get("alternatives", []):
             if alt.get("verified"):
                 dr_ticker = alt["dr_ticker"]
                 ticker_class[dr_ticker] = "dr"
-                # Grouped by underlying currency, not a flat "Global" bucket:
-                # FX exposure (and, for EUR names, correlated late market-close
-                # timing — see CLAUDE.md) is the real correlated risk across DR
-                # positions, not a single undifferentiated bucket. A literal
-                # per-exchange split was considered and rejected — NL/DK/IT
-                # each have exactly one verified DR today, so an exchange-level
-                # cap could never bind for them.
-                sector[dr_ticker] = currency
-    return ticker_class, sector, friction
+                sector[dr_ticker] = sec
+                currency_group[dr_ticker] = currency
+    return ticker_class, sector, currency_group, friction

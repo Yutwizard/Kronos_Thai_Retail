@@ -114,7 +114,7 @@ def _default_sheet_data() -> dict[str, list[list]]:
     return {
         'Portfolio': [['cash', 'initial_capital', 'mode', 'model_version', 'forecast_date'],
                       ['500000', '500000', 'paper', 'Kronos-small-zero-shot', '2026-06-18']],
-        'Positions': [['ticker', 'shares', 'avg_cost', 'entry_date', 'sector',
+        'Positions': [['ticker', 'shares', 'avg_cost', 'entry_date', 'sector', 'currency_group',
                        'current_price', 'pnl', 'pnl_pct', 'pct_to_stoploss']],
         'Equity Curve': [['date', 'equity', 'cash', 'invested'],
                          ['2026-06-17', '500000', '500000', '0']],
@@ -126,7 +126,7 @@ def _default_sheet_data() -> dict[str, list[list]]:
                          ['2026-06-17', '500000', '500000', '0', '0', '0', '0', '0',
                           '0', '0', '0', 'NEUTRAL', '0.1', 'Normal', '0', '1', '0', '0']],
         'Trade Ticket': [['ticker', 'action', 'shares', 'est_cost_thb', 'rationale',
-                          'sector', 'confidence', 'filled_price', 'filled_shares', 'fill_timestamp']],
+                          'sector', 'currency_group', 'confidence', 'filled_price', 'filled_shares', 'fill_timestamp']],
         'Trade Log': [['timestamp', 'ticker', 'action', 'shares', 'price', 'rationale',
                        'friction_cost', 'model_version', 'id', 'ref_id']],
         'Forecast History': [['date', 'ticker', 'predicted_direction', 'predicted_return',
@@ -540,10 +540,10 @@ def test_trade_edit_correct_row_with_same_day_fill(tmp):
     sh = gc.open_by_key("test_id")
     # A confirmed fill for a DIFFERENT ticker forces trade_log.csv creation during fills.
     sh.worksheet('Trade Ticket')._data = [
-        ['ticker', 'action', 'shares', 'est_cost_thb', 'rationale', 'sector',
+        ['ticker', 'action', 'shares', 'est_cost_thb', 'rationale', 'sector', 'currency_group',
          'confidence', 'filled_price', 'filled_shares', 'fill_timestamp'],
-        ['PTT.BK', 'buy', '100', '3500', 'test', 'Energy', 'green',
-         '35.0', '100', '2026-06-18T09:30'],
+        ['PTT.BK', 'buy', '100', '3500', 'test', 'Energy', '',
+         'green', '35.0', '100', '2026-06-18T09:30'],
     ]
     # NOTE: do NOT pre-create trade_log.csv — the pipeline must sync it from the sheet.
     run_daily_pipeline(gc, "test_id", model=FakeModel(), data_loader=FakeLoader(),

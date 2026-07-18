@@ -571,7 +571,7 @@ md("""## Cell 13 — Write to Staging Sheets""")
 
 code(r"""from kth.trading.portfolio import get_positions, init_portfolio
 from kth.trading.trade_gen import load_forecasts
-from kth.data.universe import get_sector, get_ticker_class, FRICTION
+from kth.data.universe import get_sector, get_currency_group, get_ticker_class, FRICTION
 from kth.trading.sheets import write_staging, build_pos_rows, POSITIONS_HEADERS, PORTFOLIO_HEADERS
 
 pf_data = init_portfolio('paper')
@@ -586,10 +586,10 @@ fc_rows      = load_forecasts(today_str)
 fc_by_ticker = {r['ticker']: r for r in fc_rows}
 write_staging(sh.worksheet('Forecasts_staging'),
     ['date_updated','ticker','rank_score','exp_ret','band_width','confidence',
-     'net_return','p5','p50','p95','sector'],
+     'net_return','p5','p50','p95','sector','currency_group'],
     [[today_str, r['ticker'], r['rank_score'], r['exp_ret'], r['band_width'],
       r['confidence'], r['net_ret'], r['p5_close'], r['p50_close'], r['p95_close'],
-      get_sector(r['ticker'])] for r in fc_rows])
+      get_sector(r['ticker']), get_currency_group(r['ticker']) or ''] for r in fc_rows])
 
 tt_rows = []
 all_items = (
@@ -607,11 +607,11 @@ for action_type, item in all_items:
     conf     = fc_by_ticker.get(ticker, {}).get('confidence', '')
     tt_rows.append([
         ticker, action_type, item['shares'], est_cost,
-        item.get('rationale', ''), get_sector(ticker), conf,
+        item.get('rationale', ''), get_sector(ticker), get_currency_group(ticker) or '', conf,
         '', '', '',
     ])
 write_staging(sh.worksheet('Trade Ticket_staging'),
-    ['ticker','action','shares','est_cost_thb','rationale','sector','confidence',
+    ['ticker','action','shares','est_cost_thb','rationale','sector','currency_group','confidence',
      'filled_price','filled_shares','fill_timestamp'],
     tt_rows)
 

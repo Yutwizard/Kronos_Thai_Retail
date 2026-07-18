@@ -9,7 +9,7 @@ from typing import Optional
 
 import pandas as pd
 
-from kth.data.universe import UNIVERSE, FRICTION, get_ticker_class, get_display_name, get_sector, get_friction, get_one_way_friction_rate
+from kth.data.universe import UNIVERSE, FRICTION, get_ticker_class, get_display_name, get_sector, get_currency_group, get_friction, get_one_way_friction_rate
 
 from kth.utils.model_slug import model_slug as _model_slug
 CACHE_SLUG = _model_slug("NeoQuasar/Kronos-small")
@@ -17,6 +17,7 @@ CACHE_DIR = Path("data/forecast_cache") / CACHE_SLUG
 POSITIONS_DIR = Path("data/positions")
 MAX_POSITIONS = 5
 MAX_SECTOR_POSITIONS = 2
+MAX_CURRENCY_POSITIONS = 2
 TOP_N = 10
 THAI_TICKERS = [t for t, _, _ in UNIVERSE["thai_equity"]]
 try:
@@ -120,6 +121,7 @@ def load_forecasts(report_date: str = None) -> list[dict]:
                 "name": resolve_display_name(ticker, get_display_name(ticker)),
                 "class": cls,
                 "sector": get_sector(exec_ticker),
+                "currency_group": get_currency_group(exec_ticker),
                 "close": round(current_close, 2),
                 "p50_close": round(p50, 2),
                 "p5_close": round(p5, 2),
@@ -236,14 +238,20 @@ def generate_trade_ticket(report_date: str = None, positions: dict = None) -> di
     existing_count = len(held_tickers) - len(exited)
     slots = max(0, MAX_POSITIONS - existing_count)
 
-    # Sector counts are seeded from held tickers, which are already execution
-    # tickers (get_sector resolves DR tickers to their underlying's currency,
-    # e.g. "HKD"/"JPY"/"EUR", via the plugin hook — not a flat "Global" bucket).
+    # Sector and currency-group counts are independent concentration pools —
+    # see docs/adr/0004-separate-dr-sector-and-currency-group.md. Both are
+    # seeded from held tickers, which are already execution tickers.
+    # get_currency_group() returns None for thai_equity, so those tickers
+    # never populate currency_counts.
     sector_counts: dict[str, int] = {}
+    currency_counts: dict[str, int] = {}
     for ticker in held_tickers:
         if ticker not in exited:
             sec = get_sector(ticker)
             sector_counts[sec] = sector_counts.get(sec, 0) + 1
+            cur = get_currency_group(ticker)
+            if cur is not None:
+                currency_counts[cur] = currency_counts.get(cur, 0) + 1
 
     try:
         from kth_dr.trade_gen_dr import is_held_underlying
@@ -263,6 +271,9 @@ def generate_trade_ticket(report_date: str = None, positions: dict = None) -> di
         if f["confidence"] == "red":
             continue
         if sector_counts.get(get_sector(exec_ticker), 0) >= MAX_SECTOR_POSITIONS:
+            continue
+        exec_currency = get_currency_group(exec_ticker)
+        if exec_currency is not None and currency_counts.get(exec_currency, 0) >= MAX_CURRENCY_POSITIONS:
             continue
 
         exec_close = f.get("exec_close", f["close"])
@@ -291,6 +302,8 @@ def generate_trade_ticket(report_date: str = None, positions: dict = None) -> di
             "rationale": rationale,
         })
         sector_counts[sec] = sector_counts.get(sec, 0) + 1
+        if exec_currency is not None:
+            currency_counts[exec_currency] = currency_counts.get(exec_currency, 0) + 1
         remaining_cap -= lots * exec_close
 
     gross_sells = sum(e["estimated_thb"] for e in exits) + sum(r["estimated_thb"] for r in reduces)

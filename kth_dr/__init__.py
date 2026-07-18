@@ -9,8 +9,8 @@ try:
     from kth.data.universe import register_asset_class
     from kth_dr.universe_dr import build_registration_dicts
 
-    ticker_class, sector, friction = build_registration_dicts()
-    register_asset_class(ticker_class, sector=sector, friction=friction)
+    ticker_class, sector, currency_group, friction = build_registration_dicts()
+    register_asset_class(ticker_class, sector=sector, currency_group=currency_group, friction=friction)
 except Exception as e:
     # Registration is best-effort: a broken mapping.json must degrade to
     # "no DRs registered", never make `import kth_dr` fail — trade_gen and

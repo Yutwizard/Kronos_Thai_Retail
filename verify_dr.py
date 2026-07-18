@@ -444,11 +444,11 @@ def test_ensure_dr_data_nonexistent_does_not_raise():
 
 # ---- Task 8: sheets_config.py / sheets.py — Positions schema ----
 
-def test_positions_headers_has_11_columns():
+def test_positions_headers_has_12_columns():
     from kth.trading.sheets_config import POSITIONS_HEADERS
-    assert len(POSITIONS_HEADERS) == 11, POSITIONS_HEADERS
+    assert len(POSITIONS_HEADERS) == 12, POSITIONS_HEADERS
     assert POSITIONS_HEADERS[-2:] == ['underlying_ticker', 'premium_pct']
-    print("PASS test_positions_headers_has_11_columns")
+    print("PASS test_positions_headers_has_12_columns")
 
 
 def test_build_pos_rows_row_length_matches_headers():
@@ -528,9 +528,11 @@ def test_build_registration_dicts_skips_non_dict_entries(tmp):
     build_registration_dicts with AttributeError at `import kth_dr` time."""
     from kth_dr.universe_dr import build_registration_dicts
     def check():
-        ticker_class, sector, friction = build_registration_dicts()
+        ticker_class, sector, currency_group, friction = build_registration_dicts()
         assert ticker_class == {"SAMSUNG80.BK": "dr"}, ticker_class
-        assert sector == {"SAMSUNG80.BK": "KRW"}, sector
+        # 005930.KS isn't in the hand-curated DR_SECTOR taxonomy -> falls back to "Other".
+        assert sector == {"SAMSUNG80.BK": "Other"}, sector
+        assert currency_group == {"SAMSUNG80.BK": "KRW"}, currency_group
         assert "dr" in friction
     _with_test_mapping(tmp, check)
     print("PASS test_build_registration_dicts_skips_non_dict_entries")

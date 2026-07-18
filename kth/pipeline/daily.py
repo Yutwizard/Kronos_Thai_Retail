@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from kth.data.universe import get_all_tickers_including_features, get_sector, get_friction
+from kth.data.universe import get_all_tickers_including_features, get_sector, get_currency_group, get_friction
 from kth.trading.portfolio import (
     init_portfolio, get_positions, get_trade_log, compute_metrics, MODEL_VERSION,
     reset_portfolio, execute_trade, edit_trade, delete_trade,
@@ -635,7 +635,8 @@ def _write_all_staging(sh, ohlcv_dict: dict, ticket_data: dict,
                   [[today_str, r['ticker'], r['rank_score'], r['exp_ret'],
                     r['band_width'], r['confidence'], r['net_ret'],
                     r['p5_close'], r['p50_close'], r['p95_close'],
-                    get_sector(r['ticker']), r.get('tier', '')] for r in fc_rows],
+                    get_sector(r['ticker']), get_currency_group(r['ticker']) or '',
+                    r.get('tier', '')] for r in fc_rows],
                   sleep_sec=staging_sleep)
 
     tt_rows = []
@@ -653,7 +654,7 @@ def _write_all_staging(sh, ohlcv_dict: dict, ticket_data: dict,
         conf = fc_by_ticker.get(ticker, {}).get('confidence', '')
         tt_rows.append([
             ticker, action_type, item['shares'], est_cost,
-            item.get('rationale', ''), get_sector(ticker), conf,
+            item.get('rationale', ''), get_sector(ticker), get_currency_group(ticker) or '', conf,
             '', '', '',
         ])
     write_staging(sh.worksheet('Trade Ticket_staging'),

@@ -99,16 +99,20 @@ for _items in UNIVERSE.values():
 
 _extra_ticker_class: dict[str, str] = {}
 _extra_sector: dict[str, str] = {}
+_extra_currency_group: dict[str, str] = {}
 _extra_friction: dict[str, dict] = {}
 
 def register_asset_class(
     ticker_class: dict[str, str],
     sector: dict[str, str] | None = None,
+    currency_group: dict[str, str] | None = None,
     friction: dict[str, dict] | None = None,
 ):
     _extra_ticker_class.update(ticker_class)
     if sector:
         _extra_sector.update(sector)
+    if currency_group:
+        _extra_currency_group.update(currency_group)
     if friction:
         _extra_friction.update(friction)
 
@@ -197,6 +201,15 @@ def get_sector(ticker: str) -> str:
     if result is not None:
         return result
     return _extra_sector.get(ticker, "Other")
+
+
+def get_currency_group(ticker: str) -> str | None:
+    """DR-only concentration dimension, independent of get_sector() — see
+    docs/adr/0004-separate-dr-sector-and-currency-group.md. thai_equity has no
+    currency group (single-currency universe); returns None so the currency
+    concentration guard skips it entirely rather than binding on a fake "THB" bucket.
+    """
+    return _extra_currency_group.get(ticker)
 
 
 _DEFAULT_FRICTION = {"commission_oneway": 0.003, "slippage_oneway": 0.001}

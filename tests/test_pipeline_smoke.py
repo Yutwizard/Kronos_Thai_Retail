@@ -71,7 +71,7 @@ def test_build_pos_rows_smoke(mock_env):
     assert len(rows) == 1
     assert rows[0][0] == 'PTT.BK'
     assert rows[0][1] == 100
-    assert rows[0][5] == 35.5
+    assert rows[0][6] == 35.5
 
 
 def test_write_staging_smoke(mock_env):

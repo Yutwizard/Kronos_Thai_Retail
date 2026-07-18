@@ -29,7 +29,7 @@ The accumulated shares of a single ticker across multiple trades. Computed as: `
 _Avoid_: Holding, allocation (allocation is the target weight, not the actual shares)
 
 **DR (Depositary Receipt)**:
-A SET-listed instrument (ticker class `"dr"`, e.g. `TENCENT80.BK`) that tracks a foreign-exchange-listed stock. Tradeable at the standard 100-share SET board lot, same as thai_equity. Registered into the ticker/sector/friction registry via the `kth_dr` plugin's `register_asset_class()` call (`kth_dr/__init__.py`), never added to `UNIVERSE` directly. Exactly one verified DR ticker exists per underlying (`get_verified_dr_tickers()` picks the primary, most-liquid alternative) — no name-collision risk. For [[Sector Concentration]] purposes, a DR's "sector" is its underlying's currency (HKD/JPY/EUR/SGD), not an industry classification.
+A SET-listed instrument (ticker class `"dr"`, e.g. `TENCENT80.BK`) that tracks a foreign-exchange-listed stock. Tradeable at the standard 100-share SET board lot, same as thai_equity. Registered into the ticker/sector/currency-group/friction registry via the `kth_dr` plugin's `register_asset_class()` call (`kth_dr/__init__.py`), never added to `UNIVERSE` directly. Exactly one verified DR ticker exists per underlying (`get_verified_dr_tickers()` picks the primary, most-liquid alternative) — no name-collision risk. A DR carries two independent concentration attributes — see [[Sector Concentration]] and [[Currency Group]] — its industry sector and its underlying's currency are tracked and capped separately, not conflated.
 _Avoid_: ADR (unrelated acronym clash with Architecture Decision Record)
 
 **Underlying Ticker**:
@@ -114,8 +114,13 @@ _Avoid_: p-value (use full term); confusing live bootstrap p-value with historic
 **Decision context:** Statistical methodology decisions documented in `docs/adr/`.
 
 **Sector Concentration**:
-A portfolio-level risk flag triggered when the buy loop would place more than 2 positions in the same sector. For thai_equity, sector means industry (Banking, Energy, Property, ...) from the `SECTOR` dict in `universe.py`. For DR, sector means the underlying's currency (HKD, JPY, EUR, ...) — see [[DR (Depositary Receipt)]] — since DR industry classification doesn't exist yet and FX/timing correlation is the more pressing concentration risk for DR today. Enforced by the same hard filter in `trade_gen.py`, keyed off `get_sector()` regardless of asset class. Not a warning — it silently skips over-concentrated picks and continues to the next ranked ticker.
-_Avoid_: Sector cap, concentration limit
+A portfolio-level risk flag triggered when the buy loop would place more than `MAX_SECTOR_POSITIONS` (2) positions in the same sector pool. thai_equity and DR each have their own sector pool, never merged: thai_equity's sector is industry (Banking, Energy, Property, ...) from the `SECTOR` dict in `universe.py`; DR's sector is a separate global industry taxonomy (Tech, Auto, Luxury, Healthcare, Semiconductors, ...) hand-curated in `kth_dr/universe_dr.py`, distinct from FX/regional risk — see [[Currency Group]] and [[DR (Depositary Receipt)]]. Enforced by a hard filter in `trade_gen.py` keyed off `get_sector()`. Not a warning — it silently skips over-concentrated picks and continues to the next ranked ticker.
+_Avoid_: Sector cap, concentration limit (ambiguous — see [[Currency Group]] for the other cap)
+
+**Currency Group**:
+A DR-only portfolio-level risk flag, independent of and enforced identically to [[Sector Concentration]]: triggered when the buy loop would place more than `MAX_CURRENCY_POSITIONS` (2) DR positions sharing the same underlying currency (HKD, JPY, EUR, ...). Captures FX exposure and correlated market-close timing (see CLAUDE.md on European-close DRs) — a risk thai_equity doesn't have, since it's single-currency (THB) by construction. thai_equity tickers return no currency group and are never subject to this check — there is no `"THB"` bucket. A DR candidate must clear both its Sector Concentration and Currency Group caps to be bought; either being full is a hard reject. Computed by `get_currency_group()` in `kth_dr/universe_dr.py`.
+_Avoid_: FX group, sector (this is deliberately not folded into Sector Concentration — see the ADR)
+**Decision:** See `docs/adr/0004-separate-dr-sector-and-currency-group.md`.
 
 **Survivorship Bias**:
 An upward distortion in backtest CAGR caused by the universe containing only currently-listed tickers. Delisted Thai stocks (bankruptcies, mergers, 2020–2024) are excluded because yfinance does not expose their historical data. Estimated to inflate CAGR by ~1–3 percentage points per year for 40–60 stock universes. Formal disclosure added to `docs/backtest-methodology.html` (planned Phase 4).
