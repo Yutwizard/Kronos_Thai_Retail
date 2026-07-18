@@ -21,6 +21,19 @@ def load_dr_bundle(underlying_ticker: str) -> dict[str, object]:
     }
 
 
+def compute_dr_premium_pct(execution_close: float, underlying_close: float, fx_close: float, ratio: float) -> float:
+    """DR premium: execution_close vs. intrinsic value (underlying_close × fx_close ÷ ratio).
+    Raises ValueError on missing/zero inputs — the caller decides how to handle
+    an unavailable premium (e.g. blank cell, skip enrichment), this function
+    never guesses a fallback value."""
+    if not underlying_close or not fx_close or not ratio:
+        raise ValueError("missing underlying_close/fx_close/ratio for DR premium calculation")
+    dr_intrinsic = (underlying_close * fx_close) / ratio
+    if not dr_intrinsic:
+        raise ValueError("computed zero DR intrinsic value")
+    return round((execution_close / dr_intrinsic) - 1, 4)
+
+
 def ensure_dr_data(underlying_ticker: str) -> None:
     """Download all data sources required for a DR position. Idempotent —
     download_universe/load_cached already skip re-downloading cached tickers.

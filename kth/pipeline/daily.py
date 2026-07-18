@@ -495,12 +495,8 @@ def run_daily_pipeline(gc, spreadsheet_id, *, model, data_loader,
 
         tickers = get_all_tickers_including_features()
         try:
-            from kth_dr.universe_dr import get_verified_dr_tickers, get_dr_underlying_tickers, DR_MAP, _ensure_loaded
-            _ensure_loaded()
-            dr_tickers = get_verified_dr_tickers()
-            dr_underlyings = get_dr_underlying_tickers()
-            dr_fx_tickers = list({DR_MAP[u].get("fx_ticker", "THB=X") for u in dr_underlyings if u in DR_MAP})
-            tickers = tickers + dr_tickers + dr_underlyings + dr_fx_tickers
+            from kth_dr.universe_dr import get_all_download_tickers
+            tickers = get_all_download_tickers(tickers)
         except ImportError:
             pass
         except Exception as e:

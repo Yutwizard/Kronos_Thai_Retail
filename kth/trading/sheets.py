@@ -46,8 +46,10 @@ def build_pos_rows(positions: dict, ohlcv_dict: dict, get_sector_fn: Callable[[s
     from kth.data.universe import get_currency_group
     try:
         from kth_dr.universe_dr import get_dr_info_for_display
+        from kth_dr.loader_dr import compute_dr_premium_pct
     except ImportError:
         get_dr_info_for_display = lambda t: None
+        compute_dr_premium_pct = None
 
     rows = []
     for p in positions['positions']:
@@ -67,9 +69,8 @@ def build_pos_rows(positions: dict, ohlcv_dict: dict, get_sector_fn: Callable[[s
             try:
                 u_close = float(ohlcv[dr_info['underlying_ticker']]['close'].iloc[-1])
                 fx_close = float(ohlcv[dr_info['fx_ticker']]['close'].iloc[-1])
-                dr_intrinsic = (u_close * fx_close) / dr_info['ratio']
-                premium_pct = round((close / dr_intrinsic) - 1, 4) if dr_intrinsic else ''
-            except (KeyError, ZeroDivisionError):
+                premium_pct = compute_dr_premium_pct(close, u_close, fx_close, dr_info['ratio'])
+            except (KeyError, ValueError):
                 premium_pct = ''
 
         rows.append([

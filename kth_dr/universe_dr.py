@@ -151,6 +151,17 @@ def get_dr_info_for_display(dr_ticker: str) -> dict | None:
     return None
 
 
+def get_all_download_tickers(base_tickers: list[str]) -> list[str]:
+    """base_tickers plus every DR/underlying/FX ticker that needs downloading —
+    the combined list kth.pipeline.daily, scripts/dashboard.py, and
+    scripts/download_data.py all need before calling download_universe()."""
+    _ensure_loaded()
+    dr_tickers = get_verified_dr_tickers()
+    dr_underlyings = get_dr_underlying_tickers()
+    dr_fx_tickers = list({DR_MAP[u].get("fx_ticker", "THB=X") for u in dr_underlyings if u in DR_MAP})
+    return base_tickers + dr_tickers + dr_underlyings + dr_fx_tickers
+
+
 def build_registration_dicts() -> tuple[dict[str, str], dict[str, str], dict[str, str], dict[str, dict]]:
     """Build the four dicts needed by register_asset_class() from verified DRs.
 

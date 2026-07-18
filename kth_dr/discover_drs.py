@@ -10,9 +10,9 @@ Process (seed-list path, implemented):
     3. Rank alternatives, write mapping.json
 
 NOT implemented yet (tracked as a follow-up, not a bug in this task):
-    - Secondary SET-wide scan for DR naming patterns (scan_set_for_drs,
-      resolve_underlying below are stubs — they exist to show the intended
-      shape of that follow-up, but main() never calls them).
+    - Secondary SET-wide scan for DR naming patterns — no code here yet;
+      would need an external SET listing source since yfinance has no
+      ticker-search API.
 """
 import json
 import time
@@ -24,14 +24,6 @@ from kth.data.universe import get_all_tickers
 
 SEED_PATH = Path("data/dr/seed_list.json")
 MAPPING_PATH = Path("data/dr/mapping.json")
-
-# Naming patterns a future SET-wide scan would match against — unused today,
-# kept here so the follow-up task starts from a documented starting point.
-DR_NAMING_PATTERNS = [
-    r"\d+\.BK$",       # e.g. AAPL80.BK
-    r"NVDR.*\.BK$",    # e.g. AAPL-NVDR.BK
-    r"DR.*\.BK$",      # e.g. AAPLDR.BK
-]
 
 
 def fx_ticker_for_currency(currency: str) -> str:
@@ -90,29 +82,6 @@ def is_already_in_universe(ticker: str) -> bool:
     ADRs. Don't rely on this function alone when adding new seed entries."""
     all_tickers = get_all_tickers()
     return ticker in all_tickers
-
-
-def resolve_underlying(dr_ticker: str) -> tuple[str | None, str | None, int | None]:
-    """[Follow-up, not called by main()] Try to resolve a DR ticker to its
-    underlying via yfinance Ticker.info. Field availability is inconsistent
-    across tickers — this needs real-world tuning before it's trustworthy."""
-    try:
-        ticker = yf.Ticker(dr_ticker)
-        info = ticker.info
-        underlying = info.get("underlyingSymbol") or info.get("underlying") or info.get("symbol")
-        name = info.get("underlyingName") or info.get("shortName") or ""
-        if underlying:
-            return underlying, name, 80
-    except Exception:
-        pass
-    return None, None, None
-
-
-def scan_set_for_drs(existing_drs: set[str]) -> list[dict]:
-    """[Follow-up, not called by main()] Secondary scan: look for DR-named
-    tickers on SET not already in the seed list. Not implemented — yfinance has
-    no ticker-search API; this needs an external SET listing source."""
-    return []
 
 
 def rank_alternatives(alternatives: list[dict]) -> list[dict]:
