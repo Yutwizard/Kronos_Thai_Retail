@@ -1860,3 +1860,30 @@ this task touches `trade_gen.py` and `daily.py`, which those suites cover.
 git add kth_dr/ kth/trading/trade_gen.py kth/pipeline/daily.py verify_dr.py data/dr/README.md CLAUDE.md
 git commit -m "fix(dr): per-currency FX pairs, broken-mapping resilience, _unresolved guard (code review 2026-07-14)"
 ```
+
+---
+
+### Post-implementation amendment (2026-07-18): sector/currency-group split
+
+Everywhere above (Task 3's `build_registration_dicts()`, Task 6's
+`generate_trade_ticket()` sector-concentration block) describes DR "sector"
+as a flat `"Global"` bucket keyed off `underlying_currency`. This was
+superseded by commits `aaadfe2` and `859608e`, which split it into two
+independently-capped concentration pools — see
+`docs/adr/0004-separate-dr-sector-and-currency-group.md` for the full
+rationale. In short:
+
+- DR sector is now a real hand-curated industry taxonomy (`DR_SECTOR` in
+  `kth_dr/universe_dr.py`), separate from SET's 10 thai_equity sectors.
+- DR currency (HKD/JPY/EUR/...) became its own concentration dimension —
+  `get_currency_group()` in `universe.py`, enforced via `MAX_CURRENCY_POSITIONS`
+  in `trade_gen.py`'s buy loop — independent of and in addition to the sector
+  cap, not a replacement for it.
+- **Schema change not listed in this plan's "Schema changes" note (Task 6):**
+  `FORECASTS_HEADERS`/`TRADE_TICKET_HEADERS` (`sheets_config.py`) gained a
+  `currency_group` column alongside the existing `sector` column, populated
+  for DR rows only.
+
+If implementing this plan fresh, apply Tasks 1–11 as written, then apply
+ADR-0004's changes on top — don't hand-write the flat-`"Global"` version and
+consider the feature done.

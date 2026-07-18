@@ -512,13 +512,23 @@ manual input.
 
 ## Kaggle persistence
 
-`data/dr/mapping.json`, `data/dr/seed_list.json`, and all DR/underlying/FX
-parquet files live under the same paths already covered by the existing
-Kaggle-Dataset cache-persistence mechanism (`./data/raw`, per the
-"multi-session support with Kaggle Dataset cache persistence" work). Action
-item during implementation: confirm the Kaggle notebook builder / dataset
-upload step's persisted-path list explicitly includes `data/dr/` — it's a new
-directory, not automatically covered just because `./data/raw` is.
+**Correction (2026-07-18):** this section originally assumed the daily
+scheduled pipeline persists `./data/raw` across sessions via a Kaggle-Dataset
+mechanism, and asked for `data/dr/` to be added to that same persisted-path
+list. That mechanism doesn't apply here — it belongs to a different,
+one-off notebook (`kaggle/kronos_backtest_rerun.ipynb`, `kagglehub.dataset_download`
+/ `dataset_create_version`) built to split a ~28hr historical backtest
+precompute across multiple sessions, and it only ever persists
+`data/forecast_cache/`, never `data/raw`.
+
+The **daily** pipeline (`kaggle/build_kaggle_notebook.py` →
+`kronos_kaggle_pipeline.ipynb`) needs no such mechanism: it `git clone`s the
+repo fresh every session and re-downloads all price data live via yfinance
+each run (see `kth/pipeline/daily.py`'s `data_loader.ensure(tickers)` call,
+which already includes DR/underlying/FX tickers in its download list).
+`data/dr/mapping.json` and `data/dr/seed_list.json` are git-tracked, so they
+arrive automatically with the `git clone` step — no separate persistence
+wiring is needed or possible to add.
 
 ## Calendar & Friction
 
