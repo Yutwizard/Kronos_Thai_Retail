@@ -530,7 +530,7 @@ def test_build_registration_dicts_skips_non_dict_entries(tmp):
     def check():
         ticker_class, sector, friction = build_registration_dicts()
         assert ticker_class == {"SAMSUNG80.BK": "dr"}, ticker_class
-        assert sector == {"SAMSUNG80.BK": "Global"}
+        assert sector == {"SAMSUNG80.BK": "KRW"}, sector
         assert "dr" in friction
     _with_test_mapping(tmp, check)
     print("PASS test_build_registration_dicts_skips_non_dict_entries")

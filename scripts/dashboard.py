@@ -229,6 +229,31 @@ def api_positions():
     return jsonify(get_positions(TRADING_MODE))
 
 
+@app.route("/api/tickers")
+def api_tickers():
+    """Tradeable tickers for the manual trade entry autocomplete: thai_equity + DR.
+
+    Excludes ^SET.BK (benchmark index, not tradeable) and DR underlying/FX
+    tickers (pricing-only, see get_dr_info_for_display).
+    """
+    from kth.data.universe import UNIVERSE, get_display_name
+    tickers = [
+        {"ticker": t, "display_name": get_display_name(t), "class": "thai_equity"}
+        for t, _, _ in UNIVERSE["thai_equity"]
+    ]
+    try:
+        from kth_dr.universe_dr import get_verified_dr_tickers, get_dr_info_for_display
+        for t in get_verified_dr_tickers():
+            info = get_dr_info_for_display(t)
+            name = f"{info['display_name']} DR" if info else t
+            tickers.append({"ticker": t, "display_name": name, "class": "dr"})
+    except ImportError:
+        pass
+    except Exception as e:
+        logger.warning(f"api_tickers: DR ticker list skipped: {e}")
+    return jsonify({"tickers": tickers})
+
+
 @app.route("/api/risk")
 def api_risk():
     from kth.trading.portfolio import compute_metrics

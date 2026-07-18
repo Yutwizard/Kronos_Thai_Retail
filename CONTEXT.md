@@ -28,6 +28,18 @@ _Avoid_: Transaction, execution (too generic)
 The accumulated shares of a single ticker across multiple trades. Computed as: `sum(all buys) - sum(all sells)`. The backtest engine tracks this as `holdings_units` in `walkforward.py`. A position can span days or weeks.
 _Avoid_: Holding, allocation (allocation is the target weight, not the actual shares)
 
+**DR (Depositary Receipt)**:
+A SET-listed instrument (ticker class `"dr"`, e.g. `TENCENT80.BK`) that tracks a foreign-exchange-listed stock. Tradeable at the standard 100-share SET board lot, same as thai_equity. Registered into the ticker/sector/friction registry via the `kth_dr` plugin's `register_asset_class()` call (`kth_dr/__init__.py`), never added to `UNIVERSE` directly. Exactly one verified DR ticker exists per underlying (`get_verified_dr_tickers()` picks the primary, most-liquid alternative) — no name-collision risk. For [[Sector Concentration]] purposes, a DR's "sector" is its underlying's currency (HKD/JPY/EUR/SGD), not an industry classification.
+_Avoid_: ADR (unrelated acronym clash with Architecture Decision Record)
+
+**Underlying Ticker**:
+The foreign-exchange-listed stock a DR tracks (e.g. `0700.HK` for `TENCENT80.BK`). Used only to price the DR's intrinsic value and compute DR Premium % — never itself a valid `ticker` in a Trade, since it isn't tradeable on the SET.
+_Avoid_: Underlying asset, reference stock
+
+**DR Premium %**:
+How far a DR's market price sits from its computed fair value: `(DR mark / DR intrinsic) − 1`, where `DR intrinsic = (underlying_close × fx_close) / ratio`. Computed per-position in `get_positions()` (`kth/trading/portfolio.py`) via `get_dr_info_for_display()`.
+_Avoid_: Tracking error (that's a benchmark-deviation concept, unrelated)
+
 **Portfolio Value**:
 The mark-to-market (MTM) total of all positions plus cash, evaluated at each day's closing prices. Tracked as `equity_curve` in `BacktestResult`. Used to compute daily returns, drawdowns, and Sharpe.
 _Avoid_: Account value, NAV, equity (too overloaded)
@@ -102,7 +114,7 @@ _Avoid_: p-value (use full term); confusing live bootstrap p-value with historic
 **Decision context:** Statistical methodology decisions documented in `docs/adr/`.
 
 **Sector Concentration**:
-A portfolio-level risk flag triggered when the buy loop would place more than 2 positions in the same SET sector (e.g., Banking, Energy, Property). Enforced by a hard filter in `trade_gen.py` using the `SECTOR` dict in `universe.py`. Not a warning — it silently skips over-concentrated picks and continues to the next ranked ticker.
+A portfolio-level risk flag triggered when the buy loop would place more than 2 positions in the same sector. For thai_equity, sector means industry (Banking, Energy, Property, ...) from the `SECTOR` dict in `universe.py`. For DR, sector means the underlying's currency (HKD, JPY, EUR, ...) — see [[DR (Depositary Receipt)]] — since DR industry classification doesn't exist yet and FX/timing correlation is the more pressing concentration risk for DR today. Enforced by the same hard filter in `trade_gen.py`, keyed off `get_sector()` regardless of asset class. Not a warning — it silently skips over-concentrated picks and continues to the next ranked ticker.
 _Avoid_: Sector cap, concentration limit
 
 **Survivorship Bias**:

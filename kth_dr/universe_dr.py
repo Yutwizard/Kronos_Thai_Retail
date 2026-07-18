@@ -125,9 +125,17 @@ def build_registration_dicts() -> tuple[dict[str, str], dict[str, str], dict[str
         # _meta is a dict but _unresolved is a list — same guard as the getters above
         if not isinstance(entry, dict) or "excluded_reason" in entry:
             continue
+        currency = entry.get("underlying_currency") or "Global"
         for alt in entry.get("alternatives", []):
             if alt.get("verified"):
                 dr_ticker = alt["dr_ticker"]
                 ticker_class[dr_ticker] = "dr"
-                sector[dr_ticker] = "Global"
+                # Grouped by underlying currency, not a flat "Global" bucket:
+                # FX exposure (and, for EUR names, correlated late market-close
+                # timing — see CLAUDE.md) is the real correlated risk across DR
+                # positions, not a single undifferentiated bucket. A literal
+                # per-exchange split was considered and rejected — NL/DK/IT
+                # each have exactly one verified DR today, so an exchange-level
+                # cap could never bind for them.
+                sector[dr_ticker] = currency
     return ticker_class, sector, friction

@@ -98,6 +98,7 @@ def load_forecasts(report_date: str = None) -> list[dict]:
                 "exec_close": round(exec_close, 2),
                 "name": resolve_display_name(ticker, get_display_name(ticker)),
                 "class": cls,
+                "sector": get_sector(exec_ticker),
                 "close": round(current_close, 2),
                 "p50_close": round(p50, 2),
                 "p5_close": round(p5, 2),
@@ -215,7 +216,8 @@ def generate_trade_ticket(report_date: str = None, positions: dict = None) -> di
     slots = max(0, MAX_POSITIONS - existing_count)
 
     # Sector counts are seeded from held tickers, which are already execution
-    # tickers (get_sector resolves DR tickers to "Global" via the plugin hook).
+    # tickers (get_sector resolves DR tickers to their underlying's currency,
+    # e.g. "HKD"/"JPY"/"EUR", via the plugin hook — not a flat "Global" bucket).
     sector_counts: dict[str, int] = {}
     for ticker in held_tickers:
         if ticker not in exited:

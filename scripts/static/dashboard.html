@@ -148,7 +148,8 @@
     <table class="modal-table">
       <tbody>
         <tr><td><label class="edit-lbl">Ticker</label></td>
-            <td><input class="hist-edit-input" id="mt-ticker" type="text" placeholder="e.g. PTT.BK" style="text-transform:uppercase"></td></tr>
+            <td><input class="hist-edit-input" id="mt-ticker" type="text" placeholder="e.g. PTT.BK or TENCENT80.BK" style="text-transform:uppercase" list="mt-ticker-list">
+                <datalist id="mt-ticker-list"></datalist></td></tr>
         <tr><td><label class="edit-lbl">Action</label></td>
             <td><select class="hist-edit-input" id="mt-action">
                   <option value="buy">buy</option>
@@ -464,6 +465,7 @@ function _tickerCell(f) {
 // Column header definitions — shown as tooltips on hover
 const COL = {
   ticker:  "Stock symbol",
+  sector:  "For thai_equity: industry sector (Banking, Energy, Property...). For DR: the underlying's currency (HKD, JPY, EUR...) — DR positions are grouped by currency for the sector concentration guard, not by industry.",
   close:   "Last known closing price (THB) — from the most recent trading day",
   expRet:  "Expected Return: model's predicted price change over the next 20 trading days (P50 forecast). ↑ = bullish, ↓ = bearish.",
   delta:   "Δ Expected Return vs previous forecast date. ▲ = model more bullish since last run, ▼ = less bullish. Does NOT measure confidence. The ↗↘ badge on the flag shows confidence-level change.",
@@ -489,6 +491,7 @@ function updateForecasts(fc) {
 
   let html = `<table><thead><tr>
     <th title="${COL.ticker}">Ticker</th>
+    <th title="${COL.sector}">Sector</th>
     <th title="${COL.close}">Close</th>
     <th title="${COL.expRet}">Exp Ret (?)</th>`;
   if (hasDelta) html += `<th title="${COL.delta}">Δ Prev (?)</th>`;
@@ -501,6 +504,7 @@ function updateForecasts(fc) {
     const retCls = f.exp_ret >= 0 ? "green" : "red";
     const flagChange = _flagDelta(f.prev_confidence, f.confidence);
     html += '<tr>' + _tickerCell(f)
+      + '<td class="muted">' + (f.sector||"—") + '</td>'
       + '<td class="num">' + (f.close?.toFixed(2)||"—") + '</td>'
       + '<td class="num ' + retCls + '">' + dir + ' ' + (f.exp_ret*100).toFixed(2) + '%</td>';
     if (hasDelta) html += '<td class="num">' + _deltaStr(f.delta_exp_ret) + '</td>';
@@ -526,6 +530,7 @@ function updateForecasts(fc) {
     <th title="${COL.rank}">#</th>
     <th title="${COL.ticker}">Ticker</th>
     <th>Name</th>
+    <th title="${COL.sector}">Sector</th>
     <th title="${COL.close}">Close</th>
     <th title="${COL.expRet}">Exp Ret (?)</th>`;
   if (hasDelta) rankHtml += `<th title="${COL.delta}">Δ (?)</th>`;
@@ -539,6 +544,7 @@ function updateForecasts(fc) {
     rankHtml += '<tr class="rank-row" data-ticker="' + f.ticker.toLowerCase() + '">'
       + '<td>' + (i+1) + '</td>' + _tickerCell(f)
       + '<td class="muted">' + (f.name||"") + '</td>'
+      + '<td class="muted">' + (f.sector||"—") + '</td>'
       + '<td class="num">' + (f.close?.toFixed(2)||"—") + '</td>'
       + '<td class="num ' + retCls + '">' + dir + ' ' + (f.exp_ret*100).toFixed(2) + '%</td>';
     if (hasDelta) rankHtml += '<td class="num" style="font-size:0.78em">' + _deltaStr(f.delta_exp_ret) + '</td>';
@@ -740,6 +746,20 @@ function _updModalTotalBar() {
 function closeModal() { $("trade-modal").classList.add("hidden"); }
 
 // ── Manual trade entry ───────────────────────────────────────
+let _tickerListCache = null;
+async function _populateTickerDatalist() {
+  const dl = $("mt-ticker-list");
+  if (!dl) return;
+  if (!_tickerListCache) {
+    try {
+      const data = await fetchJSON("/api/tickers");
+      _tickerListCache = data.tickers || [];
+    } catch { _tickerListCache = []; }
+  }
+  dl.innerHTML = _tickerListCache
+    .map(t => `<option value="${t.ticker}">${t.display_name}</option>`).join("");
+}
+
 function openManualTrade() {
   $("mt-ticker").value = "";
   $("mt-action").value = "buy";
@@ -747,6 +767,7 @@ function openManualTrade() {
   $("mt-price").value = "";
   $("manual-modal").classList.remove("hidden");
   $("mt-ticker").focus();
+  _populateTickerDatalist();
 }
 function closeManualTrade() { $("manual-modal").classList.add("hidden"); }
 
@@ -869,6 +890,7 @@ async function loadRankingForDate(selectedDate) {
     <th title="${COL.rank}">#</th>
     <th title="${COL.ticker}">Ticker</th>
     <th>Name</th>
+    <th title="${COL.sector}">Sector</th>
     <th title="${COL.close}">Close</th>
     <th title="${COL.expRet}">Exp Ret (?)</th>`;
   if (hasDelta) rankHtml += `<th title="${COL.delta}">Δ (?)</th>`;
@@ -882,6 +904,7 @@ async function loadRankingForDate(selectedDate) {
     rankHtml += '<tr class="rank-row" data-ticker="' + f.ticker.toLowerCase() + '">'
       + '<td>' + (i+1) + '</td>' + _tickerCell(f)
       + '<td class="muted">' + (f.name||"") + '</td>'
+      + '<td class="muted">' + (f.sector||"—") + '</td>'
       + '<td class="num">' + (f.close?.toFixed(2)||"—") + '</td>'
       + '<td class="num ' + retCls + '">' + dir + ' ' + (f.exp_ret*100).toFixed(2) + '%</td>';
     if (hasDelta) rankHtml += '<td class="num" style="font-size:0.78em">' + _deltaStr(f.delta_exp_ret) + '</td>';
