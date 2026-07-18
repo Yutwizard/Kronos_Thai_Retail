@@ -924,7 +924,7 @@ function renderForecasts(forecasts, forecastHistory) {
     return '<td class="num ' + cls + '" data-val="' + d + '">' + arrow + ' ' + fmt.pct(d) + '</td>';
   }
 
-  function _fcRow(r) {
+  function _fcRow(r, omitSector) {
     return '<tr>' +
       _td(r.ticker) +
       _tdNum(fmt.ratio(r.rank_score), r.rank_score) +
@@ -933,11 +933,11 @@ function renderForecasts(forecasts, forecastHistory) {
       '<td>' + confBadge(r.confidence) + '</td>' +
       _tdNum(fmt.pct(r.net_return), r.net_return) +
       _tdNum(r.p50 != null ? fmt.thb(r.p50) : '—', r.p50) +
-      _td(r.sector) +
+      (omitSector ? '' : _td(r.sector)) +
     '</tr>';
   }
 
-  var fcRows = forecasts.map(_fcRow).join('');
+  var fcRows = forecasts.map(function(r) { return _fcRow(r, false); }).join('');
 
   // Top 10 Bulls / Bottom 10 Bears — informational split of the same
   // rank_score ordering, no trade-selection impact (strategy is long-only).
@@ -953,9 +953,8 @@ function renderForecasts(forecasts, forecastHistory) {
         '<th scope="col">Confidence</th>' +
         '<th scope="col">Net Return</th>' +
         '<th scope="col">P50 Price</th>' +
-        '<th scope="col">Sector</th>' +
       '</tr></thead>' +
-      '<tbody>' + rows.map(_fcRow).join('') + '</tbody></table></div>';
+      '<tbody>' + rows.map(function(r) { return _fcRow(r, true); }).join('') + '</tbody></table></div>';
   }
   var bullBearHtml =
     '<h3>Top 10 Bulls</h3>' + _bullBearTable(bulls) +
