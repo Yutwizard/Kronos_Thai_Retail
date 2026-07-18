@@ -310,6 +310,39 @@ def test_no_inline_friction_fallbacks_remain():
     print("PASS test_no_inline_friction_fallbacks_remain")
 
 
+def test_tier_tagging():
+    """Bull/bear tier tagging: display-only classification for dashboard top/bottom-N views."""
+    from kth.trading.trade_gen import _tag_tiers
+
+    rows = [{"rank_score": 30 - i} for i in range(30)]  # sorted desc, 30 rows
+    tagged = _tag_tiers(rows, n=10)
+    assert [r["tier"] for r in tagged[:10]] == ["bull"] * 10
+    assert [r["tier"] for r in tagged[10:20]] == [""] * 10
+    assert [r["tier"] for r in tagged[20:]] == ["bear"] * 10
+    print("PASS test_tier_tagging")
+
+
+def test_tier_tagging_overlapping_top_bottom_no_double_tag():
+    """When total < 2*n, top-n and bottom-n windows overlap; if/elif keeps tags exclusive."""
+    from kth.trading.trade_gen import _tag_tiers
+
+    rows = [{"rank_score": 15 - i} for i in range(15)]  # 15 rows, n=10
+    tagged = _tag_tiers(rows, n=10)
+    assert [r["tier"] for r in tagged[:10]] == ["bull"] * 10
+    assert [r["tier"] for r in tagged[10:]] == ["bear"] * 5
+    print("PASS test_tier_tagging_overlapping_top_bottom_no_double_tag")
+
+
+def test_tier_tagging_all_bull_when_total_at_most_n():
+    """When len(rows) <= n, the 'bull' branch (i < n) wins for every index -- degrades to all-bull."""
+    from kth.trading.trade_gen import _tag_tiers
+
+    rows = [{"rank_score": 5 - i} for i in range(5)]  # 5 rows, n=10
+    tagged = _tag_tiers(rows, n=10)
+    assert [r["tier"] for r in tagged] == ["bull"] * 5
+    print("PASS test_tier_tagging_all_bull_when_total_at_most_n")
+
+
 if __name__ == "__main__":
     import inspect
     import tempfile

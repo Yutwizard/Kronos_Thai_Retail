@@ -635,7 +635,7 @@ def _write_all_staging(sh, ohlcv_dict: dict, ticket_data: dict,
                   [[today_str, r['ticker'], r['rank_score'], r['exp_ret'],
                     r['band_width'], r['confidence'], r['net_ret'],
                     r['p5_close'], r['p50_close'], r['p95_close'],
-                    get_sector(r['ticker'])] for r in fc_rows],
+                    get_sector(r['ticker']), r.get('tier', '')] for r in fc_rows],
                   sleep_sec=staging_sleep)
 
     tt_rows = []

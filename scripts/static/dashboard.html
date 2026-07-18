@@ -82,13 +82,13 @@
         <div id="positions-body"></div>
       </section>
       <section id="morning-panel" class="panel">
-        <h2>Morning Brief — Top 10 <span id="morning-data-badge" class="data-date-badge"></span></h2>
+        <h2>Morning Brief <span id="morning-data-badge" class="data-date-badge"></span></h2>
         <div id="morning-body"></div>
       </section>
     </div>
 
     <section id="ranking-panel" class="panel collapsible">
-      <h2 onclick="toggleRanking()">Full Ranking (49 tickers) <span id="rank-toggle">▼</span> <span id="ranking-data-badge" class="data-date-badge"></span></h2>
+      <h2 onclick="toggleRanking()">Full Ranking <span id="ranking-count-badge"></span> <span id="rank-toggle">▼</span> <span id="ranking-data-badge" class="data-date-badge"></span></h2>
       <div id="ranking-controls">
         <input type="text" id="ranking-search-input" placeholder="Search ticker..." oninput="filterRanking(this.value)">
         <select id="ranking-date-select" class="date-select" onchange="loadRankingForDate(this.value)" title="View rankings from a past pipeline run date">
@@ -473,6 +473,7 @@ const COL = {
   flag:    "Confidence flag based on Band width. 🟢 <10% (confident). 🟡 10–30% (moderate). 🔴 >30% (uncertain, avoid). ↗ = confidence improved vs prev forecast. ↘ = confidence downgraded (e.g. HOLD → REDUCE trigger).",
   netRet:  "Net Return = Expected Return minus round-trip friction cost (commission + slippage). This is what you actually keep after trading costs.",
   rank:    "Rank by signal strength (expected return ÷ band width). Higher rank = stronger, more confident signal.",
+  score:   "Rank score = Expected Return ÷ Uncertainty Band. Higher (more positive) = stronger bullish signal. Lower (more negative) = stronger bearish signal.",
 };
 
 const LEGEND_MORNING = `
@@ -483,29 +484,27 @@ const LEGEND_MORNING = `
   <strong>Net Ret</strong> After friction costs
 </div>`;
 
-function updateForecasts(fc) {
-  if (!fc || !fc.forecasts) return;
-  const hasDelta = fc.forecasts.some(f => f.delta_exp_ret !== undefined);
-  const prevLabel = fc.prev ? ' vs ' + fc.prev : '';
-  const top10 = fc.forecasts.slice(0, 10);
-
+// Shared table builder for the Top 10 Bulls / Bottom 10 Bears sections.
+function _buildBullBearTable(rows, hasDelta) {
   let html = `<table><thead><tr>
     <th title="${COL.ticker}">Ticker</th>
     <th title="${COL.sector}">Sector</th>
     <th title="${COL.close}">Close</th>
+    <th title="${COL.score}">Score (?)</th>
     <th title="${COL.expRet}">Exp Ret (?)</th>`;
   if (hasDelta) html += `<th title="${COL.delta}">Δ Prev (?)</th>`;
   html += `<th title="${COL.band}">Band (?)</th>
     <th title="${COL.flag}">Flag (?)</th>
     <th title="${COL.netRet}">Net Ret (?)</th>
   </tr></thead><tbody>`;
-  for (const f of top10) {
+  for (const f of rows) {
     const dir = f.direction === "up" ? "↑" : "↓";
     const retCls = f.exp_ret >= 0 ? "green" : "red";
     const flagChange = _flagDelta(f.prev_confidence, f.confidence);
     html += '<tr>' + _tickerCell(f)
       + '<td class="muted">' + (f.sector||"—") + '</td>'
       + '<td class="num">' + (f.close?.toFixed(2)||"—") + '</td>'
+      + '<td class="num ' + (f.rank_score>=0?"green":"red") + '">' + f.rank_score.toFixed(2) + '</td>'
       + '<td class="num ' + retCls + '">' + dir + ' ' + (f.exp_ret*100).toFixed(2) + '%</td>';
     if (hasDelta) html += '<td class="num">' + _deltaStr(f.delta_exp_ret) + '</td>';
     html += '<td class="num">' + (f.band_width*100).toFixed(1) + '%</td>'
@@ -513,9 +512,63 @@ function updateForecasts(fc) {
       + '<td class="num ' + (f.net_ret>=0?"green":"red") + '">' + (f.net_ret*100).toFixed(2) + '%</td></tr>';
   }
   html += '</tbody></table>';
+  return html;
+}
+
+// Shared table builder for the Full Ranking section — used both for the
+// live forecast (updateForecasts) and a historical run date (loadRankingForDate).
+function _buildRankingTable(forecasts, hasDelta) {
+  let rankHtml = `<table><thead><tr>
+    <th title="${COL.rank}">#</th>
+    <th title="${COL.ticker}">Ticker</th>
+    <th>Name</th>
+    <th title="${COL.sector}">Sector</th>
+    <th title="${COL.close}">Close</th>
+    <th title="${COL.score}">Score (?)</th>
+    <th title="${COL.expRet}">Exp Ret (?)</th>`;
+  if (hasDelta) rankHtml += `<th title="${COL.delta}">Δ (?)</th>`;
+  rankHtml += `<th title="${COL.band}">Band (?)</th>
+    <th title="${COL.flag}">Flag (?)</th>
+  </tr></thead><tbody>`;
+  forecasts.forEach((f, i) => {
+    const dir = f.direction === "up" ? "↑" : "↓";
+    const retCls = f.exp_ret >= 0 ? "green" : "red";
+    const flagChange = _flagDelta(f.prev_confidence, f.confidence);
+    rankHtml += '<tr class="rank-row" data-ticker="' + f.ticker.toLowerCase() + '">'
+      + '<td>' + (i+1) + '</td>' + _tickerCell(f)
+      + '<td class="muted">' + (f.name||"") + '</td>'
+      + '<td class="muted">' + (f.sector||"—") + '</td>'
+      + '<td class="num">' + (f.close?.toFixed(2)||"—") + '</td>'
+      + '<td class="num ' + (f.rank_score>=0?"green":"red") + '">' + f.rank_score.toFixed(2) + '</td>'
+      + '<td class="num ' + retCls + '">' + dir + ' ' + (f.exp_ret*100).toFixed(2) + '%</td>';
+    if (hasDelta) rankHtml += '<td class="num" style="font-size:0.78em">' + _deltaStr(f.delta_exp_ret) + '</td>';
+    rankHtml += '<td class="num">' + (f.band_width*100).toFixed(1) + '%</td>'
+      + '<td>' + _flagEmoji(f.confidence) + flagChange + '</td></tr>';
+  });
+  rankHtml += '</tbody></table>';
+  return rankHtml;
+}
+
+// Builds the Morning Brief markup: Top 10 Bulls + Bottom 10 Bears (informational only).
+function _buildMorningBrief(forecasts, hasDelta, compareNote) {
+  const bulls = forecasts.slice(0, 10);
+  const bears = forecasts.slice(-10).reverse();
+  let html = '<h3>Top 10 Bulls</h3>' + _buildBullBearTable(bulls, hasDelta);
   html += LEGEND_MORNING;
-  if (hasDelta && fc.prev) html += '<p class="compare-note">Δ compared to forecast from ' + fc.prev + ' — hover column headers (?) for definitions</p>';
-  $("morning-body").innerHTML = html;
+  if (compareNote) html += '<p class="compare-note">' + compareNote + '</p>';
+  html += '<h3>Bottom 10 Bears</h3>';
+  html += '<p class="compare-note">Informational only — no trade action implied (strategy is long-only).</p>';
+  html += _buildBullBearTable(bears, hasDelta);
+  return html;
+}
+
+function updateForecasts(fc) {
+  if (!fc || !fc.forecasts) return;
+  const hasDelta = fc.forecasts.some(f => f.delta_exp_ret !== undefined);
+  const compareNote = (hasDelta && fc.prev)
+    ? 'Δ compared to forecast from ' + fc.prev + ' — hover column headers (?) for definitions'
+    : null;
+  $("morning-body").innerHTML = _buildMorningBrief(fc.forecasts, hasDelta, compareNote);
 
   // Data date badge — shown in both section headings
   if (fc.data_date) {
@@ -526,37 +579,15 @@ function updateForecasts(fc) {
     if (el2) el2.textContent = badge;
   }
 
-  let rankHtml = `<table><thead><tr>
-    <th title="${COL.rank}">#</th>
-    <th title="${COL.ticker}">Ticker</th>
-    <th>Name</th>
-    <th title="${COL.sector}">Sector</th>
-    <th title="${COL.close}">Close</th>
-    <th title="${COL.expRet}">Exp Ret (?)</th>`;
-  if (hasDelta) rankHtml += `<th title="${COL.delta}">Δ (?)</th>`;
-  rankHtml += `<th title="${COL.band}">Band (?)</th>
-    <th title="${COL.flag}">Flag (?)</th>
-  </tr></thead><tbody>`;
-  fc.forecasts.forEach((f, i) => {
-    const dir = f.direction === "up" ? "↑" : "↓";
-    const retCls = f.exp_ret >= 0 ? "green" : "red";
-    const flagChange = _flagDelta(f.prev_confidence, f.confidence);
-    rankHtml += '<tr class="rank-row" data-ticker="' + f.ticker.toLowerCase() + '">'
-      + '<td>' + (i+1) + '</td>' + _tickerCell(f)
-      + '<td class="muted">' + (f.name||"") + '</td>'
-      + '<td class="muted">' + (f.sector||"—") + '</td>'
-      + '<td class="num">' + (f.close?.toFixed(2)||"—") + '</td>'
-      + '<td class="num ' + retCls + '">' + dir + ' ' + (f.exp_ret*100).toFixed(2) + '%</td>';
-    if (hasDelta) rankHtml += '<td class="num" style="font-size:0.78em">' + _deltaStr(f.delta_exp_ret) + '</td>';
-    rankHtml += '<td class="num">' + (f.band_width*100).toFixed(1) + '%</td>'
-      + '<td>' + _flagEmoji(f.confidence) + flagChange + '</td></tr>';
-  });
-  rankHtml += '</tbody></table>';
-  $("ranking-body").innerHTML = rankHtml;
+  const count = fc.forecasts.length;
+  const countBadge = $("ranking-count-badge");
+  if (countBadge) countBadge.textContent = `(${count} tickers)`;
+
+  $("ranking-body").innerHTML = _buildRankingTable(fc.forecasts, hasDelta);
 
   const redCount = fc.forecasts.filter(f => f.confidence === "red").length;
   if (redCount > 30) {
-    $("banner-area").innerHTML += '<span class="banner warn">High uncertainty — ' + redCount + '/49 tickers flagged red. Stay in cash.</span>';
+    $("banner-area").innerHTML += '<span class="banner warn">High uncertainty — ' + redCount + '/' + count + ' tickers flagged red. Stay in cash.</span>';
     $("trade-ticket").classList.add("hidden");
   } else {
     $("trade-ticket").classList.remove("hidden");
@@ -884,40 +915,23 @@ async function loadRankingForDate(selectedDate) {
   const fc = await fetchJSON(`/api/forecasts/history/${selectedDate}`);
   if (!fc) { $("ranking-data-badge").textContent = "❌ Failed"; return; }
 
-  // Render ranking table for the selected date
+  // Render ranking table + morning brief bull/bear split for the selected date
   const hasDelta = fc.forecasts.some(f => f.delta_exp_ret !== undefined);
-  let rankHtml = `<table><thead><tr>
-    <th title="${COL.rank}">#</th>
-    <th title="${COL.ticker}">Ticker</th>
-    <th>Name</th>
-    <th title="${COL.sector}">Sector</th>
-    <th title="${COL.close}">Close</th>
-    <th title="${COL.expRet}">Exp Ret (?)</th>`;
-  if (hasDelta) rankHtml += `<th title="${COL.delta}">Δ (?)</th>`;
-  rankHtml += `<th title="${COL.band}">Band (?)</th>
-    <th title="${COL.flag}">Flag (?)</th>
-  </tr></thead><tbody>`;
-  fc.forecasts.forEach((f, i) => {
-    const dir = f.direction === "up" ? "↑" : "↓";
-    const retCls = f.exp_ret >= 0 ? "green" : "red";
-    const flagChange = _flagDelta(f.prev_confidence, f.confidence);
-    rankHtml += '<tr class="rank-row" data-ticker="' + f.ticker.toLowerCase() + '">'
-      + '<td>' + (i+1) + '</td>' + _tickerCell(f)
-      + '<td class="muted">' + (f.name||"") + '</td>'
-      + '<td class="muted">' + (f.sector||"—") + '</td>'
-      + '<td class="num">' + (f.close?.toFixed(2)||"—") + '</td>'
-      + '<td class="num ' + retCls + '">' + dir + ' ' + (f.exp_ret*100).toFixed(2) + '%</td>';
-    if (hasDelta) rankHtml += '<td class="num" style="font-size:0.78em">' + _deltaStr(f.delta_exp_ret) + '</td>';
-    rankHtml += '<td class="num">' + (f.band_width*100).toFixed(1) + '%</td>'
-      + '<td>' + _flagEmoji(f.confidence) + flagChange + '</td></tr>';
-  });
-  rankHtml += '</tbody></table>';
+  let rankHtml = _buildRankingTable(fc.forecasts, hasDelta);
   if (fc.prev) rankHtml += '<p class="compare-note">Δ vs forecast from ' + fc.prev + '</p>';
   $("ranking-body").innerHTML = rankHtml;
+
+  const compareNote = fc.prev ? 'Δ compared to forecast from ' + fc.prev : null;
+  $("morning-body").innerHTML = _buildMorningBrief(fc.forecasts, hasDelta, compareNote);
+
+  const countBadge = $("ranking-count-badge");
+  if (countBadge) countBadge.textContent = `(${fc.forecasts.length} tickers)`;
 
   // Update badge with data date
   const badge = fc.data_date ? `📅 Data: ${fc.data_date}` : `📅 Run: ${selectedDate}`;
   $("ranking-data-badge").textContent = badge;
+  const morningBadge = $("morning-data-badge");
+  if (morningBadge) morningBadge.textContent = badge;
 }
 
 refresh().then(checkSetupNeeded);

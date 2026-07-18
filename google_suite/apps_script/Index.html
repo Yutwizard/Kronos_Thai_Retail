@@ -914,30 +914,55 @@ function renderForecasts(forecasts, forecastHistory) {
     ? '<span class="data-badge">📅 Data: ' + fmt.date(forecasts[0].date_updated) + '</span>'
     : '';
 
-  var fcRows = forecasts.map(function(r) {
-    var deltaCell = '';
-    if (hasDelta) {
-      var prev = prevMap[r.ticker];
-      if (prev != null) {
-        var d = r.exp_ret - prev;
-        var cls = d > 0.001 ? 'delta-up' : d < -0.001 ? 'delta-down' : '';
-        var arrow = d > 0.001 ? '▲' : d < -0.001 ? '▼' : '—';
-        deltaCell = '<td class="num ' + cls + '" data-val="' + d + '">' + arrow + ' ' + fmt.pct(d) + '</td>';
-      } else {
-        deltaCell = '<td class="num" style="color:var(--gray)">new</td>';
-      }
-    }
+  function _deltaCell(r) {
+    if (!hasDelta) return '';
+    var prev = prevMap[r.ticker];
+    if (prev == null) return '<td class="num" style="color:var(--gray)">new</td>';
+    var d = r.exp_ret - prev;
+    var cls = d > 0.001 ? 'delta-up' : d < -0.001 ? 'delta-down' : '';
+    var arrow = d > 0.001 ? '▲' : d < -0.001 ? '▼' : '—';
+    return '<td class="num ' + cls + '" data-val="' + d + '">' + arrow + ' ' + fmt.pct(d) + '</td>';
+  }
+
+  function _fcRow(r) {
     return '<tr>' +
       _td(r.ticker) +
       _tdNum(fmt.ratio(r.rank_score), r.rank_score) +
       _tdNum(fmt.pct(r.exp_ret), r.exp_ret) +
-      (hasDelta ? deltaCell : '') +
+      _deltaCell(r) +
       '<td>' + confBadge(r.confidence) + '</td>' +
       _tdNum(fmt.pct(r.net_return), r.net_return) +
       _tdNum(r.p50 != null ? fmt.thb(r.p50) : '—', r.p50) +
       _td(r.sector) +
     '</tr>';
-  }).join('');
+  }
+
+  var fcRows = forecasts.map(_fcRow).join('');
+
+  // Top 10 Bulls / Bottom 10 Bears — informational split of the same
+  // rank_score ordering, no trade-selection impact (strategy is long-only).
+  var bulls = forecasts.slice(0, 10);
+  var bears = forecasts.slice(-10).slice().reverse();
+  function _bullBearTable(rows) {
+    return '<div class="table-wrapper"><table>' +
+      '<thead><tr>' +
+        '<th scope="col">Ticker</th>' +
+        '<th scope="col" title="Expected return / uncertainty band — higher = stronger, more confident signal">Rank Score</th>' +
+        '<th scope="col" title="Expected 20-day return from today\'s close price">Exp Return</th>' +
+        (hasDelta ? '<th scope="col">Δ Prev</th>' : '') +
+        '<th scope="col">Confidence</th>' +
+        '<th scope="col">Net Return</th>' +
+        '<th scope="col">P50 Price</th>' +
+        '<th scope="col">Sector</th>' +
+      '</tr></thead>' +
+      '<tbody>' + rows.map(_fcRow).join('') + '</tbody></table></div>';
+  }
+  var bullBearHtml =
+    '<h3>Top 10 Bulls</h3>' + _bullBearTable(bulls) +
+    '<h3>Bottom 10 Bears</h3>' +
+    '<p style="color:var(--text-muted);font-size:0.85rem;margin:4px 0 8px">' +
+      'Informational only — no trade action implied (strategy is long-only).' +
+    '</p>' + _bullBearTable(bears);
 
   // Store for date-selector filter
   _forecastHistory = forecastHistory || [];
@@ -970,6 +995,8 @@ function renderForecasts(forecasts, forecastHistory) {
     '</div>' +
     '<div id="sub-fc">' +
       '<p style="margin-bottom:8px">' + dataDate + '</p>' +
+      bullBearHtml +
+      '<h3>Full Ranking (' + forecasts.length + ' tickers)</h3>' +
       '<div class="table-wrapper">' +
       '<table id="tbl-forecasts">' +
       '<thead><tr>' +

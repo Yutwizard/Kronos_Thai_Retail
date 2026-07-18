@@ -29,7 +29,7 @@ POSITIONS_HEADERS = ['ticker', 'shares', 'avg_cost', 'entry_date', 'sector',
 TRADE_LOG_HEADERS = ['timestamp', 'ticker', 'action', 'shares', 'price', 'rationale',
                      'friction_cost', 'model_version', 'id', 'ref_id']
 FORECASTS_HEADERS = ['date_updated', 'ticker', 'rank_score', 'exp_ret', 'band_width',
-                     'confidence', 'net_return', 'p5', 'p50', 'p95', 'sector']
+                     'confidence', 'net_return', 'p5', 'p50', 'p95', 'sector', 'tier']
 FORECAST_HISTORY_HEADERS = ['date', 'ticker', 'predicted_direction', 'predicted_return',
                             'entry_close', 'actual_return', 'was_correct']
 TRADE_TICKET_HEADERS = ['ticker', 'action', 'shares', 'est_cost_thb', 'rationale',

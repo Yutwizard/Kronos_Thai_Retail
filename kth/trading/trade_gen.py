@@ -17,6 +17,7 @@ CACHE_DIR = Path("data/forecast_cache") / CACHE_SLUG
 POSITIONS_DIR = Path("data/positions")
 MAX_POSITIONS = 5
 MAX_SECTOR_POSITIONS = 2
+TOP_N = 10
 THAI_TICKERS = [t for t, _, _ in UNIVERSE["thai_equity"]]
 try:
     from kth_dr.universe_dr import get_dr_underlying_tickers
@@ -36,6 +37,26 @@ BACKTEST_METRICS = {
 
 def _safe_ticker(ticker: str) -> str:
     return ticker.replace("^", "_").replace("=", "_")
+
+
+def _tag_tiers(rows: list[dict], n: int = TOP_N) -> list[dict]:
+    """Tag each row (already sorted desc by rank_score) with tier "bull"/"bear"/"".
+
+    Display-only classification for the dashboard's top/bottom-N views — does
+    not feed trade selection. if/elif keeps top-n and bottom-n windows
+    mutually exclusive even when they'd overlap (total < 2*n); if total <= n
+    every row falls in the "bull" branch. Doesn't occur in practice (~87
+    tradable tickers).
+    """
+    total = len(rows)
+    for i, r in enumerate(rows):
+        if i < n:
+            r["tier"] = "bull"
+        elif i >= total - n:
+            r["tier"] = "bear"
+        else:
+            r["tier"] = ""
+    return rows
 
 
 def load_forecasts(report_date: str = None) -> list[dict]:
@@ -118,7 +139,7 @@ def load_forecasts(report_date: str = None) -> list[dict]:
             continue
 
     rows.sort(key=lambda x: x["rank_score"], reverse=True)
-    return rows
+    return _tag_tiers(rows)
 
 
 def _next_business_day(d: date) -> date:
