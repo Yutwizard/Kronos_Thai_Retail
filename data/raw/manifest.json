@@ -1,50 +1,50 @@
 {
-  "written_at": "2026-07-18T21:15:48.784088",
-  "download_date": "2026-07-18",
+  "written_at": "2026-07-19T20:56:49.607016",
+  "download_date": "2026-07-19",
   "tickers": {
     "PTT.BK": {
       "rows": 2433,
-      "sha256_short": "d45c649b841a487a",
+      "sha256_short": "6ba973e1f2c1cea6",
       "last_date": "2026-07-17 00:00:00"
     },
     "KBANK.BK": {
       "rows": 2433,
-      "sha256_short": "c849753bef09be5a",
+      "sha256_short": "3ef641b87449c944",
       "last_date": "2026-07-17 00:00:00"
     },
     "SCB.BK": {
       "rows": 1029,
-      "sha256_short": "58643fc7cb7e0235",
+      "sha256_short": "a1591e132fcf4763",
       "last_date": "2026-07-17 00:00:00"
     },
     "BBL.BK": {
       "rows": 2433,
-      "sha256_short": "4997e71083a95079",
+      "sha256_short": "f5829d0eb87f4ebc",
       "last_date": "2026-07-17 00:00:00"
     },
     "CPALL.BK": {
       "rows": 2433,
-      "sha256_short": "aa50905bc802fdce",
+      "sha256_short": "ca5002e9de880daa",
       "last_date": "2026-07-17 00:00:00"
     },
     "DELTA.BK": {
       "rows": 2433,
-      "sha256_short": "4e2667b78da1726f",
+      "sha256_short": "4b058e5d28b66258",
       "last_date": "2026-07-17 00:00:00"
     },
     "ADVANC.BK": {
       "rows": 2433,
-      "sha256_short": "f057dad2351d1073",
+      "sha256_short": "0b3b2a5d7f79f3ce",
       "last_date": "2026-07-17 00:00:00"
     },
     "AOT.BK": {
       "rows": 2433,
-      "sha256_short": "6ef5d1a86bd7ed12",
+      "sha256_short": "fa4d03931d7b0159",
       "last_date": "2026-07-17 00:00:00"
     },
     "BDMS.BK": {
       "rows": 2433,
-      "sha256_short": "4a4c21f48487fcdc",
+      "sha256_short": "82887c2c1bce05a0",
       "last_date": "2026-07-17 00:00:00"
     },
     "GULF.BK": {
@@ -54,227 +54,227 @@
     },
     "PTTEP.BK": {
       "rows": 2433,
-      "sha256_short": "a309066d86ee43f0",
+      "sha256_short": "669b9445e6b43be9",
       "last_date": "2026-07-17 00:00:00"
     },
     "CPN.BK": {
       "rows": 2433,
-      "sha256_short": "be2fa3d8ec02efbc",
+      "sha256_short": "6ac8d5bb189c0449",
       "last_date": "2026-07-17 00:00:00"
     },
     "MINT.BK": {
       "rows": 2433,
-      "sha256_short": "01f2a543af22ce85",
+      "sha256_short": "604d145724ecc5e0",
       "last_date": "2026-07-17 00:00:00"
     },
     "BH.BK": {
       "rows": 2433,
-      "sha256_short": "66174f8ede2133bd",
+      "sha256_short": "684e6beda8f9ef42",
       "last_date": "2026-07-17 00:00:00"
     },
     "IVL.BK": {
       "rows": 2433,
-      "sha256_short": "1e2eeed52c958c03",
+      "sha256_short": "12e1a91da2331c26",
       "last_date": "2026-07-17 00:00:00"
     },
     "BGRIM.BK": {
       "rows": 2187,
-      "sha256_short": "e5567474c888c5f4",
+      "sha256_short": "67cd79976a9fb430",
       "last_date": "2026-07-17 00:00:00"
     },
     "GPSC.BK": {
       "rows": 2433,
-      "sha256_short": "f9d8a857b9be7675",
+      "sha256_short": "e5e12c527889b1d0",
       "last_date": "2026-07-17 00:00:00"
     },
     "TOP.BK": {
       "rows": 2433,
-      "sha256_short": "7d6e03527b317268",
+      "sha256_short": "552ceea247727b32",
       "last_date": "2026-07-17 00:00:00"
     },
     "IRPC.BK": {
       "rows": 2433,
-      "sha256_short": "9e49a4f4cc66e3e7",
+      "sha256_short": "d079d1eac5705cc8",
       "last_date": "2026-07-17 00:00:00"
     },
     "BANPU.BK": {
       "rows": 2433,
-      "sha256_short": "ea9f225345aedb6a",
+      "sha256_short": "0e614e033c4e374b",
       "last_date": "2026-07-17 00:00:00"
     },
     "BCP.BK": {
       "rows": 2433,
-      "sha256_short": "b6c16fbdfbb45664",
+      "sha256_short": "d472429f75d05771",
       "last_date": "2026-07-17 00:00:00"
     },
     "RATCH.BK": {
       "rows": 2433,
-      "sha256_short": "eaab8968eaaa1599",
+      "sha256_short": "dfefddeeaa269be7",
       "last_date": "2026-07-17 00:00:00"
     },
     "KTB.BK": {
       "rows": 2433,
-      "sha256_short": "401ee408275a98df",
+      "sha256_short": "719c85432a5393a2",
       "last_date": "2026-07-17 00:00:00"
     },
     "TISCO.BK": {
       "rows": 2433,
-      "sha256_short": "d3b35e6da23ef9d1",
+      "sha256_short": "b98560236485d4f5",
       "last_date": "2026-07-17 00:00:00"
     },
     "TCAP.BK": {
       "rows": 2433,
-      "sha256_short": "7085d0b195f9be31",
+      "sha256_short": "0ac2896055b7e7d3",
       "last_date": "2026-07-17 00:00:00"
     },
     "KKP.BK": {
       "rows": 2433,
-      "sha256_short": "99b92f498d706c32",
+      "sha256_short": "145e5dcc3ddab744",
       "last_date": "2026-07-17 00:00:00"
     },
     "MEGA.BK": {
       "rows": 2433,
-      "sha256_short": "efcb7533a27d9dc8",
+      "sha256_short": "302e7fbee3206c66",
       "last_date": "2026-07-17 00:00:00"
     },
     "LH.BK": {
       "rows": 2433,
-      "sha256_short": "3a70b8e38491b0e9",
+      "sha256_short": "a02013fb1b1606fc",
       "last_date": "2026-07-17 00:00:00"
     },
     "QH.BK": {
       "rows": 2433,
-      "sha256_short": "98d4015b8a816d68",
+      "sha256_short": "ab17885ce1f418e9",
       "last_date": "2026-07-17 00:00:00"
     },
     "AP.BK": {
       "rows": 2433,
-      "sha256_short": "e2fc7ae4b10a6108",
+      "sha256_short": "d487310df51022f8",
       "last_date": "2026-07-17 00:00:00"
     },
     "ORI.BK": {
       "rows": 2433,
-      "sha256_short": "94383fca1fe7f050",
+      "sha256_short": "3e77c8a6c03035db",
       "last_date": "2026-07-17 00:00:00"
     },
     "SCC.BK": {
       "rows": 2433,
-      "sha256_short": "20f0a5747ff44050",
+      "sha256_short": "e4e4336f94b65bf6",
       "last_date": "2026-07-17 00:00:00"
     },
     "HMPRO.BK": {
       "rows": 2433,
-      "sha256_short": "4b00d409122bd1de",
+      "sha256_short": "493dcf20cc6edd5f",
       "last_date": "2026-07-17 00:00:00"
     },
     "SIRI.BK": {
       "rows": 2433,
-      "sha256_short": "d6d99c3943e5268f",
+      "sha256_short": "792b2ad14d0d8bb8",
       "last_date": "2026-07-17 00:00:00"
     },
     "PSH.BK": {
       "rows": 2339,
-      "sha256_short": "90dfa5700facba32",
+      "sha256_short": "55270f31ae5b1be1",
       "last_date": "2026-07-17 00:00:00"
     },
     "CPF.BK": {
       "rows": 2433,
-      "sha256_short": "151526957d62c084",
+      "sha256_short": "04c025dae020b459",
       "last_date": "2026-07-17 00:00:00"
     },
     "OSP.BK": {
       "rows": 1882,
-      "sha256_short": "6c086f2af6e5adfb",
+      "sha256_short": "b5f296edb5ae9b34",
       "last_date": "2026-07-17 00:00:00"
     },
     "ICHI.BK": {
       "rows": 2433,
-      "sha256_short": "ea7d0093e7737d9e",
+      "sha256_short": "12986479e1a27097",
       "last_date": "2026-07-17 00:00:00"
     },
     "CRC.BK": {
       "rows": 1554,
-      "sha256_short": "d3a0875e68b55000",
+      "sha256_short": "d2c9f4eb66e47090",
       "last_date": "2026-07-17 00:00:00"
     },
     "GLOBAL.BK": {
       "rows": 2433,
-      "sha256_short": "5f1d970b5e236f05",
+      "sha256_short": "bef83a98c3ef1b4b",
       "last_date": "2026-07-17 00:00:00"
     },
     "DOHOME.BK": {
       "rows": 1688,
-      "sha256_short": "53d1658a2e15e02a",
+      "sha256_short": "12f463dcedc1d848",
       "last_date": "2026-07-17 00:00:00"
     },
     "CENTEL.BK": {
       "rows": 2433,
-      "sha256_short": "1cfd9397c667715c",
+      "sha256_short": "23a42e0888022ed6",
       "last_date": "2026-07-17 00:00:00"
     },
     "ERW.BK": {
       "rows": 2433,
-      "sha256_short": "60b9083fd9252afe",
+      "sha256_short": "2b6900b73aa5e8c9",
       "last_date": "2026-07-17 00:00:00"
     },
     "BCH.BK": {
       "rows": 2433,
-      "sha256_short": "ae95a8ded0197ff4",
+      "sha256_short": "f2fe19fdd6b105a6",
       "last_date": "2026-07-17 00:00:00"
     },
     "CHG.BK": {
       "rows": 2433,
-      "sha256_short": "b4b0302ffcdbc488",
+      "sha256_short": "ae4e135ca09b5aa5",
       "last_date": "2026-07-17 00:00:00"
     },
     "BEM.BK": {
       "rows": 2433,
-      "sha256_short": "29bd2a4bd2c7af91",
+      "sha256_short": "a45b568756c7eb94",
       "last_date": "2026-07-17 00:00:00"
     },
     "BTS.BK": {
       "rows": 2433,
-      "sha256_short": "97e2e20405f06c48",
+      "sha256_short": "57ebeec83af5910d",
       "last_date": "2026-07-17 00:00:00"
     },
     "TRUE.BK": {
       "rows": 2433,
-      "sha256_short": "dc6b0e27884c3a72",
+      "sha256_short": "379f53519bb79542",
       "last_date": "2026-07-17 00:00:00"
     },
     "JMART.BK": {
       "rows": 2433,
-      "sha256_short": "d9a51f27d14a5539",
+      "sha256_short": "adda71325ef3f113",
       "last_date": "2026-07-17 00:00:00"
     },
     "HANA.BK": {
       "rows": 2433,
-      "sha256_short": "47b98905828b600e",
+      "sha256_short": "f401d5dcd08e5f87",
       "last_date": "2026-07-17 00:00:00"
     },
     "CPNREIT.BK": {
       "rows": 2433,
-      "sha256_short": "0e37407d5c018f7b",
+      "sha256_short": "8f89aa4ebf3b8a4b",
       "last_date": "2026-07-17 00:00:00"
     },
     "^SET.BK": {
-      "rows": 2418,
-      "sha256_short": "3dca4d86750d8ac4",
-      "last_date": "2026-07-10 00:00:00"
+      "rows": 2423,
+      "sha256_short": "9dd806236229c30a",
+      "last_date": "2026-07-17 00:00:00"
     },
     "TENCENT80.BK": {
       "rows": 995,
-      "sha256_short": "bc40a831c8429f0a",
+      "sha256_short": "b47c3d15f816a2a4",
       "last_date": "2026-07-17 00:00:00"
     },
     "TOYOTA80.BK": {
       "rows": 503,
-      "sha256_short": "247ba7581bf11399",
+      "sha256_short": "b04b8df03ebbddc5",
       "last_date": "2026-07-17 00:00:00"
     },
     "ASML01.BK": {
       "rows": 648,
-      "sha256_short": "8717395b1997d1af",
+      "sha256_short": "88b3b8c90bec3abe",
       "last_date": "2026-07-17 00:00:00"
     },
     "BABA80.BK": {
@@ -299,12 +299,12 @@
     },
     "NETEASE80.BK": {
       "rows": 808,
-      "sha256_short": "a8115955072018f1",
+      "sha256_short": "4706a8b30be9783b",
       "last_date": "2026-07-17 00:00:00"
     },
     "BYDCOM80.BK": {
       "rows": 964,
-      "sha256_short": "29f1df022f262667",
+      "sha256_short": "c03c012602d25447",
       "last_date": "2026-07-17 00:00:00"
     },
     "XIAOMI80.BK": {
@@ -374,7 +374,7 @@
     },
     "SONY80.BK": {
       "rows": 503,
-      "sha256_short": "f5a19b6ede830223",
+      "sha256_short": "d4470f08545317ee",
       "last_date": "2026-07-17 00:00:00"
     },
     "SOFTBANK23.BK": {
@@ -394,7 +394,7 @@
     },
     "UNIQLO80.BK": {
       "rows": 503,
-      "sha256_short": "31cc2b4bc996893c",
+      "sha256_short": "f8ad15e4429ac0cc",
       "last_date": "2026-07-17 00:00:00"
     },
     "SANRIO23.BK": {
@@ -409,7 +409,7 @@
     },
     "HERMES80.BK": {
       "rows": 415,
-      "sha256_short": "1e52d56722d7a994",
+      "sha256_short": "0ec8e082d9bd7c8e",
       "last_date": "2026-07-17 00:00:00"
     },
     "LOREAL80.BK": {
@@ -419,7 +419,7 @@
     },
     "LVMH01.BK": {
       "rows": 648,
-      "sha256_short": "ee8e09e1b7a52de5",
+      "sha256_short": "1fe546fb3ca446c1",
       "last_date": "2026-07-17 00:00:00"
     },
     "NOVOB80.BK": {
@@ -434,32 +434,32 @@
     },
     "FERRARI80.BK": {
       "rows": 421,
-      "sha256_short": "292432f7fd89c605",
+      "sha256_short": "36ac2f124da4924a",
       "last_date": "2026-07-17 00:00:00"
     },
     "SINGTEL80.BK": {
       "rows": 557,
-      "sha256_short": "86bd320865f7d826",
+      "sha256_short": "08adc179b78fe91c",
       "last_date": "2026-07-17 00:00:00"
     },
     "0700.HK": {
       "rows": 2462,
-      "sha256_short": "f54d63932e306c5c",
+      "sha256_short": "70cac6feda9cd4fe",
       "last_date": "2026-07-17 00:00:00"
     },
     "7203.T": {
       "rows": 2464,
-      "sha256_short": "0eb9f7066d98b36c",
+      "sha256_short": "b9fd791635795136",
       "last_date": "2026-07-17 00:00:00"
     },
     "ASML.AS": {
       "rows": 2560,
-      "sha256_short": "0b2214e0a6f41ebf",
+      "sha256_short": "e3adaede26386d7b",
       "last_date": "2026-07-17 00:00:00"
     },
     "9988.HK": {
       "rows": 1631,
-      "sha256_short": "46422248e8e332b3",
+      "sha256_short": "7f3a7095ff4f0059",
       "last_date": "2026-07-17 00:00:00"
     },
     "9888.HK": {
@@ -469,7 +469,7 @@
     },
     "9618.HK": {
       "rows": 1493,
-      "sha256_short": "2dc224ba464bcc7f",
+      "sha256_short": "8f79b89b7659eaff",
       "last_date": "2026-07-17 00:00:00"
     },
     "3690.HK": {
@@ -479,12 +479,12 @@
     },
     "9999.HK": {
       "rows": 1498,
-      "sha256_short": "0d6fbab6893e6746",
+      "sha256_short": "1081e298ab8af3ef",
       "last_date": "2026-07-17 00:00:00"
     },
     "1211.HK": {
       "rows": 2462,
-      "sha256_short": "8ec4eb33a5178366",
+      "sha256_short": "c22cc6a33719704e",
       "last_date": "2026-07-17 00:00:00"
     },
     "1810.HK": {
@@ -494,7 +494,7 @@
     },
     "2899.HK": {
       "rows": 2462,
-      "sha256_short": "055a43f79533ff59",
+      "sha256_short": "6c0fc0fcbade7a10",
       "last_date": "2026-07-17 00:00:00"
     },
     "1024.HK": {
@@ -504,22 +504,22 @@
     },
     "0175.HK": {
       "rows": 2462,
-      "sha256_short": "0f689eaaf320e777",
+      "sha256_short": "4ec4aba81defc073",
       "last_date": "2026-07-17 00:00:00"
     },
     "3968.HK": {
       "rows": 2462,
-      "sha256_short": "66722206f09a5d46",
+      "sha256_short": "7fada21057fe7eb7",
       "last_date": "2026-07-17 00:00:00"
     },
     "0857.HK": {
       "rows": 2462,
-      "sha256_short": "35021d8a2d28c386",
+      "sha256_short": "9df5ae082a8d431b",
       "last_date": "2026-07-17 00:00:00"
     },
     "9992.HK": {
       "rows": 1373,
-      "sha256_short": "cf7ead668f41f747",
+      "sha256_short": "b0577e0a95b51a2a",
       "last_date": "2026-07-17 00:00:00"
     },
     "0020.HK": {
@@ -534,7 +534,7 @@
     },
     "3888.HK": {
       "rows": 2462,
-      "sha256_short": "92f93e22f9ec647c",
+      "sha256_short": "556fd9a763e07026",
       "last_date": "2026-07-17 00:00:00"
     },
     "9880.HK": {
@@ -544,7 +544,7 @@
     },
     "9633.HK": {
       "rows": 1437,
-      "sha256_short": "1a5f336f46397d42",
+      "sha256_short": "ddb95f48a3b3fcd3",
       "last_date": "2026-07-17 00:00:00"
     },
     "3750.HK": {
@@ -554,72 +554,77 @@
     },
     "6758.T": {
       "rows": 2464,
-      "sha256_short": "456b7d6ab18f5460",
+      "sha256_short": "f2b22839c43284c9",
       "last_date": "2026-07-17 00:00:00"
     },
     "9984.T": {
       "rows": 2464,
-      "sha256_short": "1b8e32f16ee25932",
+      "sha256_short": "073bf2e8fa7591a8",
       "last_date": "2026-07-17 00:00:00"
     },
     "8035.T": {
       "rows": 2464,
-      "sha256_short": "cfac9ccc40a025ba",
+      "sha256_short": "69a406bafbfb8def",
       "last_date": "2026-07-17 00:00:00"
     },
     "6861.T": {
       "rows": 2464,
-      "sha256_short": "f4d8eabda28161cc",
+      "sha256_short": "7954c85d0bbe0fae",
       "last_date": "2026-07-17 00:00:00"
     },
     "9983.T": {
       "rows": 2464,
-      "sha256_short": "28899cf602843773",
+      "sha256_short": "d761fb98ce9c6dd9",
       "last_date": "2026-07-17 00:00:00"
     },
     "8136.T": {
       "rows": 2464,
-      "sha256_short": "3682694a5a0a2585",
+      "sha256_short": "02e1a6c54555bfea",
       "last_date": "2026-07-17 00:00:00"
     },
     "3563.T": {
       "rows": 2292,
-      "sha256_short": "255d75824d764047",
+      "sha256_short": "a7d702b54eb0b4a8",
       "last_date": "2026-07-17 00:00:00"
     },
     "RMS.PA": {
       "rows": 2561,
-      "sha256_short": "0a16192bfdfc8ccd",
+      "sha256_short": "64aab99a82718a98",
       "last_date": "2026-07-17 00:00:00"
     },
     "OR.PA": {
       "rows": 2561,
-      "sha256_short": "970ff4bd2c22e128",
+      "sha256_short": "50f672dd1ff2a6fc",
       "last_date": "2026-07-17 00:00:00"
     },
     "MC.PA": {
       "rows": 2561,
-      "sha256_short": "d6406d073c1a217d",
+      "sha256_short": "46c080a86de87a09",
       "last_date": "2026-07-17 00:00:00"
     },
     "NOVO-B.CO": {
       "rows": 2501,
-      "sha256_short": "26d5ca67a1400838",
+      "sha256_short": "bff08076ea49bf3c",
       "last_date": "2026-07-17 00:00:00"
     },
     "SAN.PA": {
       "rows": 2561,
-      "sha256_short": "08ade5bb1e67e9e1",
+      "sha256_short": "8a802c68aa79d046",
       "last_date": "2026-07-17 00:00:00"
     },
     "RACE.MI": {
       "rows": 2540,
-      "sha256_short": "fd837e9d7ad14d93",
+      "sha256_short": "948e6b94ebd08a59",
       "last_date": "2026-07-17 00:00:00"
     },
     "Z74.SI": {
       "rows": 2515,
-      "sha256_short": "7bf8f20df07f2538",
+      "sha256_short": "648aa1e00906b166",
+      "last_date": "2026-07-17 00:00:00"
+    },
+    "SGDTHB=X": {
+      "rows": 2602,
+      "sha256_short": "7ad20c1b34166fae",
       "last_date": "2026-07-17 00:00:00"
     },
     "DKKTHB=X": {
@@ -635,11 +640,6 @@
     "EURTHB=X": {
       "rows": 2602,
       "sha256_short": "2be2c306604d9bae",
-      "last_date": "2026-07-17 00:00:00"
-    },
-    "SGDTHB=X": {
-      "rows": 2602,
-      "sha256_short": "7ad20c1b34166fae",
       "last_date": "2026-07-17 00:00:00"
     },
     "JPYTHB=X": {
