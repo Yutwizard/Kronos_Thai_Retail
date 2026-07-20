@@ -67,11 +67,9 @@ def get_positions(mode: str = "paper") -> dict:
 
     from kth.data.universe import get_ticker_class
     try:
-        from kth_dr.universe_dr import get_dr_info_for_display
-        from kth_dr.loader_dr import compute_dr_premium_pct
+        from kth_dr.loader_dr import enrich_dr_premium
     except ImportError:
-        get_dr_info_for_display = lambda t: None
-        compute_dr_premium_pct = None
+        enrich_dr_premium = lambda t, c, get_close: ('', None)
 
     enriched = []
     for ticker, pos in positions.items():
@@ -81,17 +79,8 @@ def get_positions(mode: str = "paper") -> dict:
         pnl = (mark - pos["avg_cost"]) / pos["avg_cost"] if pos["avg_cost"] > 0 else 0
         val = pos["shares"] * mark
 
-        underlying_ticker = None
-        premium_pct = None
-        dr_info = get_dr_info_for_display(ticker)
-        if dr_info:
-            underlying_ticker = dr_info["underlying_ticker"]
-            u_close = _get_current_price(dr_info["underlying_ticker"])
-            fx_close = _get_current_price(dr_info["fx_ticker"])
-            try:
-                premium_pct = compute_dr_premium_pct(mark, u_close, fx_close, dr_info["ratio"])
-            except ValueError:
-                premium_pct = None
+        underlying_ticker, premium_pct = enrich_dr_premium(ticker, mark, _get_current_price)
+        underlying_ticker = underlying_ticker or None
 
         enriched.append({
             "ticker": ticker,

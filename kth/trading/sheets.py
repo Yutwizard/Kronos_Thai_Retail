@@ -45,11 +45,9 @@ def promote_staging(sh, staging_map: dict = None, sleep_sec: float = 1.0) -> dic
 def build_pos_rows(positions: dict, ohlcv_dict: dict, get_sector_fn: Callable[[str], str]) -> list:
     from kth.data.universe import get_currency_group
     try:
-        from kth_dr.universe_dr import get_dr_info_for_display
-        from kth_dr.loader_dr import compute_dr_premium_pct
+        from kth_dr.loader_dr import enrich_dr_premium
     except ImportError:
-        get_dr_info_for_display = lambda t: None
-        compute_dr_premium_pct = None
+        enrich_dr_premium = lambda t, c, get_close: ('', None)
 
     rows = []
     for p in positions['positions']:
@@ -61,17 +59,9 @@ def build_pos_rows(positions: dict, ohlcv_dict: dict, get_sector_fn: Callable[[s
         pnl = (close - p['avg_cost']) * p['shares']
         pnl_pct = (close / p['avg_cost'] - 1) if p['avg_cost'] else 0
 
-        underlying_ticker = ''
-        premium_pct = ''
-        dr_info = get_dr_info_for_display(p['ticker'])
-        if dr_info:
-            underlying_ticker = dr_info['underlying_ticker']
-            try:
-                u_close = float(ohlcv[dr_info['underlying_ticker']]['close'].iloc[-1])
-                fx_close = float(ohlcv[dr_info['fx_ticker']]['close'].iloc[-1])
-                premium_pct = compute_dr_premium_pct(close, u_close, fx_close, dr_info['ratio'])
-            except (KeyError, ValueError):
-                premium_pct = ''
+        underlying_ticker, premium_pct = enrich_dr_premium(
+            p['ticker'], close, lambda t: float(ohlcv[t]['close'].iloc[-1]))
+        premium_pct = premium_pct if premium_pct is not None else ''
 
         rows.append([
             p['ticker'], p['shares'], p['avg_cost'], p.get('entry_date', ''),

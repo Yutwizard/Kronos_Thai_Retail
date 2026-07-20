@@ -34,6 +34,30 @@ def compute_dr_premium_pct(execution_close: float, underlying_close: float, fx_c
     return round((execution_close / dr_intrinsic) - 1, 4)
 
 
+def enrich_dr_premium(exec_ticker: str, execution_close: float, get_close) -> tuple[str, float | None]:
+    """Full DR-premium enrichment for one position/candidate ticker.
+
+    get_close(ticker) -> float: caller's own close-lookup — live fetch, preloaded
+    dict, or on-disk cache — the one thing that legitimately differs per caller.
+    May raise; any failure here or in compute_dr_premium_pct collapses to a blank
+    premium rather than propagating, since premium display must never abort
+    enrichment of the row it's attached to.
+
+    Returns (underlying_ticker, premium_pct) — '' / None when exec_ticker isn't
+    a DR or the premium couldn't be computed.
+    """
+    dr_info = get_dr_info_for_display(exec_ticker)
+    if not dr_info:
+        return '', None
+    try:
+        u_close = get_close(dr_info['underlying_ticker'])
+        fx_close = get_close(dr_info['fx_ticker'])
+        premium_pct = compute_dr_premium_pct(execution_close, u_close, fx_close, dr_info['ratio'])
+    except (ValueError, KeyError, IndexError, FileNotFoundError):
+        premium_pct = None
+    return dr_info['underlying_ticker'], premium_pct
+
+
 def ensure_dr_data(underlying_ticker: str) -> None:
     """Download all data sources required for a DR position. Idempotent —
     download_universe/load_cached already skip re-downloading cached tickers.
