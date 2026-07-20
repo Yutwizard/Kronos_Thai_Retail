@@ -434,6 +434,12 @@ function updatePositions(pos, fcMap) {
   body.innerHTML = html;
 }
 
+function _hasDrRows(rows) { return rows.some(f => f.class === "dr"); }
+function _premiumCell(f) {
+  if (f.class !== "dr" || f.premium_pct === null || f.premium_pct === undefined) return '<td class="muted">—</td>';
+  const cls = f.premium_pct >= 0 ? "red" : "green"; // positive premium = expensive = caution
+  return '<td class="num ' + cls + '">' + (f.premium_pct*100).toFixed(1) + '%</td>';
+}
 function _flagEmoji(c) { return c==="green"?"🟢":c==="yellow"?"🟡":c==="red"?"🔴":"—"; }
 function _deltaStr(d) {
   if (d === null || d === undefined) return '<span class="muted">—</span>';
@@ -467,6 +473,7 @@ const COL = {
   ticker:  "Stock symbol",
   sector:  "Industry sector. For thai_equity: SET sector (Banking, Energy, Property...). For DR: a separate global industry taxonomy (Tech, Auto, Luxury...). Capped at 2 positions per sector, independently for each asset class.",
   currency: "DR-only: the underlying's currency (HKD, JPY, EUR...), capturing FX exposure and correlated market-close timing. Capped at 2 DR positions per currency, independently of Sector. Not applicable to thai_equity.",
+  premium: "DR-only: DR price vs. its intrinsic value = (underlying close × FX) ÷ ratio. Positive = DR trading above its underlying (expensive); negative = below (cheap). Informational only — does not affect ranking or Score.",
   close:   "Last known closing price (THB) — from the most recent trading day",
   expRet:  "Expected Return: model's predicted price change over the next 20 trading days (P50 forecast). ↑ = bullish, ↓ = bearish.",
   delta:   "Δ Expected Return vs previous forecast date. ▲ = model more bullish since last run, ▼ = less bullish. Does NOT measure confidence. The ↗↘ badge on the flag shows confidence-level change.",
@@ -487,11 +494,13 @@ const LEGEND_MORNING = `
 
 // Shared table builder for the Top 10 Bulls / Bottom 10 Bears sections.
 function _buildBullBearTable(rows, hasDelta) {
+  const hasDr = _hasDrRows(rows);
   let html = `<table><thead><tr>
     <th title="${COL.ticker}">Ticker</th>
     <th title="${COL.sector}">Sector</th>
-    <th title="${COL.currency}">Currency</th>
-    <th title="${COL.close}">Close</th>
+    <th title="${COL.currency}">Currency</th>`;
+  if (hasDr) html += `<th title="${COL.premium}">Premium %</th>`;
+  html += `<th title="${COL.close}">Close</th>
     <th title="${COL.score}">Score (?)</th>
     <th title="${COL.expRet}">Exp Ret (?)</th>`;
   if (hasDelta) html += `<th title="${COL.delta}">Δ Prev (?)</th>`;
@@ -506,6 +515,7 @@ function _buildBullBearTable(rows, hasDelta) {
     html += '<tr>' + _tickerCell(f)
       + '<td class="muted">' + (f.sector||"—") + '</td>'
       + '<td class="muted">' + (f.currency_group||"—") + '</td>'
+      + (hasDr ? _premiumCell(f) : '')
       + '<td class="num">' + (f.close?.toFixed(2)||"—") + '</td>'
       + '<td class="num ' + (f.rank_score>=0?"green":"red") + '">' + f.rank_score.toFixed(2) + '</td>'
       + '<td class="num ' + retCls + '">' + dir + ' ' + (f.exp_ret*100).toFixed(2) + '%</td>';
@@ -521,13 +531,15 @@ function _buildBullBearTable(rows, hasDelta) {
 // Shared table builder for the Full Ranking section — used both for the
 // live forecast (updateForecasts) and a historical run date (loadRankingForDate).
 function _buildRankingTable(forecasts, hasDelta) {
+  const hasDr = _hasDrRows(forecasts);
   let rankHtml = `<table><thead><tr>
     <th title="${COL.rank}">#</th>
     <th title="${COL.ticker}">Ticker</th>
     <th>Name</th>
     <th title="${COL.sector}">Sector</th>
-    <th title="${COL.currency}">Currency</th>
-    <th title="${COL.close}">Close</th>
+    <th title="${COL.currency}">Currency</th>`;
+  if (hasDr) rankHtml += `<th title="${COL.premium}">Premium %</th>`;
+  rankHtml += `<th title="${COL.close}">Close</th>
     <th title="${COL.score}">Score (?)</th>
     <th title="${COL.expRet}">Exp Ret (?)</th>`;
   if (hasDelta) rankHtml += `<th title="${COL.delta}">Δ (?)</th>`;
@@ -543,6 +555,7 @@ function _buildRankingTable(forecasts, hasDelta) {
       + '<td class="muted">' + (f.name||"") + '</td>'
       + '<td class="muted">' + (f.sector||"—") + '</td>'
       + '<td class="muted">' + (f.currency_group||"—") + '</td>'
+      + (hasDr ? _premiumCell(f) : '')
       + '<td class="num">' + (f.close?.toFixed(2)||"—") + '</td>'
       + '<td class="num ' + (f.rank_score>=0?"green":"red") + '">' + f.rank_score.toFixed(2) + '</td>'
       + '<td class="num ' + retCls + '">' + dir + ' ' + (f.exp_ret*100).toFixed(2) + '%</td>';

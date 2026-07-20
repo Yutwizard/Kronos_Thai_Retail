@@ -74,10 +74,14 @@ def load_forecasts(report_date: str = None) -> list[dict]:
     from kth.data.loader import load_cached
     try:
         from kth_dr.trade_gen_dr import resolve_execution_ticker, resolve_execution_price, resolve_display_name
+        from kth_dr.universe_dr import get_dr_info_for_display
+        from kth_dr.loader_dr import compute_dr_premium_pct
     except ImportError:
         resolve_execution_ticker = lambda t: t
         resolve_execution_price = lambda u, e, c: c
         resolve_display_name = lambda t, fallback: fallback
+        get_dr_info_for_display = lambda t: None
+        compute_dr_premium_pct = None
 
     rows = []
     for ticker in TRADABLE_TICKERS:
@@ -114,6 +118,18 @@ def load_forecasts(report_date: str = None) -> list[dict]:
             net_ret = exp_ret - friction_rt
             rank_score = exp_ret / max(band_width, 0.001)
 
+            # Display-only, mirrors get_positions()'s premium enrichment — never
+            # feeds rank_score or the buy filter, so a failure here must not
+            # drop the candidate from the ranking.
+            premium_pct = None
+            dr_info = get_dr_info_for_display(exec_ticker)
+            if dr_info and compute_dr_premium_pct:
+                try:
+                    fx_close = float(load_cached(dr_info["fx_ticker"])["close"].iloc[-1])
+                    premium_pct = compute_dr_premium_pct(exec_close, current_close, fx_close, dr_info["ratio"])
+                except (ValueError, FileNotFoundError, KeyError, IndexError):
+                    premium_pct = None
+
             rows.append({
                 "ticker": ticker,
                 "execution_ticker": exec_ticker,
@@ -135,6 +151,7 @@ def load_forecasts(report_date: str = None) -> list[dict]:
                 "net_ret": round(net_ret, 4),
                 "rank_score": round(rank_score, 4),
                 "market_sharpe": BACKTEST_METRICS.get(cls, {}).get("sharpe"),
+                "premium_pct": premium_pct,
             })
         except Exception as e:
             logging.warning(f"Trade gen: skipping {ticker}: {e}")

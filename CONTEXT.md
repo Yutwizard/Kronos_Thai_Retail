@@ -37,7 +37,7 @@ The foreign-exchange-listed stock a DR tracks (e.g. `0700.HK` for `TENCENT80.BK`
 _Avoid_: Underlying asset, reference stock
 
 **DR Premium %**:
-How far a DR's market price sits from its computed fair value: `(DR mark / DR intrinsic) − 1`, where `DR intrinsic = (underlying_close × fx_close) / ratio`. Computed per-position in `get_positions()` (`kth/trading/portfolio.py`) via `get_dr_info_for_display()`.
+How far a DR's market price sits from its computed fair value: `(DR mark / DR intrinsic) − 1`, where `DR intrinsic = (underlying_close × fx_close) / ratio`. Computed by the shared `compute_dr_premium_pct()` helper (`kth_dr/loader_dr.py`). Two independent call sites: per-position in `get_positions()` (`kth/trading/portfolio.py`), and per-candidate in the ranking table (`load_forecasts()`, `kth/trading/trade_gen.py`) — the latter is informational display only and does not feed `rank_score` or any buy/filter decision.
 _Avoid_: Tracking error (that's a benchmark-deviation concept, unrelated)
 
 **Portfolio Value**:

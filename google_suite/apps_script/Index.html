@@ -912,6 +912,10 @@ function renderForecasts(forecasts, forecastHistory) {
     }
   }
   var hasDelta = Object.keys(prevMap).length > 0;
+  // Only DR rows ever carry a currency_group (thai_equity has no "THB" bucket
+  // — see CONTEXT.md "Currency Group") — reuse it as the DR-row signal since
+  // the sheet-backed forecast rows here don't carry a `class` field.
+  var hasDr = forecasts.some(function(f) { return f.currency_group; });
   var dataDate = forecasts.length && forecasts[0].date_updated
     ? '<span class="data-badge">📅 Data: ' + fmt.date(forecasts[0].date_updated) + '</span>'
     : '';
@@ -926,6 +930,16 @@ function renderForecasts(forecasts, forecastHistory) {
     return '<td class="num ' + cls + '" data-val="' + d + '">' + arrow + ' ' + fmt.pct(d) + '</td>';
   }
 
+  function _premiumCell(r) {
+    if (r.premium_pct === null || r.premium_pct === undefined || r.premium_pct === '') {
+      return '<td class="num" style="color:var(--gray)">—</td>';
+    }
+    var v = Number(r.premium_pct);
+    return '<td class="num" style="' + (v >= 0 ? 'color:var(--red)' : 'color:var(--green)') +
+      '" data-val="' + v + '" title="DR price vs. intrinsic value — positive = expensive, negative = cheap">' +
+      fmt.pct(v) + '</td>';
+  }
+
   function _fcRow(r, omitSector) {
     return '<tr>' +
       _td(r.ticker) +
@@ -935,7 +949,7 @@ function renderForecasts(forecasts, forecastHistory) {
       '<td>' + confBadge(r.confidence) + '</td>' +
       _tdNum(fmt.pct(r.net_return), r.net_return) +
       _tdNum(r.p50 != null ? fmt.thb(r.p50) : '—', r.p50) +
-      (omitSector ? '' : _td(r.sector) + _td(r.currency_group || '—')) +
+      (omitSector ? '' : _td(r.sector) + _td(r.currency_group || '—') + (hasDr ? _premiumCell(r) : '')) +
     '</tr>';
   }
 
@@ -1010,6 +1024,7 @@ function renderForecasts(forecasts, forecastHistory) {
         '<th scope="col" title="Median (p50) price forecast — what the model thinks the price will be in 20 days">P50 Price</th>' +
         '<th scope="col">Sector</th>' +
         '<th scope="col" title="DR-only: underlying\'s currency, capturing FX exposure. Not applicable to thai_equity">Currency</th>' +
+        (hasDr ? '<th scope="col" title="DR-only: DR price vs. intrinsic value (underlying × FX ÷ ratio). Positive = trading rich, negative = trading cheap. Informational only — does not affect ranking.">Premium %</th>' : '') +
       '</tr></thead>' +
       '<tbody>' + fcRows + '</tbody>' +
       '</table></div>' +

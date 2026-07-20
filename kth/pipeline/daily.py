@@ -632,7 +632,8 @@ def _write_all_staging(sh, ohlcv_dict: dict, ticket_data: dict,
                     r['band_width'], r['confidence'], r['net_ret'],
                     r['p5_close'], r['p50_close'], r['p95_close'],
                     get_sector(r['ticker']), get_currency_group(r['ticker']) or '',
-                    r.get('tier', '')] for r in fc_rows],
+                    r.get('tier', ''), r.get('premium_pct', '') if r.get('premium_pct') is not None else '']
+                   for r in fc_rows],
                   sleep_sec=staging_sleep)
 
     tt_rows = []
