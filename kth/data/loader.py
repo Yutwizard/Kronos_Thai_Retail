@@ -159,6 +159,16 @@ def quality_report(df: pd.DataFrame, ticker: str) -> dict:
 # Batch download to cache
 # ---------------------------------------------------------------------------
 
+# A fresh download replacing a cached ticker with far fewer rows usually means
+# Yahoo returned a thin trading-halt/suspension stub for that request, not that
+# the ticker's real history shrank (see the 2026-07-25 BANPU.BK incident: 2433
+# cached rows silently overwritten by a 6-row flat/zero-volume stub). Below
+# MIN_PREV_ROWS_FOR_GUARD the ticker is still building up history, so a big
+# relative swing is normal and not guarded.
+ROWCOUNT_DROP_RATIO = 0.5
+MIN_PREV_ROWS_FOR_GUARD = 30
+
+
 def download_universe(
     tickers: Iterable[str],
     period: str = "10y",
@@ -185,6 +195,18 @@ def download_universe(
         # Sanitize filename: SPY -> SPY, BTC-USD -> BTC-USD, ^SET.BK -> _SET.BK
         safe = ticker.replace("^", "_").replace("=", "_")
         outfile = cache_path / f"{safe}.parquet"
+
+        if outfile.exists():
+            prev_rows = len(pd.read_parquet(outfile, columns=["timestamps"]))
+            if prev_rows >= MIN_PREV_ROWS_FOR_GUARD and len(df) < prev_rows * ROWCOUNT_DROP_RATIO:
+                print(f"SKIPPED ({len(df)} rows << {prev_rows} cached, keeping existing cache)")
+                reports.append({
+                    "ticker": ticker, "rows": prev_rows,
+                    "issue": f"rowcount_drop_kept_cache (new={len(df)}, cached={prev_rows})",
+                })
+                time.sleep(pause_between)
+                continue
+
         df.to_parquet(outfile, index=False)
         rpt = quality_report(df, ticker)
         reports.append(rpt)
