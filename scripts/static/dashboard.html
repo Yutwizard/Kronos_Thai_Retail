@@ -18,6 +18,7 @@
     <div class="h-right">
       <span id="header-date"></span>
       <span id="header-refresh"></span>
+      <button id="btn-theme" class="btn-theme" onclick="toggleTheme()" title="Toggle dark mode">🌙</button>
       <button id="btn-pipeline" class="btn-pipeline" onclick="runPipeline()">▶ Run Pipeline</button>
       <span id="banner-area"></span>
     </div>
@@ -174,6 +175,27 @@ const MODE = "paper";
 const API = "";
 
 function $(id) { return document.getElementById(id); }
+
+// ── Dark mode toggle ────────────────────────────────────────
+function toggleTheme() {
+  const html = document.documentElement;
+  const btn = $("btn-theme");
+  const isDark = html.getAttribute("data-theme") === "dark";
+  html.setAttribute("data-theme", isDark ? "light" : "dark");
+  btn.textContent = isDark ? "🌙" : "☀️";
+  localStorage.setItem("kronos-theme", isDark ? "light" : "dark");
+}
+
+(function initTheme() {
+  const saved = localStorage.getItem("kronos-theme");
+  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const isDark = saved ? saved === "dark" : prefersDark;
+  if (isDark) {
+    document.documentElement.setAttribute("data-theme", "dark");
+    const btn = $("btn-theme");
+    if (btn) btn.textContent = "☀️";
+  }
+})();
 
 async function fetchJSON(url) {
   try { const r = await fetch(API + url); return await r.json(); }
