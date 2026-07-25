@@ -108,13 +108,14 @@ python scripts/dashboard.py --generate
 [06:20:01] STEP2: forecast generation
 [06:20:05] Eligible tickers: 49 / 50
 [06:20:05] Calendar: 5-day (business)
-[06:20:05] STEP2: 0 tickers already forecasted today, running 49 remaining
 ...
 [06:32:30] STEP2_OK
 [06:32:31] STEP3: trade ticket generation
 [06:32:35] STEP3_OK: 0 exits, X buys
 [06:32:35] PIPELINE_OK
 ```
+
+**Every run regenerates all forecasts from scratch** — Step 2 wipes today's `data/forecast_cache/NeoQuasar_Kronos-small/YYYY-MM-DD/` before recomputing, so rerunning later the same day (e.g. after SET close, once the download step has pulled the finalized close) always refreshes the ranking rather than reusing a stale intraday forecast. The trade-off: if Step 2 crashes partway through, the next run redoes all tickers on GPU rather than resuming from where it left off.
 
 **If GPU OOM error:** Edit `scripts/dashboard.py` and find `n_samples=50` → change to `n_samples=20` temporarily. This reduces forecast quality but fits 6GB VRAM.
 

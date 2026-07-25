@@ -547,7 +547,7 @@ Permutation preserves the mean exactly → always non-significant. Fixed to cent
 **Resilience issues — all fixed:**
 - `trade_gen.py`: friction from FRICTION dict (not hardcoded 0.00268); INITIAL_CAPITAL from portfolio.py; sector guard (max 2/sector); T+2 warning; per-ticker friction in cash flow.
 - `portfolio.py`: atomic JSON write via os.replace(); model_version + forecast_date in trade log.
-- `dashboard.py`: forecast recovery (skip completed tickers); POST /api/trades validation; sanity failures surfaced in /api/health.
+- `dashboard.py`: forecast recovery (skip completed tickers); POST /api/trades validation; sanity failures surfaced in /api/health. **Reverted 2026-07-25**: skip-completed-tickers caused a same-day rerun (e.g. before vs. after SET close) to silently reuse a stale intraday forecast in the ranking — Run Pipeline now always wipes and regenerates today's full forecast cache, trading away crash-resume for ranking correctness.
 - `download_data.py`: price sanity filter (>30% move → exclude from forecast, write to sanity log).
 - `cron_pipeline.sh`: LINE Notify on failure via $LINE_NOTIFY_TOKEN.
 - `metrics.py`: IR, batting average, calibration, drawdown velocity, bootstrap p-value.

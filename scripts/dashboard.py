@@ -578,15 +578,14 @@ def cmd_generate():
         today_str = str(date.today())
         slug = "NeoQuasar_Kronos-small"
         today_dir = Path(f"data/forecast_cache/{slug}/{today_str}")
+        # Always force a full refresh: a same-day rerun (e.g. before vs. after
+        # SET close) must reflect the latest downloaded prices in the ranking,
+        # not silently reuse a stale intraday forecast. This trades away
+        # crash-resume (a rerun after a partial failure redoes all tickers on
+        # GPU) for ranking correctness on every run.
+        if today_dir.exists():
+            shutil.rmtree(today_dir)
         today_dir.mkdir(parents=True, exist_ok=True)
-
-        def _already_done(ticker: str) -> bool:
-            safe = ticker.replace("^", "_").replace("=", "_")
-            p = today_dir / f"{safe}.parquet"
-            if not p.exists():
-                return False
-            from datetime import datetime as _dt
-            return _dt.fromtimestamp(p.stat().st_mtime).date() == date.today()
 
         # Skip tickers that failed price sanity check
         sanity_log = PROJECT_ROOT / f"data/logs/sanity_{today_str}.json"
@@ -597,10 +596,7 @@ def cmd_generate():
             if sanity_failures:
                 log(f"STEP2: excluding {len(sanity_failures)} sanity-failed tickers: {sorted(sanity_failures)}")
 
-        pending = [t for t in tickers if not _already_done(t) and t not in sanity_failures]
-        skipped = len(tickers) - len(pending) - len(sanity_failures)
-        if skipped:
-            log(f"STEP2: {skipped} tickers already forecasted today, running {len(pending)} remaining")
+        pending = [t for t in tickers if t not in sanity_failures]
 
         if pending:
             th = KronosTH.from_pretrained("NeoQuasar/Kronos-small", device="cuda")

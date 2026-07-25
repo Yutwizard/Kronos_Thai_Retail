@@ -527,7 +527,7 @@ Median band width: 38%
 |---------|-------|-----|
 | Notebook says "No module named kth" | kth package not installed | `python -m pip install -e .` |
 | GPU out of memory | Model + batch too large | Reduce `n_samples = 5` in Cell 0 |
-| Forecasts looking stale | Cache not refreshed | Delete `data/forecast_cache/NeoQuasar_Kronos-small/YYYY-MM-DD/` for today and re-run |
+| Forecasts looking stale | Shouldn't happen — Run Pipeline always wipes and regenerates today's cache. If it does, delete `data/forecast_cache/NeoQuasar_Kronos-small/YYYY-MM-DD/` for today and re-run |
 | `pd.bdate_range` error | Old cached file | Delete full `data/forecast_cache/NeoQuasar_Kronos-small/` and re-run |
 | 60/40 benchmark = 0.00 | TLT.parquet not cached | Run `python -c "from kth.data.loader import download_universe; download_universe(['TLT'], period='max')"` |
 | Missing tickers in Morning Brief | Ticker has <400 rows of history | GULF.BK etc. need more data — check `data/raw/GULF.BK.parquet` row count |
