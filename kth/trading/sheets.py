@@ -44,10 +44,8 @@ def promote_staging(sh, staging_map: dict = None, sleep_sec: float = 1.0) -> dic
 
 def build_pos_rows(positions: dict, ohlcv_dict: dict, get_sector_fn: Callable[[str], str]) -> list:
     from kth.data.universe import get_currency_group
-    try:
-        from kth_dr.loader_dr import enrich_dr_premium
-    except ImportError:
-        enrich_dr_premium = lambda t, c, get_close: ('', None)
+    from kth.trading._dr_optional import get_enrich_dr_premium
+    enrich_dr_premium = get_enrich_dr_premium()
 
     rows = []
     for p in positions['positions']:

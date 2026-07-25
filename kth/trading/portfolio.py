@@ -66,10 +66,8 @@ def get_positions(mode: str = "paper") -> dict:
                 "frozen": pf.get("frozen", False), "equity": pf["equity_curve"][-1]["value"] if pf["equity_curve"] else pf["cash"]}
 
     from kth.data.universe import get_ticker_class
-    try:
-        from kth_dr.loader_dr import enrich_dr_premium
-    except ImportError:
-        enrich_dr_premium = lambda t, c, get_close: ('', None)
+    from kth.trading._dr_optional import get_enrich_dr_premium
+    enrich_dr_premium = get_enrich_dr_premium()
 
     enriched = []
     for ticker, pos in positions.items():

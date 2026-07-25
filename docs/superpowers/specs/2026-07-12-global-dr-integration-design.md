@@ -416,9 +416,18 @@ friction). Nothing else in `universe.py` changes.
 ### Schema changes
 - `POSITIONS_HEADERS` (sheets_config.py) gains two columns: `underlying_ticker`,
   `premium_pct` — populated only for `dr`-class positions, blank otherwise.
-  This is the one schema touch that isn't optional-import-guarded (a header
-  change), but it's harmless dead weight if `kth_dr` is later removed —
-  just two permanently-blank columns.
+- `FORECASTS_HEADERS` (sheets_config.py) also gains `class` and `premium_pct`
+  — added 2026-07-25, after the Positions-table version shipped, to mirror
+  the same premium display on the ranking/forecast table. `class` carries
+  the ticker's asset class (`"dr"` or otherwise) so both dashboards can
+  detect DR rows off one authoritative field instead of reimplementing their
+  own proxy heuristic; `premium_pct` is computed off `exec_ticker`
+  (the resolved `primary_dr`) exactly as on Positions, and is populated only
+  for `dr`-class rows. Same invariant as Positions: display/monitoring only,
+  never read by `rank_score` or the buy filter.
+- None of these schema touches are optional-import-guarded (they're header
+  changes), but they're harmless dead weight if `kth_dr` is later removed —
+  permanently-blank columns.
 
 ### Pipeline integration
 1. **Forecast phase:** Kronos runs on underlying tickers as usual; underlying

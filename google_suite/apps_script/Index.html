@@ -912,10 +912,7 @@ function renderForecasts(forecasts, forecastHistory) {
     }
   }
   var hasDelta = Object.keys(prevMap).length > 0;
-  // Only DR rows ever carry a currency_group (thai_equity has no "THB" bucket
-  // — see CONTEXT.md "Currency Group") — reuse it as the DR-row signal since
-  // the sheet-backed forecast rows here don't carry a `class` field.
-  var hasDr = forecasts.some(function(f) { return f.currency_group; });
+  var hasDr = forecasts.some(function(f) { return f.class === 'dr'; });
   var dataDate = forecasts.length && forecasts[0].date_updated
     ? '<span class="data-badge">📅 Data: ' + fmt.date(forecasts[0].date_updated) + '</span>'
     : '';

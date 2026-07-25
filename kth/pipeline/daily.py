@@ -628,7 +628,7 @@ def _write_all_staging(sh, ohlcv_dict: dict, ticket_data: dict,
     fc_by_ticker = {r['ticker']: r for r in fc_rows}
     write_staging(sh.worksheet('Forecasts_staging'),
                   FORECASTS_HEADERS,
-                  [[today_str, r['ticker'], r['rank_score'], r['exp_ret'],
+                  [[today_str, r['ticker'], r.get('class', ''), r['rank_score'], r['exp_ret'],
                     r['band_width'], r['confidence'], r['net_ret'],
                     r['p5_close'], r['p50_close'], r['p95_close'],
                     get_sector(r['ticker']), get_currency_group(r['ticker']) or '',
