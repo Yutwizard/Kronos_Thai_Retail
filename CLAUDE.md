@@ -111,12 +111,14 @@ columns: timestamps, open, high, low, close, volume, amount
 - **Kronos pre-training cutoff ≈ Dec 2022 (inferred).** 2023-2026 OOS backtests are clean; the 2022 portion of older runs may be partially in-sample. Confirm via arXiv:2508.02739 §3 if it matters.
 - Target model: **Kronos-small** (24.7M params) in production. Kronos-base (102.3M) requires T4 16GB.
 - **GULF.BK** excluded from forecasts until ~Oct 2026 (only 281 rows, needs ≥400 for the Kronos lookback); auto-qualifies once history accumulates.
+- **BANPU.BK** excluded from forecasts until ~early 2028 (only 6 rows as of 2026-07-24 — see the 2026-07-25 incident below, a different cause than GULF.BK's; needs ≥400 for the Kronos lookback); auto-qualifies once history accumulates.
 
 ## Known quirks
 
 - Real yfinance access works only on Colab/Kaggle/local — `verify_data_layer.py` uses synthetic data because yfinance is blocked in most sandboxes.
 - For real data, run `notebooks/01_data_layer.ipynb` on Colab (downloads ~10y daily OHLCV for all 52 universe tickers plus DR/underlying/FX tickers to `./data/raw/*.parquet`).
 - **2026-07-16 incident:** `verify_data_layer.py`/`verify_model_layer.py` used to write their synthetic data straight into the real `./data/raw` cache, silently overwriting real prices with random-walk data on every test run (caught via an abnormal AP.BK price). Both now write to isolated `tempfile.mkdtemp()` dirs — safe to run anytime. Run `python scripts/check_data_sanity.py` after any real download to sanity-check the cache (flags missing files, the synthetic-data rowcount fingerprint, oversized single-day jumps, and staleness).
+- **2026-07-25 incident:** Yahoo Finance started returning a thin, flat/zero-volume trading-halt stub for BANPU.BK (consistent with a SET suspension) regardless of the requested `period`, and `download_universe()` silently overwrote its cached 2433-row history with that 6-row stub — `check_data_sanity.py` didn't catch it either (no single-day jump, since the price never moved). `kth/data/loader.py`'s `download_universe()` now refuses to overwrite a cached ticker whose fresh download has under half its previously cached rows (once the cache already has ≥30 rows — see `ROWCOUNT_DROP_RATIO`/`MIN_PREV_ROWS_FOR_GUARD`), so this can't happen silently again. BANPU.BK's pre-incident history is unrecoverable locally (`data/raw/*.parquet` is git-ignored, no backup) — it now genuinely has only 6 rows and is excluded from forecasts by the lookback gate (see Research Decisions above) until it re-accumulates enough real trading days.
 
 ## Hard scope limits
 
