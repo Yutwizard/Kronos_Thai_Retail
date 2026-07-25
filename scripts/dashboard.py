@@ -340,6 +340,7 @@ def api_health():
     cache_dir = Path(f"data/forecast_cache/NeoQuasar_Kronos-small/{today_str}")
     if cache_dir.exists():
         last_forecast = today_str
+        stale = False
         steps["forecast"] = steps.get("forecast", "ok")
     else:
         # Find latest cached date
