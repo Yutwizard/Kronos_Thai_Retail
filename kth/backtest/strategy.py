@@ -66,24 +66,44 @@ def apply_hysteresis(
     config_long_threshold: float,
     config_entry_buffer: float,
     config_min_holding_days: int,
+    max_holding_days: int | None = None,
+    cooldown_days: int | None = None,
+    cooldown_remaining: dict[str, int] | None = None,
 ) -> tuple[dict[str, float], dict[str, float]]:
     """Apply entry/exit hysteresis to raw signals.
 
     Returns (signals, signals_for_ranking):
       - signals: {ticker: 0 or 1 or signal_value} — 0=close, 1=hold, value=open
       - signals_for_ranking: {ticker: signal_value} — only held + newly opened
+
+    `max_holding_days`/`cooldown_days`/`cooldown_remaining` are an experimental,
+    disabled-by-default extension (see Wayfinder map .scratch/optimize-entry-exit):
+    when `max_holding_days` is set, a position is force-closed once its holding
+    days reach the cap regardless of signal, and `cooldown_remaining[t]` is set
+    to `cooldown_days` to block re-entry. The caller owns `cooldown_remaining`
+    and is responsible for decrementing it once per day — apply_hysteresis only
+    reads it (for the entry gate) and writes it (on a forced exit).
     """
     signals: dict[str, float] = {}
     signals_for_ranking: dict[str, float] = {}
+    if cooldown_remaining is None:
+        cooldown_remaining = {}
     for t, sig in raw_signals.items():
         if t in holdings and holdings[t] > 0:
-            if (sig < config_long_threshold - config_entry_buffer
-                    and holding_days.get(t, 0) >= config_min_holding_days):
+            days_held = holding_days.get(t, 0)
+            forced_exit = max_holding_days is not None and days_held >= max_holding_days
+            hysteresis_exit = (sig < config_long_threshold - config_entry_buffer
+                                and days_held >= config_min_holding_days)
+            if forced_exit or hysteresis_exit:
                 signals[t] = 0
+                if forced_exit and cooldown_days:
+                    cooldown_remaining[t] = cooldown_days
             else:
                 signals[t] = 1
                 signals_for_ranking[t] = sig
         else:
+            if cooldown_remaining.get(t, 0) > 0:
+                continue
             if sig > config_long_threshold + config_entry_buffer:
                 signals[t] = sig
                 signals_for_ranking[t] = sig

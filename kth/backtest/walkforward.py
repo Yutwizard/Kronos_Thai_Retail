@@ -51,6 +51,8 @@ class BacktestConfig:
     long_threshold: float = 0.01
     entry_buffer: float = 0.005
     min_holding_days: int = 5
+    max_holding_days: int | None = None
+    cooldown_days: int | None = None
     max_positions: int = 5
     position_sizing: str = "equal"
     inv_vol_window: int = 20
@@ -284,6 +286,7 @@ def run_walkforward(
     gross_cash = 1.0
     holdings_units: dict[str, float] = {}
     holding_days: dict[str, int] = {}
+    cooldown_remaining: dict[str, int] = {}
     portfolio_values: list[float] = []
     gross_portfolio_values: list[float] = []
     mark_days: list = []
@@ -291,6 +294,14 @@ def run_walkforward(
     lots: dict[str, list[dict]] = {}
 
     for day_idx, day in enumerate(trading_days):
+        if day_idx + 1 >= len(trading_days):
+            # No next-day open to execute into, so today's signal can't be
+            # acted on. Without this, `next_day` fell back to `day` and this
+            # iteration re-marked the same date as the previous iteration —
+            # a duplicate index entry in equity_curve that breaks
+            # compute_metrics' benchmark alignment (pandas: "cannot reindex
+            # on an axis with duplicate labels").
+            break
         day_str = day.strftime("%Y-%m-%d")
 
         # --- 1. FORECAST ---
@@ -310,11 +321,19 @@ def run_walkforward(
                     last_closes[t] = float(df_t.loc[mask, "close"].iloc[-1])
 
         # --- 2. SIGNAL with hysteresis ---
+        for t in list(cooldown_remaining.keys()):
+            cooldown_remaining[t] -= 1
+            if cooldown_remaining[t] <= 0:
+                del cooldown_remaining[t]
+
         raw_signals = compute_signals(forecasts, last_closes, config.long_threshold, config.pred_len)
         from kth.backtest.strategy import apply_hysteresis
         signals, signals_for_ranking = apply_hysteresis(
             raw_signals, holdings_units, holding_days,
             config.long_threshold, config.entry_buffer, config.min_holding_days,
+            max_holding_days=config.max_holding_days,
+            cooldown_days=config.cooldown_days,
+            cooldown_remaining=cooldown_remaining,
         )
 
         # --- 3. POSITION SIZING ---
