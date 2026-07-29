@@ -1,18 +1,44 @@
-> **⚠️ STALE NUMBERS:** Results in these directories were computed before the
-> 2026-06-21 bug fixes (equity curve alignment, PSR formula, open_trades blending).
-> A GPU re-run is required to get correct alpha/beta/IR/PSR numbers. Do NOT cite
-> these numbers until the re-run is complete.
+> **Re-run completed 2026-07-29.** These numbers superseded two bugs, not one:
+> (1) the originally-flagged 2026-06-21 fixes (equity curve alignment, PSR
+> formula, open_trades blending) had never actually been re-run, because (2)
+> `run_walkforward`'s last loop iteration re-marked the same day twice,
+> crashing `compute_metrics()` on every attempt — found and fixed alongside
+> `.scratch/optimize-entry-exit/`. Fixing that surfaced a third, independent
+> bug while validating this re-run: the `equal_weight` and `60_40` benchmarks
+> in `_compute_benchmarks()` silently degraded to a flat 1.0 line whenever
+> `start_date` fell on a market holiday (e.g. Jan 1st — a business day by
+> `freq='B'` but not an actual trading day), via a caught `KeyError`/
+> `UnboundLocalError` in each benchmark's `except Exception` fallback. That
+> bug directly corrupted the p-value below — it's a t-test of strategy
+> returns **against the `equal_weight` benchmark**, so a flat degenerate
+> benchmark silently turned it into a test against zero instead, a
+> meaningfully weaker bar. Both bugs are now fixed; the numbers below are
+> the first correct run of this test the project has had.
+>
+> **This changes the headline conclusion.** Under the old (bugged, vs-zero)
+> comparison, 2024 was "the only year clearing p<0.05" (p=0.015). Under the
+> corrected vs-equal-weight comparison: 2024 is *more* significant
+> (p=0.001, now survives Bonferroni correction even at the strict 9-test
+> threshold p<0.0056 — previously "no year survives, 2024 is closest") and
+> **2025 also now clears p<0.05** (p=0.027, previously p=0.257). 2026 moves
+> the other way — was borderline (p=0.066 vs zero), now clearly
+> non-significant (p=0.335 vs the real benchmark), because 2026's equal-weight
+> benchmark itself surged in that bull run. The "only 2024 is significant"
+> framing in `PROJECT_STRUCTURE.md` (search `Bonferroni`, `only year
+> clearing`) has **not yet been updated** to match — flagged for the user to
+> decide how to revise that narrative, since it's a bigger interpretive call
+> than a number swap.
 
 # Backtest Results Manifest
 
-## Authoritative (n=50 samples, use these for citation — AFTER GPU re-run)
+## Authoritative (n=50 samples, use these for citation)
 
 | Directory | Period | Notes |
 |-----------|--------|-------|
-| `thai_equity_2023_n50/` | 2023 | p=0.419 — bull market, cash drag |
-| `thai_equity_2024_n50/` | 2024 | **p=0.015 — only year clearing p<0.05** |
-| `thai_equity_2025_n50/` | 2025 | p=0.257 |
-| `thai_equity_2026_n50/` | 2026 YTD | p=0.353 |
+| `thai_equity_2023_n50/` | 2023 | p=0.313 (was 0.604 pre-fix) — bull market, cash drag |
+| `thai_equity_2024_n50/` | 2024 | **p=0.001 (was 0.017 pre-fix) — clears Bonferroni even at the strict 9-test threshold** |
+| `thai_equity_2025_n50/` | 2025 | **p=0.027 (was 0.260 pre-fix) — now also clears p<0.05** |
+| `thai_equity_2026_n50/` | 2026 YTD | p=0.335 (was 0.066 pre-fix) — no longer borderline; real EW benchmark surged too in this bull run |
 
 ## Superseded (do NOT cite — stale parameters)
 

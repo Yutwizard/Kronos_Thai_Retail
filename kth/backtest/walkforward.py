@@ -562,6 +562,9 @@ def _compute_benchmarks(config: BacktestConfig, tickers: list[str], ticker_data:
         w_spy, w_tlt = 0.6, 0.4
         spy_units = w_spy / combined.iloc[0]["spy"]
         tlt_units = w_tlt / combined.iloc[0]["tlt"]
+        val = w_spy + w_tlt  # = 1.0; guards against UnboundLocalError below if
+        # trading_days[0] isn't in combined.index (e.g. Jan 1st, a business day
+        # by freq='B' but a market holiday, so no SPY/TLT price exists for it)
         for day in trading_days:
             if day in rebal_dates and day in combined.index:
                 val = spy_units * combined.loc[day, "spy"] + tlt_units * combined.loc[day, "tlt"]
@@ -584,8 +587,15 @@ def _compute_benchmarks(config: BacktestConfig, tickers: list[str], ticker_data:
             s = df_t.set_index("timestamps")["close"]
             closes[t] = s
         price_df = pd.DataFrame(closes)
-        norm_df = price_df / price_df.loc[start_ts]
-        eq_series = norm_df.mean(axis=1).reindex(trading_days, method="ffill")
+        # reindex+ffill to trading_days BEFORE normalizing, so the divisor is
+        # always a real (or forward-filled) price -- price_df.loc[start_ts]
+        # raised KeyError whenever start_date fell on a market holiday (e.g.
+        # Jan 1st, a business day by freq='B' but not an actual trading day),
+        # silently degrading this whole benchmark to a flat 1.0 via the
+        # except-fallback below.
+        price_aligned = price_df.reindex(trading_days, method="ffill")
+        norm_df = price_aligned / price_aligned.iloc[0]
+        eq_series = norm_df.mean(axis=1)
         benchmarks["equal_weight"] = eq_series.fillna(1.0)
     except Exception:
         benchmarks["equal_weight"] = pd.Series(1.0, index=trading_days)
