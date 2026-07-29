@@ -483,18 +483,33 @@ Key tickers include PTT, KBANK, SCB, BBL, CPALL, DELTA, ADVANC, AOT, BDMS, GULF,
 
 ## 7. 4-Year OOS Summary (2023–2026, n=50)
 
-All 4 post-cutoff years complete. These are the trustworthy OOS results.
+All 4 post-cutoff years complete. **Re-run 2026-07-29** — the table below
+(and 2023 especially) predates two bug fixes: a duplicate-mark-day crash and
+a degenerate `equal_weight`/`60_40` benchmark (see `PROJECT_STRUCTURE.md`'s
+"4-Year OOS Results" and `data/backtest_results/MANIFEST.md` for the full
+trail). 2026's row also reflects more elapsed calendar time than the old
+107-trading-day snapshot below (now 145 days, through 2026-07-25) — part of
+that row's shift is simply more of the year having happened, not just the
+bug fixes.
 
 | Year | Net CAGR | Sharpe | Max DD | p-value | EW CAGR | Alpha vs EW | Friction/yr |
 |------|----------|--------|--------|---------|---------|-------------|-------------|
-| **2023** | +2.6% | 0.10 | −13.1% | 0.419 ❌ | +12.8% | −10.2pp | 5.68% |
-| **2024** | +42.0% | 2.27 | −6.9% | **0.015 ✅** | −7.2% | +49.2pp | 7.54% |
-| **2025** | +33.7% | 1.03 | −24.0% | 0.257 ❌ | −9.9% | +43.6pp | 17.35% |
-| **2026**¹ | +143% | 2.42 | −18.3% | 0.353 ❌ | +41.8% | +101pp | 32.78% |
+| **2023** | +9.1% | 0.42 | −15.8% | 0.313 ❌ | −5.7% | +14.9pp | 8.09% |
+| **2024** | +41.3% | 2.23 | −6.9% | **0.001 ✅✅** | −6.5% | +47.8pp | 7.03% |
+| **2025** | +34.5% | 1.05 | −23.5% | **0.027 ✅** | −9.3% | +43.8pp | 16.82% |
+| **2026**¹ | +121.3% | 2.39 | −18.3% | 0.335 ❌ | +60.8% | +60.5pp | 41.57% |
 
-> ¹ 107 trading days only. Annualised CAGR not representative of a full year.
+> ¹ 145 trading days (through 2026-07-25). Annualised CAGR not representative of a full year.
 
-**Bonferroni correction (4 OOS years, threshold p<0.0125):** No year survives. The evidence is suggestive, not conclusive by frequentist standards.
+**Bonferroni correction (4 OOS years, threshold p<0.0125):** **2024 survives** (p=0.001). No other year does; 2025 (p=0.027) clears the conventional p<0.05 bar but not this stricter threshold.
+
+> ⚠️ **Regime pattern below — premise under re-verification (2026-07-29).**
+> Written believing 2023 was a +12.8% EW bull market; the corrected benchmark
+> shows EW was actually down (−5.7%) in 2023, and alpha vs EW is now
+> *positive* in all four tested years, including 2026 (a real bull year, EW
+> +60.8%, strategy still +60.5pp ahead). The bull-vs-bear framing below does
+> not obviously hold under the corrected numbers — left as-is pending
+> re-analysis, do not cite the specific pp figures.
 
 **Regime pattern:** Strategy underperforms EW in SET bull years (2023: EW +12.8%), outperforms strongly in SET bear years (2024: EW −7.2%, 2025: EW −9.9%). The 2023 underperformance is structural cash drag (50% deployed × 12.8% EW = −6.4pp) plus friction — not bad predictions. The deployed stocks beat EW by +3.3pp on deployed capital.
 

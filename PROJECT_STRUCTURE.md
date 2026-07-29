@@ -536,7 +536,7 @@ See full results in `docs/user-manual.md` §6.
 4-phase, 15-item improvement plan — all shipped. Plan files archived.
 
 **Statistical questions — resolved:**
-- Historical backtest p-values (p=0.015/0.257/0.353) use a **t-test** in `compute_metrics()` — unchanged. 2024 is significant; 2025/2026 are not.
+- Historical backtest p-values use a **t-test** in `compute_metrics()`, against the `equal_weight` benchmark — unchanged methodology, but re-run 2026-07-29 after fixing two bugs that had corrupted every prior run: a duplicate-mark-day crash in `run_walkforward`, and a degenerate (flat 1.0) `equal_weight`/`60_40` benchmark on any year starting on a market holiday (see `data/backtest_results/MANIFEST.md`). Corrected p-values: 2023 p=0.313, **2024 p=0.001**, **2025 p=0.027**, 2026 p=0.335. 2024 and 2025 are now significant at p<0.05 (previously only 2024, and at a much weaker p=0.015); 2023 and 2026 are not.
 - Live dashboard now tracks `compute_bootstrap_pvalue()` (centered bootstrap resampling, n=1000) in `/api/risk` — will accumulate significance as paper trading equity curve grows.
 - P5/P95 calibration check: `compute_calibration()` added to `metrics.py`, wired to `/api/risk`, reports `insufficient_data` until ≥10 historical forecast dates accumulate.
 - Survivorship bias: formal disclosure added to `docs/backtest-methodology.html` (~+28–30% CAGR adjusted estimate).
@@ -554,14 +554,27 @@ Permutation preserves the mean exactly → always non-significant. Fixed to cent
 
 ### 4-Year OOS Results (2023–2026, n=50)
 
+**Re-run 2026-07-29** (see `data/backtest_results/MANIFEST.md` for the full bug-fix trail — a duplicate-mark-day crash and a degenerate equal_weight/60_40 benchmark, both fixed). All columns below are from the corrected run; the table this replaced predates *both* fixes and, for 2023 specifically, also predates the 2026-06-21 equity-curve-alignment/PSR/open_trades fixes (it was never successfully re-run until now) — that's why 2023 moved far more than 2024/2025.
+
 | Year | Net CAGR | Sharpe | Max DD | p-value | Friction/yr | EW CAGR | Alpha vs EW |
 |------|----------|--------|--------|---------|-------------|---------|-------------|
-| **2023** | +2.6% | 0.10 | −13.1% | 0.419 ❌ | 5.68% | +12.8% | **−10.2pp** |
-| **2024** | +42.0% | 2.27 | −6.9% | 0.015 ✅ | 7.54% | −7.2% | **+49.2pp** |
-| **2025** | +33.7% | 1.03 | −24.0% | 0.257 ❌ | 17.35% | −9.9% | **+43.6pp** |
-| **2026** | +143% ann. | 2.42 | −18.3% | 0.353 ❌ | 32.78% | +41.8% | **+101pp** |
+| **2023** | +9.1% | 0.42 | −15.8% | 0.313 ❌ | 8.09% | −5.7% | **+14.9pp** |
+| **2024** | +41.3% | 2.23 | −6.9% | 0.001 ✅✅ | 7.03% | −6.5% | **+47.8pp** |
+| **2025** | +34.5% | 1.05 | −23.5% | 0.027 ✅ | 16.82% | −9.3% | **+43.8pp** |
+| **2026** | +121.3% ann. | 2.39 | −18.3% | 0.335 ❌ | 41.57% ann. | +60.8% ann. | **+60.5pp** |
 
-**Decision gate triggered: 🔴 MODEL REVIEW** (2023 Sharpe=0.10 < 0.5).
+**Decision gate: 🔴 still triggers** (2023 Sharpe=0.42 < 0.5 threshold — but this is now a borderline miss, not the stark 0.10 failure previously recorded).
+
+> ⚠️ **Superseded premise — needs re-verification, not rewritten here.** The
+> "2023 root cause" and "Pattern" paragraphs below were written believing 2023
+> was a **+12.8% EW bull market**. The corrected benchmark shows EW was
+> actually **down** in 2023 (EW CAGR −5.7%), consistent with SET's own real
+> −14.8% decline that year (Thai equities had a genuinely bad 2023 — capital
+> outflows, political uncertainty). The "cash drag in a bull market" framing
+> does not hold under the corrected numbers; the cash-drag/friction/
+> stock-selection decomposition below needs to be redone against the real
+> benchmark before citing it. Left as-is pending that re-analysis — do not
+> treat the specific pp figures below as current.
 
 **2023 root cause — NOT model failure. Cash drag + friction:**
 - Deployed stocks actually beat EW by +3.3pp on deployed capital — model predictions were correct
@@ -571,7 +584,7 @@ Permutation preserves the mean exactly → always non-significant. Fixed to cent
 
 **Pattern: strategy underperforms EW in bull markets because it holds cash (by design)**. In bear markets (2024: EW −7.2%, 2025: EW −9.9%), holding selective positions instead of equal-weight is exactly the right strategy.
 
-**Bonferroni (4 OOS years, threshold p<0.0125):** No year survives. 2024 p=0.015 is the closest.
+**Bonferroni (4 OOS years, threshold p<0.0125):** **2024 survives** (p=0.001). No other year does; 2025 (p=0.027) clears the conventional p<0.05 bar but not this corrected threshold.
 
 ### Open questions from QFM review (2026-06-03)
 
@@ -580,13 +593,13 @@ Post-review data analysis surfaced the following — pending 2023 backtest befor
 **Confirmed (do not re-investigate):**
 - `inv_vol` position sizing was backtested in `thai_equity_2022-2024_invvol/`: CAGR 13.29%, Sharpe 0.84, p=0.732. **Equal-weight is conclusively better.** inv_vol allocates more to low-signal, low-vol stocks. Do not use.
 - Canonical 2022-2024 result is `thai_equity_2022-2024_v2/` (CAGR 31.44%, Sharpe 1.40, p=0.034). The original `thai_equity_2022-2024/` run (CAGR 25.03%, Sharpe 1.29) used different data — v2 is the one in AGENTS.md.
-- Bonferroni correction (9 tests, threshold p<0.0056): no year survives. 2024 p=0.015 is the closest. Statistical evidence is suggestive, not conclusive.
+- Bonferroni correction (9 tests, threshold p<0.0056): **2024 survives** (p=0.001, corrected 2026-07-29 — see `data/backtest_results/MANIFEST.md`). No other year does. Statistical evidence for 2024 specifically is now conclusive at this strict threshold; 2025 (p=0.027) is suggestive at the conventional p<0.05 bar but not conclusive under either Bonferroni threshold.
 
 **Open — investigate after 2023 backtest completes:**
-- **2025 friction drain (17.35%/yr vs 7.54% in 2024):** 2.3× more friction despite only 8% more trades. Likely cause: larger average position sizes in high-volatility 2025 regime (more capital deployed per trade). If structural, may need higher entry threshold to reduce turnover in volatile regimes.
+- **2025 friction drain (16.82%/yr vs 7.03% in 2024, corrected 2026-07-29 — pattern unchanged from the original 17.35%/7.54% figures):** ~2.4× more friction despite only 8% more trades. Likely cause: larger average position sizes in high-volatility 2025 regime (more capital deployed per trade). If structural, may need higher entry threshold to reduce turnover in volatile regimes. (A related but distinct exit-side fix — a max-holding-days cap — was tested 2026-07-29 and rejected after a paired significance check; see `.scratch/optimize-entry-exit/` and the "Exit hysteresis" entry in `CLAUDE.md`'s Research Decisions.)
 - **Kronos pre-training cutoff:** Unverified. If training data overlaps 2022–2024, the canonical backtest is not out-of-sample. Check Kronos paper/model card.
 - **Factor attribution:** Is the alpha genuinely predictive or a dressed momentum factor? Regress daily returns on SET 12-1 momentum factor.
-- **2023 n=50 result:** The most credible OOS year. p-value here determines whether the strategy has demonstrated statistically robust edge.
+- ✅ **2023 n=50 result — resolved 2026-07-29:** p=0.313, not statistically significant (corrected from the earlier undercomputed run — see `data/backtest_results/MANIFEST.md`). Positive alpha (+14.9pp vs EW) but not distinguishable from noise at this sample size.
 
 ### Layer 5 — Google Suite Dashboard (2026-06-04) ✅ AVAILABLE + Flask parity (2026-06-06)
 

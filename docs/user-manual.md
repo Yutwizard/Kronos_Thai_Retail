@@ -396,7 +396,9 @@ The most credible evidence for the strategy comes from the 4 clean OOS years —
 
 > ¹ 2026 covers only 107 trading days (Jan–May 2026). Annualised figures are not representative of a full year.
 
-**Statistical note:** Only 2024 clears p<0.05 (unadjusted). Under Bonferroni correction for 4 OOS years (threshold p<0.0125), no year survives. The evidence is suggestive, not conclusive.
+**Statistical note (corrected 2026-07-29 — see `PROJECT_STRUCTURE.md`'s "4-Year OOS Results" and `data/backtest_results/MANIFEST.md`):** 2024 (p=0.001) and 2025 (p=0.027) both clear p<0.05 unadjusted. Under Bonferroni correction for 4 OOS years (threshold p<0.0125), **2024 survives**; no other year does.
+
+> ⚠️ **Pattern below — premise under re-verification (2026-07-29).** A benchmark bug fix shows 2023 was actually a **down** year for EW (−5.7%, not +12.8%), and the corrected numbers show *positive* alpha vs EW in all four tested years, including 2026 (a genuine bull year). The bull-vs-bear framing below does not obviously hold under the corrected data — left as-is pending re-analysis, do not cite the specific figures below.
 
 **Pattern — SET regime dependency:**
 - 📈 **SET bull years (EW positive):** 2023 (EW +12.8%) → strategy underperforms. Cash drag from conservative allocation (50% deployed in a rising market) + friction costs more than stock-selection gains.
@@ -522,7 +524,7 @@ High-quality backtests with n_samples=50 on the clean out-of-sample window (post
 
 8. **CPU inference is very slow.** Generating forecasts for 100 tickers takes 10-15 minutes on GTX 1060, 3-4 minutes on T4, but would take hours on CPU. The notebook will refuse to run on CPU. If you don't have GPU access, use Colab.
 
-9. **Statistical significance is suggestive, not conclusive.** Only 2024 (p=0.015) passes p<0.05 unadjusted. Under Bonferroni correction for 4 OOS years tested (threshold p<0.0125), no single year survives. The multi-year consistency of outperformance in SET bear markets provides practical confidence, but a statistician would not call this proven.
+9. **Statistical significance (corrected 2026-07-29 — see `PROJECT_STRUCTURE.md`).** 2024 (p=0.001) and 2025 (p=0.027) both pass p<0.05 unadjusted. Under Bonferroni correction for 4 OOS years tested (threshold p<0.0125), 2024 alone survives. The "outperformance concentrated in SET bear markets" framing is itself under re-verification — see the note above.
 
 10. **The alpha is NOT market beta or momentum.** OLS factor regression (2022–2024 equity curve vs SET market + 12-1 month momentum factor) shows:
     - Beta_market = −0.009, R² = 0.000 — strategy is **completely market-neutral**

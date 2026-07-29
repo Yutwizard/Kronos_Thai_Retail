@@ -346,7 +346,7 @@ Use the example template:
 - Confidence scaling: PTT 🟢 → 25%, AAPL 🟢 → 25%, BTC 🟡 → 12.5%
 - Remaining: 100% - 25% - 25% - 12.5% = **37.5% cash**
 
-> **Note on cash drag and regime dependency:** The 4-year OOS study (2023–2026) confirms the strategy underperforms equal-weight in SET bull markets and strongly outperforms in SET bear markets.
+> ⚠️ **Note on cash drag and regime dependency — premise under re-verification (2026-07-29):** This was written using 2023 as the bull-market example (EW +12.8%). A benchmark bug fixed 2026-07-29 (see `PROJECT_STRUCTURE.md`'s "4-Year OOS Results" and `data/backtest_results/MANIFEST.md`) shows 2023 was actually **down** (EW −5.7%, matching SET's real −14.8% decline that year), and under the corrected numbers the strategy shows *positive* alpha vs EW in **all four** tested years (2023–2026), including 2026 — a genuine bull year (EW +60.8%) where the strategy still beat it by +60.5pp. That doesn't obviously fit "underperforms in bull markets." Do not rely on the specific claims below until this is re-examined — flagged for discussion, not rewritten here.
 > - **SET bull (EW positive, e.g. 2023 EW +12.8%):** strategy holds 50% cash → costs ~6.4pp vs a fully-deployed equal-weight portfolio, even when stock picks are correct. This is intentional risk management, not model failure.
 > - **SET bear (EW negative, e.g. 2024 EW −7.2%, 2025 EW −9.9%):** strategy's selective positions crush equal-weight by 43–49pp.
 > - **In a strong SET bull market, use BEAR allocation (5%) or NEUTRAL (10%) to limit capital at risk.** The strategy's edge comes from stock selection in diverging markets — in a rising-tide market, concentration in 5 picks is a disadvantage vs the full 49-stock equal-weight.

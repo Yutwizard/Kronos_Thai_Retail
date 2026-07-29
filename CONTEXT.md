@@ -109,7 +109,7 @@ _Avoid_: Grind (too informal), slow drawdown
 A statistical measure of whether the **live paper trading** strategy's alpha is real or luck. Uses centered bootstrap resampling (n=1,000): computes active returns (strategy − zero benchmark), centers them under H₀ (subtracts observed mean), resamples with replacement, counts the fraction where resampled mean ≥ observed mean. p < 0.05 = edge confirmed; p ≥ 0.15 = no confirmed edge. Displayed inline in the Signal Health row. Computed by `compute_bootstrap_pvalue()` in `kth/backtest/metrics.py`, called from `portfolio.compute_metrics()`, surfaced via `/api/risk`.
 **Critical distinction — two separate p-value mechanisms exist:**
 1. `compute_bootstrap_pvalue()` — live dashboard only, centered resampling, grows as paper trading history accumulates (needs ≥20 days; shows `null` before that).
-2. Historical backtest p-values (p=0.015/0.257/0.353 in AGENTS.md) — computed via t-test in `kth/backtest/metrics.compute_metrics()`, stored in `data/backtest_results/`. Never recalculated by the dashboard.
+2. Historical backtest p-values (2023: p=0.313, 2024: p=0.001, 2025: p=0.027, 2026: p=0.335 — corrected 2026-07-29, see `PROJECT_STRUCTURE.md`'s "4-Year OOS Results") — computed via t-test in `kth/backtest/metrics.compute_metrics()`, stored in `data/backtest_results/`. Never recalculated by the dashboard.
 _Avoid_: p-value (use full term); confusing live bootstrap p-value with historical t-test p-value
 **Decision context:** Statistical methodology decisions documented in `docs/adr/`.
 

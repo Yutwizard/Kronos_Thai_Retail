@@ -321,7 +321,7 @@ Four metrics displayed inline. All show "—" until enough live trading history 
 | **Band coverage** | % of past prices that actually fell within the model's P5/P95 band | 80–95% = good; < 80% = overconfident; shows "—" until 20+ forecast dates accumulate |
 | **Bootstrap p-value** | Statistical test: is your live alpha real or luck? Centered resampling, n=1,000 | p < 0.05 ✅ edge confirmed; p ≥ 0.15 ❌ no confirmed edge; "—" until ≥ 20 trading days |
 
-> **Important:** The bootstrap p-value here is for your **live paper trading only**. The historical backtest p-values (p=0.015 in 2024 etc.) are a separate t-test and are not affected by this metric.
+> **Important:** The bootstrap p-value here is for your **live paper trading only**. The historical backtest p-values (2024: p=0.001, corrected 2026-07-29 — see `PROJECT_STRUCTURE.md`) are a separate t-test and are not affected by this metric.
 
 Alerts:
 - "⚠ Forecasts from 2026-06-01 — stale" → cron failed. Run pipeline manually.
