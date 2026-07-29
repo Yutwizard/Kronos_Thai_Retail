@@ -43,9 +43,9 @@ deliberately **out of scope** for this map — a future map picks that up.
 ## Decisions so far
 
 - [01 - Build and run the max-holding-days + cooldown sweep](issues/01-build-and-run-max-holding-sweep.md) — Implemented the experimental `max_holding_days`/`cooldown_days` params (disabled by default, production path unchanged) and ran 20 fresh backtests (baseline + 4 caps × 2023-2026). Also found and fixed a pre-existing bug (duplicate final mark-day) that was crashing *every* backtest run, likely the actual blocker behind the outstanding GPU re-run in `data/backtest_results/MANIFEST.md`. Results: friction is equal-or-higher for every capped config in every year; in 2024 (the flagship p<0.05 year) every cap weakens PSR/Sharpe/p-value vs baseline; cap60 clearly wins in 2023 but that's a documented weak-edge year. Full table + interpretation deferred to Ticket 02.
-- [02 - Lock the max-holding-days research decision](issues/02-lock-max-holding-decision.md) — **Adopted** `max_holding_days=60`, `cooldown_days=5`, recorded in CLAUDE.md's Research Decisions section. This required explicitly relaxing the map's own locked decision rule (cap60 does weaken 2024's p-value, 0.017→0.036, though it stays under 0.05) — the relaxation is written into the CLAUDE.md entry itself, not hidden. Implementation into the live `BacktestConfig` defaults is explicitly **not done** — a separate follow-up effort.
+- [02 - Lock the max-holding-days research decision](issues/02-lock-max-holding-decision.md) — Initially **adopted** `max_holding_days=60`/`cooldown_days=5` off annual point-estimates (required relaxing the map's own locked decision rule to do so). **Revised to REJECT** after a follow-up paired block-bootstrap on daily active returns (`scripts/analyze_cap60_significance.py`) showed 2024's degradation is statistically clean (not noise) while 2023's apparent win is only marginal — pooled across 2023-2026 the effect is statistically indistinguishable from zero. CLAUDE.md's entry updated in place to reflect the rejection.
 
-**Destination reached** — both tickets resolved, no open tickets remain. This map is complete.
+**Destination reached** — both tickets resolved, no open tickets remain. This map is complete. Final verdict: reject the max-holding-days mechanism as tested.
 
 ## Not yet specified
 
