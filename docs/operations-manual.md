@@ -346,11 +346,18 @@ Use the example template:
 - Confidence scaling: PTT 🟢 → 25%, AAPL 🟢 → 25%, BTC 🟡 → 12.5%
 - Remaining: 100% - 25% - 25% - 12.5% = **37.5% cash**
 
-> ⚠️ **Note on cash drag and regime dependency — premise under re-verification (2026-07-29):** This was written using 2023 as the bull-market example (EW +12.8%). A benchmark bug fixed 2026-07-29 (see `PROJECT_STRUCTURE.md`'s "4-Year OOS Results" and `data/backtest_results/MANIFEST.md`) shows 2023 was actually **down** (EW −5.7%, matching SET's real −14.8% decline that year), and under the corrected numbers the strategy shows *positive* alpha vs EW in **all four** tested years (2023–2026), including 2026 — a genuine bull year (EW +60.8%) where the strategy still beat it by +60.5pp. That doesn't obviously fit "underperforms in bull markets." Do not rely on the specific claims below until this is re-examined — flagged for discussion, not rewritten here.
-> - **SET bull (EW positive, e.g. 2023 EW +12.8%):** strategy holds 50% cash → costs ~6.4pp vs a fully-deployed equal-weight portfolio, even when stock picks are correct. This is intentional risk management, not model failure.
-> - **SET bear (EW negative, e.g. 2024 EW −7.2%, 2025 EW −9.9%):** strategy's selective positions crush equal-weight by 43–49pp.
-> - **In a strong SET bull market, use BEAR allocation (5%) or NEUTRAL (10%) to limit capital at risk.** The strategy's edge comes from stock selection in diverging markets — in a rising-tide market, concentration in 5 picks is a disadvantage vs the full 49-stock equal-weight.
-> - **Signal to shift allocation up:** When the weekly Quant PM view shows >5 tickers with bullish 🟢↑ signals AND the SET index has been declining for 4+ consecutive weeks, consider moving from BEAR to NEUTRAL.
+> **Retracted 2026-07-29:** This section used to instruct operators to
+> manually cut allocation to BEAR/NEUTRAL in a perceived SET bull market,
+> based on a claim that the strategy underperforms equal-weight in bull
+> regimes. That claim has been disproven — a daily-level regime-split test
+> (922 trading days, 2023-2026, paired block bootstrap) found the strategy's
+> active return significantly positive in *both* SET bull-days and bear-days,
+> statistically indistinguishable from each other. See CLAUDE.md's Research
+> Decisions and `.scratch/regime-conditional-alpha/` for the full analysis.
+> **Do not manually reduce allocation based on a perceived SET bull/bear
+> regime.** Allocation should be driven by the automated trailing-Sharpe band
+> in `kth/trading/portfolio.py` (BULL/NEUTRAL/BEAR/EXIT from the strategy's
+> own recent live performance), not manual market-regime judgment.
 
 #### Step 4.4 — Execute over 2-3 days
 
@@ -585,12 +592,20 @@ NEW ALERTS TO KNOW:
 
 If the dashboard shows "STAY CASH" or BEAR allocation for 30+ consecutive days:
 
-1. **This is expected in a bull market.** The strategy structurally holds cash
-   when the SET is in a strong uptrend. See README caveat #4 (regime-conditional).
+1. **This reflects recent live performance, not the SET regime.** The
+   allocation band is driven entirely by the strategy's own trailing-Sharpe
+   on live paper trading (`kth/trading/portfolio.py`) — a sustained BEAR band
+   means recent live Sharpe has been low, regardless of what SET is doing.
+   The earlier claim that this was *expected in a bull market* has been
+   retracted (2026-07-29) — see CLAUDE.md's Research Decisions and
+   `.scratch/regime-conditional-alpha/`.
 2. **Do not override the risk band manually.** The 12-week trailing Sharpe is
    the signal. If it rises above 0.5, the band auto-promotes to NEUTRAL.
-3. **Verify the regime.** Check SET Index 60-day return. If SET is up >10% over
-   60 days, BEAR allocation is the correct response, not a malfunction.
+3. ~~**Verify the regime.**~~ **Removed (2026-07-29):** checking SET's 60-day
+   return to "confirm" BEAR allocation is no longer valid guidance — a
+   daily-level regime-split test found no significant difference in the
+   strategy's edge between SET bull-days and bear-days. Do not treat a SET
+   uptrend as justification for a low allocation band.
 4. **Override criteria (rare):** Only override if (a) the model forecasts are
    loading correctly (check `/api/health`), AND (b) you have a documented
    thesis for why the regime is about to shift. Document the override in the

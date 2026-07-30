@@ -503,15 +503,16 @@ bug fixes.
 
 **Bonferroni correction (4 OOS years, threshold p<0.0125):** **2024 survives** (p=0.001). No other year does; 2025 (p=0.027) clears the conventional p<0.05 bar but not this stricter threshold.
 
-> ⚠️ **Regime pattern below — premise under re-verification (2026-07-29).**
-> Written believing 2023 was a +12.8% EW bull market; the corrected benchmark
-> shows EW was actually down (−5.7%) in 2023, and alpha vs EW is now
-> *positive* in all four tested years, including 2026 (a real bull year, EW
-> +60.8%, strategy still +60.5pp ahead). The bull-vs-bear framing below does
-> not obviously hold under the corrected numbers — left as-is pending
-> re-analysis, do not cite the specific pp figures.
-
-**Regime pattern:** Strategy underperforms EW in SET bull years (2023: EW +12.8%), outperforms strongly in SET bear years (2024: EW −7.2%, 2025: EW −9.9%). The 2023 underperformance is structural cash drag (50% deployed × 12.8% EW = −6.4pp) plus friction — not bad predictions. The deployed stocks beat EW by +3.3pp on deployed capital.
+**Regime pattern — claim retracted 2026-07-29.** Previously claimed the
+strategy underperforms EW in SET bull years (citing 2023 as the example)
+and outperforms in bear years. Wrong premise — 2023 was actually a down
+year for EW (−5.7%, not +12.8%). A daily-level regime split (trailing
+60-day SET return, paired block bootstrap, 922 trading days across
+2023-2026 — see `.scratch/regime-conditional-alpha/`) found active return
+significantly positive in *both* bull-days (+34.8% ann.) and bear-days
+(+33.4% ann.), statistically indistinguishable from each other. There's no
+evidence the strategy's edge depends on SET regime — see CLAUDE.md's
+Research Decisions for the retraction record.
 
 ## 7a. Factor Attribution
 

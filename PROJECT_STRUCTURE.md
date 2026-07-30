@@ -466,7 +466,8 @@ If our strategy doesn't beat both after frictions, we say so plainly.
 
 > **Code review fixes applied 2026-06-21.** Stored backtest numbers in
 > `data/backtest_results/` are STALE pending GPU re-run. See MANIFEST.md.
-> The alpha is regime-conditional (defensive tilt) — see README caveats.
+> The "alpha is regime-conditional" claim was retracted 2026-07-29 — see
+> CLAUDE.md's Research Decisions and README caveat #4.
 > Phase 1 no-GPU fixes complete: pytest suite (78 tests), friction centralization,
 > FIFO lot ledger, data versioning, scipy PSR, calibration fix, hysteresis refactor.
 
@@ -565,24 +566,17 @@ Permutation preserves the mean exactly → always non-significant. Fixed to cent
 
 **Decision gate: 🔴 still triggers** (2023 Sharpe=0.42 < 0.5 threshold — but this is now a borderline miss, not the stark 0.10 failure previously recorded).
 
-> ⚠️ **Superseded premise — needs re-verification, not rewritten here.** The
-> "2023 root cause" and "Pattern" paragraphs below were written believing 2023
-> was a **+12.8% EW bull market**. The corrected benchmark shows EW was
-> actually **down** in 2023 (EW CAGR −5.7%), consistent with SET's own real
-> −14.8% decline that year (Thai equities had a genuinely bad 2023 — capital
-> outflows, political uncertainty). The "cash drag in a bull market" framing
-> does not hold under the corrected numbers; the cash-drag/friction/
-> stock-selection decomposition below needs to be redone against the real
-> benchmark before citing it. Left as-is pending that re-analysis — do not
-> treat the specific pp figures below as current.
-
-**2023 root cause — NOT model failure. Cash drag + friction:**
-- Deployed stocks actually beat EW by +3.3pp on deployed capital — model predictions were correct
-- Cash drag: NEUTRAL band (50% deployed) in a +12.8% EW bull market costs −6.4pp
-- Friction: −5.68%/yr
-- Total underperformance = cash drag + friction − small stock-selection gain
-
-**Pattern: strategy underperforms EW in bull markets because it holds cash (by design)**. In bear markets (2024: EW −7.2%, 2025: EW −9.9%), holding selective positions instead of equal-weight is exactly the right strategy.
+**Regime-conditional alpha — claim retracted 2026-07-29.** The "2023 root
+cause: cash drag in a bull market" / "underperforms EW in bull markets"
+narrative that used to appear here was built on 2023 as the bull-market
+counter-example (EW +12.8%), but that was wrong — 2023 was actually down
+(EW −5.7%, matching SET's real −14.8% decline that year). A daily-level
+regime split (trailing 60-day SET return, paired block bootstrap, 922
+trading days across 2023-2026 — see `.scratch/regime-conditional-alpha/`)
+found active return significantly positive in *both* bull-days (+34.8%
+ann.) and bear-days (+33.4% ann.), statistically indistinguishable from each
+other. There is no evidence the strategy's edge depends on SET regime. See
+CLAUDE.md's Research Decisions for the retraction record.
 
 **Bonferroni (4 OOS years, threshold p<0.0125):** **2024 survives** (p=0.001). No other year does; 2025 (p=0.027) clears the conventional p<0.05 bar but not this corrected threshold.
 

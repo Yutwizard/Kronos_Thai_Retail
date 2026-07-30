@@ -140,11 +140,15 @@ kronos-th/
 1. **Kronos is a forecasting model, not an alpha machine.** The Kronos authors state explicitly: raw signals aren't a strategy. We add strategy + risk layers on top.
 2. **Thai stocks may be out-of-distribution.** Kronos was pre-trained on 45 global exchanges. It probably saw some Thai data, but mid-cap SET stocks are less represented than US mega-caps. Fine-tuning on the Thai universe (notebook 04) is meant to close this gap.
 3. **Backtests lie.** Even with realistic frictions baked in, survivorship bias, look-ahead, and regime shifts are everywhere. Treat backtest numbers as a sanity floor, not a forecast of future returns.
-4. **Alpha is regime-conditional, not year-round.** This is a defensive tilt,
-   not a stock-selection edge. The strategy structurally holds cash, so it
-   outperforms in bear/flat SET regimes (2024, 2025) but underperforms in broad
-   bull markets (2023, 2026-to-date). In a bull regime, expect BEAR allocation
-   (5% deployed) until the regime shifts. Do not expect it to beat a bull market.
+4. **"Alpha is regime-conditional" — retracted 2026-07-29.** Previously
+   claimed the strategy is a defensive tilt that underperforms in bull SET
+   markets, citing 2023 as the example — but that was built on a wrong
+   premise (2023 was actually a down year for EW, not up). A daily-level
+   regime-split test (922 trading days, 2023-2026, paired block bootstrap)
+   found the strategy's active return significantly positive in both SET
+   bull-days and bear-days, statistically indistinguishable from each other.
+   Do not expect a low-allocation BEAR band just because SET looks bullish —
+   see CLAUDE.md's Research Decisions and `.scratch/regime-conditional-alpha/`.
 5. **Free data has limits.** yfinance is wonderful and free but rate-limited; intraday is restricted to last 60 days (which is why this project is daily-only — see earlier conversation). For production-grade Thai equity data you'd need a paid source like SET SMART or EOD Historical.
 6. **Stored backtest numbers are stale.** The 2026-06-21 code review found critical statistical bugs (PSR formula, equity curve alignment, open_trades blending, FIFO lot ledger). Fixes are applied but stored `data/backtest_results/*/metrics.json` files were computed before these fixes. A GPU re-run is required. See `data/backtest_results/MANIFEST.md`.
 

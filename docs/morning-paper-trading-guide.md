@@ -174,15 +174,21 @@ The Trade Ticket is the hero panel. On Day 1 there are no exits (nothing held).
 | **Net Ret** | After friction (0.536% round-trip) | Must be > 1.0% (2× friction) |
 | **Band** | Uncertainty range | Narrow band = more confident |
 
-**Today's decision rule (BEAR allocation — SET bull market):**
+**Decision rule:**
 
-> ⚠️ We are in a SET bull market (EW returns strongly positive in 2026).  
-> The strategy underperforms in broad bull markets due to cash drag.  
-> **Use BEAR allocation: maximum 1 position, 5% of capital = 25,000 THB.**
+> **Retracted 2026-07-29:** This used to instruct manually forcing BEAR
+> allocation whenever SET looked like it was in a bull market, believing the
+> strategy underperforms in bull regimes. That claim has been disproven — a
+> daily-level regime-split test found active return statistically
+> indistinguishable between SET bull-days and bear-days. See CLAUDE.md's
+> Research Decisions and `.scratch/regime-conditional-alpha/`. **Trust the
+> dashboard's automated allocation band** (driven by the strategy's own
+> trailing-Sharpe performance, `kth/trading/portfolio.py`) rather than
+> manually overriding it based on a perceived SET regime.
 
 | Signal condition | Action |
 |---|---|
-| ≥1 ticker with 🟢↑ AND net_ret > 1.0% | Buy 1 position only (25,000 THB) |
+| ≥1 ticker with 🟢↑ AND net_ret > 1.0% | Buy up to the dashboard's current allocation band |
 | All tickers 🔴 or ↓ | Stay cash today. Log reason. |
 | Market State = Turmoil | Do NOT trade. Go to cash. |
 | High uncertainty day (>30 tickers 🔴) | Stay cash. Dashboard shows banner. |

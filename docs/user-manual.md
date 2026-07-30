@@ -398,12 +398,16 @@ The most credible evidence for the strategy comes from the 4 clean OOS years —
 
 **Statistical note (corrected 2026-07-29 — see `PROJECT_STRUCTURE.md`'s "4-Year OOS Results" and `data/backtest_results/MANIFEST.md`):** 2024 (p=0.001) and 2025 (p=0.027) both clear p<0.05 unadjusted. Under Bonferroni correction for 4 OOS years (threshold p<0.0125), **2024 survives**; no other year does.
 
-> ⚠️ **Pattern below — premise under re-verification (2026-07-29).** A benchmark bug fix shows 2023 was actually a **down** year for EW (−5.7%, not +12.8%), and the corrected numbers show *positive* alpha vs EW in all four tested years, including 2026 (a genuine bull year). The bull-vs-bear framing below does not obviously hold under the corrected data — left as-is pending re-analysis, do not cite the specific figures below.
-
-**Pattern — SET regime dependency:**
-- 📈 **SET bull years (EW positive):** 2023 (EW +12.8%) → strategy underperforms. Cash drag from conservative allocation (50% deployed in a rising market) + friction costs more than stock-selection gains.
-- 📉 **SET bear years (EW negative):** 2024 (EW −7.2%), 2025 (EW −9.9%) → strategy crushes equal-weight by +49pp and +44pp. Selective positions in declining markets is exactly where the model's advantage shows.
-- **Key finding:** The 2023 underperformance is structural, not a model failure. The deployed stocks beat EW by +3.3pp on deployed capital — cash drag (−6.4pp) and friction (−5.7pp) caused the net underperformance vs a fully-deployed EW.
+**Pattern — SET regime dependency: claim retracted 2026-07-29.** This used
+to claim the strategy underperforms in SET bull years (citing 2023 as the
+example) and crushes bear years. That was built on a wrong premise — 2023
+was actually a down year for EW (−5.7%, not the +12.8% originally believed).
+A daily-level regime split (trailing 60-day SET return, paired block
+bootstrap, 922 trading days across 2023-2026 — see
+`.scratch/regime-conditional-alpha/`) found active return significantly
+positive in *both* bull-days and bear-days, statistically indistinguishable
+from each other. There's no evidence the strategy's edge depends on SET
+regime — see CLAUDE.md's Research Decisions for the retraction record.
 
 ---
 
@@ -506,11 +510,7 @@ High-quality backtests with n_samples=50 on the clean out-of-sample window (post
 
 2. **Survivorship bias is real.** The universe includes only currently-listed tickers. Delisted stocks are absent from backtests, which overstates returns. The real historical performance of this strategy would be lower.
 
-3. **Regime dependency confirmed.** The 4-year OOS study (2023–2026) shows the strategy underperforms equal-weight in SET bull markets and dramatically outperforms in SET bear markets:
-   - 2023 (EW +12.8%, SET bull): strategy +2.6% net, −10.2pp vs EW. Root cause: **cash drag** — conservative allocation (50% deployed) in a rising market costs ~6.4pp, plus friction (5.7%/yr). The deployed stocks actually beat EW by +3.3pp on deployed capital.
-   - 2024 (EW −7.2%, SET bear): strategy +42.0%, +49.2pp alpha. Model's stock-selection is decisive when the market is selective.
-   - 2025 (EW −9.9%, SET bear): strategy +33.7%, +43.6pp alpha.
-   - **Practical implication:** If SET EW is strongly positive (bull market), expect the strategy to underperform on paper. This is not failure — it is the cost of risk management. The expanded 2020-2024 backtest confirms alpha was positive in ALL 3 earlier regimes too. Full-period p=0.174 (n=10 samples) is weaker than the 3-year result (p=0.034, n=10 samples; 2024 n=50: p=0.015).
+3. **Regime dependency retracted (2026-07-29).** This used to claim the strategy underperforms equal-weight in SET bull markets and outperforms in bear markets, citing 2023 as the bull-market example. That premise was wrong — 2023 was actually a down year for EW (−5.7%, not +12.8%), and a proper daily-level regime-split test (922 trading days, 2023-2026, paired block bootstrap) found the strategy's active return significantly positive in *both* SET bull-days and bear-days, statistically indistinguishable from each other. Do not expect the strategy to underperform on paper during a SET bull market — see CLAUDE.md's Research Decisions and `.scratch/regime-conditional-alpha/` for the full analysis.
 
 4. **Crypto calendar fix applied.** The original backtest used 5-day business days (Mon-Fri) for all assets, which skipped weekends for crypto. This was fixed in Task 1 of the HFM review: `walkforward.py` now uses `_get_calendar_for_tickers()` which returns "D" (7-day) for crypto tickers. `forecast()` and `forecast_batch()` auto-detect crypto from ticker class. Crypto precompute and walk-forward now use the correct 7-day calendar. See `kth/backtest/walkforward.py:_get_calendar_for_tickers()`.
 
@@ -524,7 +524,7 @@ High-quality backtests with n_samples=50 on the clean out-of-sample window (post
 
 8. **CPU inference is very slow.** Generating forecasts for 100 tickers takes 10-15 minutes on GTX 1060, 3-4 minutes on T4, but would take hours on CPU. The notebook will refuse to run on CPU. If you don't have GPU access, use Colab.
 
-9. **Statistical significance (corrected 2026-07-29 — see `PROJECT_STRUCTURE.md`).** 2024 (p=0.001) and 2025 (p=0.027) both pass p<0.05 unadjusted. Under Bonferroni correction for 4 OOS years tested (threshold p<0.0125), 2024 alone survives. The "outperformance concentrated in SET bear markets" framing is itself under re-verification — see the note above.
+9. **Statistical significance (corrected 2026-07-29 — see `PROJECT_STRUCTURE.md`).** 2024 (p=0.001) and 2025 (p=0.027) both pass p<0.05 unadjusted. Under Bonferroni correction for 4 OOS years tested (threshold p<0.0125), 2024 alone survives. The "outperformance concentrated in SET bear markets" framing has been retracted — see item 3 above.
 
 10. **The alpha is NOT market beta or momentum.** OLS factor regression (2022–2024 equity curve vs SET market + 12-1 month momentum factor) shows:
     - Beta_market = −0.009, R² = 0.000 — strategy is **completely market-neutral**
