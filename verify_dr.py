@@ -602,6 +602,34 @@ def test_build_pos_rows_dr_premium_uses_fx(tmp):
     print("PASS test_build_pos_rows_dr_premium_uses_fx")
 
 
+def test_dashboard_close_column_uses_exec_close_not_underlying():
+    """Regression for a real incident: the ranking dashboard's Close column
+    rendered f.close (the DR-mapped underlying's raw foreign-currency close,
+    e.g. 9988.HK's 110.70 HKD) instead of f.exec_close (BABA80.BK's own SET
+    close, 4.76 THB) -- both _buildBullBearTable and _buildRankingTable in
+    scripts/static/dashboard.html had the same bug. The column's own tooltip
+    (COL.close) documents "Last known closing price (THB)" -- the underlying's
+    close is never in THB for a DR row, so f.close must never be what's shown
+    there. See kth/trading/trade_gen.py's load_forecasts() docstring: "never
+    the underlying's raw close"."""
+    from pathlib import Path
+    src = Path("scripts/static/dashboard.html").read_text()
+    close_column_cells = [
+        line for line in src.splitlines()
+        if "toFixed(2)" in line and ("f.close" in line or "f.exec_close" in line)
+    ]
+    assert len(close_column_cells) == 2, (
+        f"Expected exactly 2 Close-column cells (_buildBullBearTable + "
+        f"_buildRankingTable), found {len(close_column_cells)}: {close_column_cells}"
+    )
+    for line in close_column_cells:
+        assert "f.exec_close" in line and "f.close?" not in line, (
+            f"Close column must render f.exec_close (DR-aware THB price), "
+            f"not the raw underlying close: {line.strip()}"
+        )
+    print("PASS test_dashboard_close_column_uses_exec_close_not_underlying")
+
+
 if __name__ == "__main__":
     import inspect
     import tempfile

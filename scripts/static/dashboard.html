@@ -538,7 +538,7 @@ function _buildBullBearTable(rows, hasDelta) {
       + '<td class="muted">' + (f.sector||"—") + '</td>'
       + '<td class="muted">' + (f.currency_group||"—") + '</td>'
       + (hasDr ? _premiumCell(f) : '')
-      + '<td class="num">' + (f.close?.toFixed(2)||"—") + '</td>'
+      + '<td class="num">' + ((f.exec_close ?? f.close)?.toFixed(2)||"—") + '</td>'
       + '<td class="num ' + (f.rank_score>=0?"green":"red") + '">' + f.rank_score.toFixed(2) + '</td>'
       + '<td class="num ' + retCls + '">' + dir + ' ' + (f.exp_ret*100).toFixed(2) + '%</td>';
     if (hasDelta) html += '<td class="num">' + _deltaStr(f.delta_exp_ret) + '</td>';
@@ -578,7 +578,7 @@ function _buildRankingTable(forecasts, hasDelta) {
       + '<td class="muted">' + (f.sector||"—") + '</td>'
       + '<td class="muted">' + (f.currency_group||"—") + '</td>'
       + (hasDr ? _premiumCell(f) : '')
-      + '<td class="num">' + (f.close?.toFixed(2)||"—") + '</td>'
+      + '<td class="num">' + ((f.exec_close ?? f.close)?.toFixed(2)||"—") + '</td>'
       + '<td class="num ' + (f.rank_score>=0?"green":"red") + '">' + f.rank_score.toFixed(2) + '</td>'
       + '<td class="num ' + retCls + '">' + dir + ' ' + (f.exp_ret*100).toFixed(2) + '%</td>';
     if (hasDelta) rankHtml += '<td class="num" style="font-size:0.78em">' + _deltaStr(f.delta_exp_ret) + '</td>';
