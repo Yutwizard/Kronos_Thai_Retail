@@ -506,6 +506,7 @@ If our strategy doesn't beat both after frictions, we say so plainly.
 - `docs/user-manual.md` — full user manual with methodology, backtest results, and usage instructions
 - `docs/user-manual.html` — HTML version with 7 embedded data visualization charts
 - `docs/operations-manual.html` — styled HTML operations manual
+- `docs/news-monitoring-manual.md` / `.html` — manual, human-facing news-monitoring habit for the daily top-10 ranking (source directory, decision protocol, aggregation setup); does not touch pipeline/model code — see `.scratch/news-monitoring-template/map.md` for the design trail
 - `docs/monthly-walkthrough.html` — 21-day simulated month with timeline and allocation graphics
 - `docs/backtest-methodology.html` — styled HTML with 4 charts, Gantt timeline, and "What This Means" section
 - `docs/superpowers/specs/2026-05-24-expanded-backtest-design.md` — design spec for 2020-2024 Thai equity expansion

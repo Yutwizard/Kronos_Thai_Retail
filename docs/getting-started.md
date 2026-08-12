@@ -485,6 +485,7 @@ Visit http://localhost:5555/api/phase2_gate — it shows which checks pass/fail.
 |-------------------|-----------|
 | Learn the daily routine in detail | [Dashboard User Manual](dashboard-user-manual.md) |
 | Understand the decision rules | [Operations Manual](operations-manual.md) |
+| Sanity-check the daily top-10 against real news | [News Monitoring Manual](news-monitoring-manual.md) |
 | See the technical architecture | [Design Spec](superpowers/specs/2026-06-02-real-market-dashboard-design.md) |
 | Understand how the backtest works | [User Manual & Methodology](user-manual.md) |
 | Get help or report a bug | Open a GitHub issue at https://github.com/Yutwizard/Kronos_Thai_Retail/issues |

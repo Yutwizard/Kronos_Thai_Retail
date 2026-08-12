@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kronos-TH — News Monitoring Manual</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1a1a2e; background: #f5f6fa; line-height: 1.6; }
+  .container { max-width: 960px; margin: 0 auto; padding: 20px; }
+  .hero { background: linear-gradient(135deg, #1a5276 0%, #2e86c1 100%); color: white; padding: 40px 30px; border-radius: 12px; margin: 20px 0 30px; text-align: center; }
+  .hero h1 { color: white; font-size: 2.2rem; font-weight: 800; margin: 0; }
+  .hero .subtitle { color: rgba(255,255,255,0.85); font-size: 1.05rem; margin: 8px 0 0; }
+  .hero .badge { display: inline-block; background: rgba(255,255,255,0.2); padding: 4px 14px; border-radius: 20px; font-size: 0.8rem; margin: 10px 4px 0; }
+  h2 { font-size: 1.5rem; font-weight: 700; color: #1a5276; margin: 45px 0 12px; padding-bottom: 6px; border-bottom: 3px solid #2e86c1; }
+  h3 { font-size: 1.15rem; font-weight: 600; color: #2c3e50; margin: 28px 0 10px; }
+  h4 { font-weight: 600; color: #34495e; margin: 20px 0 8px; }
+  p { margin: 8px 0; }
+  .card { background: white; border-radius: 10px; padding: 25px; margin: 16px 0; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  .toc { background: white; border-radius: 10px; padding: 20px 25px; margin: 20px 0; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  .toc ol { padding-left: 20px; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #2e86c1; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.9rem; }
+  th { background: #1a5276; color: white; padding: 8px 10px; text-align: left; font-weight: 600; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.5px; }
+  td { padding: 7px 10px; border-bottom: 1px solid #eee; }
+  tr:hover td { background: #f0f4f8; }
+  tr:nth-child(even) td { background: #fafbfc; }
+  tr:nth-child(even):hover td { background: #f0f4f8; }
+  code, pre { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; background: #f0f4f8; border-radius: 4px; }
+  code { padding: 2px 5px; }
+  pre { padding: 14px; overflow-x: auto; border-left: 3px solid #2e86c1; margin: 10px 0; position: relative; border-radius: 0 6px 6px 0; }
+  .copy-btn { position: absolute; top: 6px; right: 6px; background: rgba(255,255,255,0.85); border: 1px solid #ddd; border-radius: 4px; padding: 2px 8px; font-size: 0.72rem; cursor: pointer; color: #555; font-family: 'Inter', sans-serif; }
+  .copy-btn:hover { background: #e8f0fe; color: #1a5276; }
+  .copy-btn.copied { background: #27ae60; color: white; border-color: #27ae60; }
+  .highlight { background: #fff8e1; border-left: 4px solid #f39c12; padding: 12px 16px; margin: 12px 0; border-radius: 4px; font-size: 0.9rem; }
+  .highlight-green { background: #e8f8f5; border-left: 4px solid #27ae60; padding: 12px 16px; margin: 12px 0; border-radius: 4px; font-size: 0.9rem; }
+  .highlight-red { background: #fdecea; border-left: 4px solid #e74c3c; padding: 12px 16px; margin: 12px 0; border-radius: 4px; font-size: 0.9rem; }
+  .highlight-blue { background: #eaf2f8; border-left: 4px solid #2e86c1; padding: 12px 16px; margin: 12px 0; border-radius: 4px; font-size: 0.9rem; }
+  .step-box { background: white; border-radius: 8px; padding: 18px 22px; margin: 10px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.06); border-left: 4px solid #2e86c1; }
+  .step-box .step-num { font-size: 0.75rem; color: #7f8c8d; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .step-box .step-title { font-size: 1.05rem; font-weight: 600; color: #1a5276; margin-bottom: 6px; }
+  .step-box p, .step-box ul { font-size: 0.92rem; }
+  .signal-table td:first-child { white-space: nowrap; font-weight: 500; }
+  .trade-grid { background: #f8f9fa; border-radius: 8px; padding: 16px; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; line-height: 1.8; overflow-x: auto; white-space: pre; }
+  .quick-ref { background: #1a5276; color: white; border-radius: 10px; padding: 25px 30px; margin: 20px 0; }
+  .quick-ref table { width: 100%; border-collapse: collapse; }
+  .quick-ref td { padding: 7px 10px; border-bottom: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.9); font-size: 0.88rem; }
+  .quick-ref td:first-child { font-weight: 600; color: white; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+  .quick-ref h3 { color: white; font-size: 1.2rem; margin-top: 0; margin-bottom: 15px; border: none; padding: 0; }
+  ul, ol { padding-left: 22px; margin: 6px 0; }
+  li { margin: 4px 0; }
+  .btt { position: fixed; bottom: 30px; right: 30px; background: #1a5276; color: white; width: 42px; height: 42px; border-radius: 50%; text-align: center; line-height: 42px; font-size: 1.4rem; text-decoration: none; box-shadow: 0 2px 8px rgba(0,0,0,0.2); display: none; z-index: 100; }
+  .btt:hover { background: #2e86c1; }
+  @media (max-width: 768px) {
+    .container { padding: 10px; }
+    h2 { font-size: 1.3rem; }
+    pre { font-size: 0.75rem; }
+  }
+</style>
+<script>
+window.addEventListener('scroll', function(){
+  var btn = document.querySelector('.btt');
+  if (btn) btn.style.display = window.scrollY > 300 ? 'block' : 'none';
+});
+document.addEventListener('DOMContentLoaded', function(){
+  document.querySelectorAll('pre').forEach(function(pre){
+    if (pre.querySelector('.copy-btn')) return;
+    var btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.textContent = 'Copy';
+    btn.onclick = function(){
+      navigator.clipboard.writeText(pre.textContent).then(function(){
+        btn.textContent = 'Copied!';
+        btn.classList.add('copied');
+        setTimeout(function(){ btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+      }).catch(function(){ btn.textContent = 'Failed'; });
+    };
+    pre.style.position = 'relative';
+    pre.appendChild(btn);
+  });
+});
+</script>
+</head>
+<body>
+<div class="container">
+
+<div class="hero">
+  <h1>Kronos-TH — News Monitoring Manual</h1>
+  <p class="subtitle">A manual, human-facing habit for sanity-checking the daily top-10 ranking against real news</p>
+  <span class="badge">Not financial advice</span>
+  <span class="badge">Does not touch pipeline or model code</span>
+</div>
+
+<div class="card" style="margin-bottom:20px;">
+  <p><strong>Scope note:</strong> this manual never touches pipeline or model code — no news ingestion, no scoring, nothing feeds into <code>rank_score</code> or trade generation. CLAUDE.md's hard scope limit on "news sentiment" in the automated pipeline stays exactly as-is; this is a separate, entirely manual operator habit alongside <a href="operations-manual.html">operations-manual.html</a> and <a href="morning-paper-trading-guide.md">morning-paper-trading-guide.md</a>.</p>
+  <p style="margin-bottom:0;">Produced via a wayfinder planning effort — see <code>.scratch/news-monitoring-template/map.md</code> and its child tickets for the full research trail behind every source and rule below.</p>
+</div>
+
+<div class="toc">
+  <h3 style="margin-top:0; border:none; padding:0;">Contents</h3>
+  <ol>
+    <li><a href="#daily">Daily Quick-Scan (10-15 minutes)</a></li>
+    <li><a href="#weekly">Weekly Deeper Review (15-20 minutes)</a></li>
+    <li><a href="#protocol">Red-Flag Decision Protocol</a></li>
+    <li><a href="#set-sources">Source Directory — SET-Listed Equities</a></li>
+    <li><a href="#dr-sources">Source Directory — DR Underlyings</a></li>
+    <li><a href="#setup">One-Time Aggregation Setup</a></li>
+    <li><a href="#caveats">Caveats &amp; Known Gaps</a></li>
+    <li><a href="#quickref">Quick Reference Card</a></li>
+  </ol>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="daily">1. Daily Quick-Scan</h2>
+<div class="card">
+  <p><strong>Objective:</strong> sanity-check whatever 10 tickers land in today's <code>get_top_ranked(10)</code> output against real news, using sources already pre-filtered by &sect;4-&sect;6 — this is a skim of what's already there, not research from scratch.</p>
+  <p><strong>When:</strong> fold into the existing evening pipeline routine (~23:45 BKK), after the Trade Ticket is generated and before recording any paper trades. <strong>Time:</strong> 10-15 minutes.</p>
+
+  <div class="step-box">
+    <div class="step-num">Step 1.1</div>
+    <div class="step-title">Pull today's top-10</div>
+    <p>Open the dashboard's Trade Ticket (or run <code>get_top_ranked(10)</code> directly) and note the 10 tickers for tonight's scan.</p>
+  </div>
+
+  <div class="step-box">
+    <div class="step-num">Step 1.2</div>
+    <div class="step-title">Skim the Inoreader folders, per ticker</div>
+    <p>For each of the 10 tickers, check whichever Inoreader folder applies (<strong>Thai-market</strong> or <strong>DR-underlyings</strong>, set up per &sect;6) for anything new since yesterday, filtered to that ticker's name.</p>
+  </div>
+
+  <div class="step-box">
+    <div class="step-num">Step 1.3</div>
+    <div class="step-title">Check the Settrade App favorites (SET names only)</div>
+    <p>Glance at the Settrade App's push notifications for anything Inoreader missed — SET Group's own per-ticker channel (&sect;6), covers SET-listed names only, not DR underlyings.</p>
+  </div>
+
+  <div class="step-box">
+    <div class="step-num">Step 1.4</div>
+    <div class="step-title">Cross-check against the skip list</div>
+    <p>For anything flagged in Steps 1.2-1.3, check it against the fixed 5-item skip list in &sect;3.</p>
+    <div class="highlight-red" style="margin-bottom:0;"><strong>Only those five ever trigger a skip</strong> — routine earnings misses, analyst rating changes, guidance revisions, ordinary management reshuffles, and mechanical DR ratio/conversion notices are informational only and don't block the trade.</div>
+  </div>
+
+  <div class="step-box">
+    <div class="step-num">Step 1.5</div>
+    <div class="step-title">One combined macro glance</div>
+    <p>Not per-ticker — a single check: SET index level/direction, USD/THB, and whether BoT released anything today. Pairs with the Nikkei Asia feed in the Inoreader macro folder (&sect;6) if you want regional context too.</p>
+  </div>
+
+  <div class="step-box">
+    <div class="step-num">Step 1.6</div>
+    <div class="step-title">Log the day's entry</div>
+    <p>Append to <code>data/positions/morning_log.md</code> (the same daily journal the paper-trading flow already writes to — see <a href="morning-paper-trading-guide.md">morning-paper-trading-guide.md</a> Step 9).</p>
+    <div class="trade-grid">News scan: no flags found across today's top-10.</div>
+    <p style="margin-bottom:0;">Even a "no flags found" day gets a line, so there's a trace the scan actually happened. If a red flag <em>did</em> fire and you skipped a trade because of it, log it per &sect;3's phrasing convention.</p>
+  </div>
+</div>
+
+<div style="text-align:right;margin-top:-10px;"><a href="#" onclick="window.scrollTo(0,0);return false;" style="color:#2e86c1;font-size:0.82rem;text-decoration:none;">&uarr; Back to top</a></div>
+
+<!-- ============================================================ -->
+<h2 id="weekly">2. Weekly Deeper Review</h2>
+<div class="card">
+  <p><strong>Objective:</strong> broader sector and macro context that the daily quick-scan intentionally skips, plus a deeper one-time look at any name newly entering the top-10.</p>
+  <p><strong>When:</strong> piggybacked onto the <em>existing</em> "3. Weekly Portfolio Review (15-20 minutes)" slot in <a href="operations-manual.html">operations-manual.html</a> — every Sunday evening or Monday morning before market open. Not a separate standalone cadence. <strong>Time:</strong> 15-20 minutes.</p>
+
+  <div class="step-box">
+    <div class="step-num">Step 2.1</div>
+    <div class="step-title">Sector context</div>
+    <p>For whichever <code>SECTOR</code> buckets (per <code>kth/data/universe.py</code>) the current top-10 touches, skim for sector-wide news beyond what the daily per-ticker scan caught.</p>
+  </div>
+
+  <div class="step-box">
+    <div class="step-num">Step 2.2</div>
+    <div class="step-title">Past week's macro releases</div>
+    <p>Review the week's Bank of Thailand releases and any Thai SEC items (&sect;4) that the daily glance (Step 1.5) wouldn't have surfaced in depth.</p>
+  </div>
+
+  <div class="step-box">
+    <div class="step-num">Step 2.3</div>
+    <div class="step-title">SET Market Alerts check</div>
+    <p>Check SET Market Alerts for any name that's been sitting in the top-10 across multiple days — catches a structural flag (halt, caution list, cash-balance designation) that might have been missed day-to-day.</p>
+  </div>
+
+  <div class="step-box">
+    <div class="step-num">Step 2.4</div>
+    <div class="step-title">New-entrant deep look</div>
+    <p>For any ticker newly entering the top-10 for the first time in a while, do one deeper pass: its IR page (&sect;4/&sect;5), recent filings, and — for a DR name — a check of the KTB/BLS DR-mechanics page (&sect;5).</p>
+    <div class="highlight-blue" style="margin-bottom:0;">This is the "event-triggered" component of the weekly review, folded into the calendar cadence rather than run as a separate always-on watcher.</div>
+  </div>
+</div>
+
+<div style="text-align:right;margin-top:-10px;"><a href="#" onclick="window.scrollTo(0,0);return false;" style="color:#2e86c1;font-size:0.82rem;text-decoration:none;">&uarr; Back to top</a></div>
+
+<!-- ============================================================ -->
+<h2 id="protocol">3. Red-Flag Decision Protocol</h2>
+<div class="card">
+  <h4 style="margin-top:0;">Trigger threshold</h4>
+  <p>A red flag can come from <strong>either</strong> a primary source <strong>or</strong> a reputable secondary source (&sect;4/&sect;5's tiered lists) — you don't need to wait for primary-source confirmation before acting. Primary disclosure feeds are often slow or non-existent (SET's own RSS is dead; Nasdaq Copenhagen's feed isn't company-filterable), so a same-day secondary-press report is often the only realistic signal you'll get before market open.</p>
+
+  <h4>The fixed skip list</h4>
+  <p>Only these five trigger a skip. Everything else — routine earnings misses/beats, analyst rating changes, guidance revisions, ordinary management reshuffles, mechanical DR ratio/conversion notices — is informational only.</p>
+  <table>
+    <tr><th>#</th><th>Trigger</th><th>Where it typically shows up</th></tr>
+    <tr><td>1</td><td>Trading halt / suspension</td><td>SET Market Alerts; home-exchange equivalent for DR names</td></tr>
+    <tr><td>2</td><td>Cash-balance-only or caution-list designation</td><td>SET Market Alerts</td></tr>
+    <tr><td>3</td><td>Fraud allegation or regulatory investigation/enforcement action</td><td>Thai SEC, AMF, CONSOB, or SEC EDGAR enforcement item</td></tr>
+    <tr><td>4</td><td>Auditor's qualified opinion, disclaimer, or going-concern flag</td><td>Company IR / annual filing coverage</td></tr>
+    <tr><td>5</td><td>Sudden, unscheduled C-suite departure</td><td>Company IR, primary/secondary press (not a scheduled transition)</td></tr>
+  </table>
+
+  <h4>Scope</h4>
+  <div class="highlight-red"><strong>Strictly single-ticker.</strong> A red flag skips only the flagged name's trade — this protocol does not add a macro-level override. The dashboard's existing Market State/Turmoil gate already handles systemic days, and CLAUDE.md already retracted manually overriding allocation based on a perceived SET macro regime (the regime-conditional-alpha decision). This protocol deliberately doesn't reintroduce that pattern via a news-driven back door.</div>
+
+  <h4>DR-specific addition</h4>
+  <p>For DR trades, also check the KTB/BLS issuer-page DR-mechanics channel (&sect;5) — a ratio/conversion event severe enough to pair with a trading-halt-equivalent triggers a skip even if nothing shows up in the underlying's home-market news, since this failure mode has no equivalent on the Paris/Milan/Copenhagen side.</p>
+
+  <h4>Recording the override</h4>
+  <p>Log it in the existing <code>data/positions/morning_log.md</code> Reason field, using a consistent phrasing convention:</p>
+  <pre>Reason: Manual override — news red flag ([trigger type], [source]).</pre>
+  <div class="highlight-blue" style="margin-bottom:0;">No new field, no dashboard/API change — this reuses infrastructure that already exists.</div>
+</div>
+
+<div style="text-align:right;margin-top:-10px;"><a href="#" onclick="window.scrollTo(0,0);return false;" style="color:#2e86c1;font-size:0.82rem;text-decoration:none;">&uarr; Back to top</a></div>
+
+<!-- ============================================================ -->
+<h2 id="set-sources">4. Source Directory — SET-Listed Equities</h2>
+<div class="card">
+  <p>Covers the <code>thai_equity</code>/<code>thai_index</code> universe (<code>kth/data/universe.py</code>) — the names that can appear in <code>get_top_ranked(10)</code>. Full research trail: <code>.scratch/news-monitoring-template/research/01-set-sources-findings.md</code>.</p>
+
+  <h4>Primary (official/regulatory)</h4>
+  <table>
+    <tr><th>Source</th><th>URL</th><th>Notes</th></tr>
+    <tr><td>SET News &amp; Announcements (EN/TH)</td><td><a href="https://www.set.or.th/en/market/news-and-alert/news" target="_blank" rel="noopener">set.or.th/.../news</a></td><td>The master disclosure feed, filterable by ticker. No RSS — SET's old feed hub (<code>classic.set.or.th</code>) is dead.</td></tr>
+    <tr><td>SET Market Alerts</td><td><a href="https://www.set.or.th/en/market/news-and-alert/market-alerts" target="_blank" rel="noopener">set.or.th/.../market-alerts</a></td><td>Halts, suspensions, caution/cash-balance flags — feeds &sect;3's skip list directly.</td></tr>
+    <tr><td>Thai SEC (สำนักงาน ก.ล.ต.)</td><td><a href="https://www.sec.or.th" target="_blank" rel="noopener">sec.or.th</a></td><td>A <strong>distinct regulator from SET</strong> — tender offers, prospectuses, insider-transaction filings. No RSS found; browse manually.</td></tr>
+    <tr><td>Bank of Thailand — News &amp; Media</td><td><a href="https://www.bot.or.th/en/news-and-media/news.html" target="_blank" rel="noopener">bot.or.th/.../news</a></td><td>Rate decisions, monthly economic conditions. No RSS/email found.</td></tr>
+    <tr><td>Company IR pages</td><td>varies per ticker</td><td>No central SET directory exists. Check the company's own site first; many are hosted on the shared <code>&lt;company&gt;.irplus.in.th</code> platform if not obvious.</td></tr>
+  </table>
+
+  <h4>Secondary — Thai</h4>
+  <table>
+    <tr><th>Source</th><th>URL</th><th>RSS?</th></tr>
+    <tr><td>SETTRADE.com news portal</td><td><a href="https://www.settrade.com/th/news-and-articles/news/main" target="_blank" rel="noopener">settrade.com</a></td><td><strong>Yes</strong> — live directory at <a href="https://www.settrade.com/th/rss" target="_blank" rel="noopener">settrade.com/th/rss</a>, 6 topic feeds (not per-ticker).</td></tr>
+    <tr><td>Thunhoon</td><td><a href="https://thunhoon.com/" target="_blank" rel="noopener">thunhoon.com</a></td><td>No</td></tr>
+    <tr><td>Kaohoon</td><td><a href="https://www.kaohoon.com/" target="_blank" rel="noopener">kaohoon.com</a></td><td>No (has a mobile app)</td></tr>
+    <tr><td>efinanceThai</td><td><a href="https://www.efinancethai.com/LastestNews/AllLatestNews.aspx" target="_blank" rel="noopener">efinancethai.com</a></td><td>No</td></tr>
+    <tr><td>Bangkok Business News (Finance)</td><td><a href="https://www.bangkokbiznews.com/finance" target="_blank" rel="noopener">bangkokbiznews.com/finance</a></td><td>Not confirmed</td></tr>
+    <tr><td>Prachachat Business</td><td><a href="https://www.prachachat.net/finance" target="_blank" rel="noopener">prachachat.net/finance</a></td><td>Not confirmed</td></tr>
+  </table>
+
+  <h4>Secondary — English</h4>
+  <table>
+    <tr><th>Source</th><th>URL</th><th>RSS?</th></tr>
+    <tr><td>Bangkok Post Business</td><td><a href="https://www.bangkokpost.com/business" target="_blank" rel="noopener">bangkokpost.com/business</a></td><td>Site fine for browsing; RSS is bot-toll-gated (HTTP 402) — don't rely on it for automation.</td></tr>
+    <tr><td>The Nation Thailand Business</td><td><a href="https://www.nationthailand.com/business" target="_blank" rel="noopener">nationthailand.com/business</a></td><td>Not confirmed</td></tr>
+    <tr><td>Kaohoon International</td><td><a href="https://www.kaohooninternational.com/thailand" target="_blank" rel="noopener">kaohooninternational.com</a></td><td>No</td></tr>
+    <tr><td>Investing.com — Thailand SET</td><td><a href="https://www.investing.com/indices/thailand-set-news" target="_blank" rel="noopener">investing.com</a></td><td><strong>No per-symbol RSS confirmed</strong> (topic feeds only) — browse manually.</td></tr>
+    <tr><td>Reuters / Bloomberg — Asia markets</td><td>reuters.com/markets/asia, bloomberg.com/quote/SET:IND</td><td>Macro-only, no Thailand company depth.</td></tr>
+  </table>
+
+  <div class="highlight" style="margin-bottom:0;"><strong>Deprioritized:</strong> Thairath and other general-interest dailies (lower signal-density than finance-specialist outlets). <strong>Dead/broken:</strong> <code>classic.set.or.th</code>'s RSS hub, efinanceThai's old frame-based news URL.</div>
+</div>
+
+<div style="text-align:right;margin-top:-10px;"><a href="#" onclick="window.scrollTo(0,0);return false;" style="color:#2e86c1;font-size:0.82rem;text-decoration:none;">&uarr; Back to top</a></div>
+
+<!-- ============================================================ -->
+<h2 id="dr-sources">5. Source Directory — DR Underlyings</h2>
+<div class="card">
+  <p>Covers the 6 DR underlyings tradable on the SET in THB. Confirmed against <code>kth_dr/universe_dr.py</code>. Full research trail: <code>.scratch/news-monitoring-template/research/02-dr-sources-findings.md</code>.</p>
+
+  <table>
+    <tr><th>Underlying</th><th>Home exchange</th><th>DR ticker (issuer)</th></tr>
+    <tr><td>Hermès (<code>RMS.PA</code>)</td><td>Euronext Paris</td><td><code>HERMES80.BK</code> (KTB)</td></tr>
+    <tr><td>L'Oréal (<code>OR.PA</code>)</td><td>Euronext Paris</td><td><code>LOREAL80.BK</code> (KTB)</td></tr>
+    <tr><td>LVMH (<code>MC.PA</code>)</td><td>Euronext Paris</td><td><code>LVMH01.BK</code> (BLS)</td></tr>
+    <tr><td>Sanofi (<code>SAN.PA</code>)</td><td>Euronext Paris</td><td><code>SANOFI80.BK</code> (KTB)</td></tr>
+    <tr><td>Ferrari (<code>RACE.MI</code>)</td><td>Borsa Italiana / Euronext Milan (dual NYSE <code>RACE</code>)</td><td><code>FERRARI80.BK</code> (KTB)</td></tr>
+    <tr><td>Novo Nordisk (<code>NOVO-B.CO</code>)</td><td>Nasdaq Copenhagen</td><td><code>NOVOB80.BK</code> (KTB)</td></tr>
+  </table>
+
+  <div class="step-box">
+    <div class="step-title">Group 1 — Euronext Paris (Hermès, L'Oréal, LVMH, Sanofi)</div>
+    <p><strong>Primary:</strong> AMF BDIF regulated-disclosure database (<a href="https://bdif.amf-france.org/en" target="_blank" rel="noopener">bdif.amf-france.org/en</a>) + each company's own IR page (Sanofi's has an explicit email-alert signup; LVMH's is JS-heavy, verify manually). <strong>Secondary:</strong> Les Echos (note: owned by LVMH's parent group — a real independence caveat for LVMH coverage specifically), Boursorama, Reuters/Bloomberg/FT (English wires, account-gated).</p>
+  </div>
+
+  <div class="step-box">
+    <div class="step-title">Group 2 — Milan (Ferrari, dual-listed NYSE)</div>
+    <p><strong>Primary:</strong> CONSOB's eMarket storage mechanism, Ferrari IR (JS-heavy, verify manually), SEC EDGAR (NYSE cross-check). <strong>Secondary:</strong> Il Sole 24 Ore, MilanoFinanza.</p>
+  </div>
+
+  <div class="step-box">
+    <div class="step-title">Group 3 — Copenhagen (Novo Nordisk)</div>
+    <p><strong>Primary:</strong> company IR (has an explicit email-alert signup), GlobeNewswire (Novo's chosen regulatory-announcement wire), SEC EDGAR (ADR <code>NVO</code> cross-check). <strong>Secondary:</strong> DR (Danmarks Radio) Penge desk, Børsen (account-gated).</p>
+    <div class="highlight" style="margin-bottom:0;">Nasdaq Copenhagen's own exchange feed (<code>subscribe.news.eu.nasdaq.com/rss</code>) is real but <strong>Nordic-wide only, not filterable to Novo Nordisk</strong> — GlobeNewswire is the better company-specific option.</div>
+  </div>
+
+  <h4>Cross-cutting — Seeking Alpha per-symbol RSS</h4>
+  <p>The single easiest source in this whole directory to plug into a reader — free, no signup, one uniform mechanism covering all 6 names via their US OTC/ADR/NYSE tickers:</p>
+  <table>
+    <tr><th>Underlying</th><th>Seeking Alpha feed</th></tr>
+    <tr><td>Sanofi</td><td><code>seekingalpha.com/api/sa/combined/SNY.xml</code></td></tr>
+    <tr><td>Novo Nordisk</td><td><code>seekingalpha.com/api/sa/combined/NVO.xml</code></td></tr>
+    <tr><td>Ferrari</td><td><code>seekingalpha.com/api/sa/combined/RACE.xml</code></td></tr>
+    <tr><td>LVMH</td><td><code>seekingalpha.com/api/sa/combined/LVMUY.xml</code></td></tr>
+    <tr><td>Hermès</td><td><code>seekingalpha.com/api/sa/combined/HESAY.xml</code></td></tr>
+    <tr><td>L'Oréal</td><td><code>seekingalpha.com/api/sa/combined/LRLCY.xml</code></td></tr>
+  </table>
+  <p>Treat as a secondary-tier, cross-cutting supplement — not a replacement for the primary regulatory/IR sources above.</p>
+
+  <h4>SET's DR-mechanics channel (not a news substitute)</h4>
+  <p>Per-DR issuer pages — KTB (<code>krungthai.com</code>) for 5 of 6, BLS (<code>bualuang.co.th</code>) for LVMH01 — mirror ratio/conversion/corporate-action changes. SET's own DR quote pages have no news tab. SET's general newsroom separately covers DR-product-wide circulars (trading hours, new listings).</p>
+  <div class="highlight-red" style="margin-bottom:0;"><strong>None of this substitutes for the home-market source tables above</strong> — it's a low-frequency mechanics check, feeding &sect;3's DR-specific skip-list addition.</div>
+</div>
+
+<div style="text-align:right;margin-top:-10px;"><a href="#" onclick="window.scrollTo(0,0);return false;" style="color:#2e86c1;font-size:0.82rem;text-decoration:none;">&uarr; Back to top</a></div>
+
+<!-- ============================================================ -->
+<h2 id="setup">6. One-Time Aggregation Setup</h2>
+<div class="card">
+  <p>Full research trail: <code>.scratch/news-monitoring-template/research/03-alerting-tooling-findings.md</code>. Since both universes (52 tickers, 6 DR underlyings) are fixed lists, this is a one-time setup, not daily reconfiguration.</p>
+
+  <div class="step-box">
+    <div class="step-num">Setup 1</div>
+    <div class="step-title">Create a free Inoreader account</div>
+    <p>150 RSS feeds + 20 email-to-RSS "Newsletter Feeds" on the free tier — chosen over Feedly, whose free tier excludes newsletters.</p>
+  </div>
+
+  <div class="step-box">
+    <div class="step-num">Setup 2-3</div>
+    <div class="step-title">"Thai-market" folder</div>
+    <p>Add SETTRADE's 6 RSS feeds (<a href="https://www.settrade.com/th/rss" target="_blank" rel="noopener">settrade.com/th/rss</a>). Then, for each of the 52 <code>thai_equity</code>/<code>thai_index</code> tickers, add a <strong>Google News RSS search</strong> feed:</p>
+    <pre>https://news.google.com/rss/search?q="TICKER.BK"+"Company Name"</pre>
+    <div class="highlight-red" style="margin-bottom:0;"><strong>Always include the full company name in the query, not just the ticker</strong> — a bare-ticker query returns stale, years-old results. For names whose English name collides with a common word, add a disambiguating News/Finance-only phrasing.</div>
+  </div>
+
+  <div class="step-box">
+    <div class="step-num">Setup 4-6</div>
+    <div class="step-title">"DR-underlyings" folder</div>
+    <p>Add all 6 Seeking Alpha per-symbol feeds (&sect;5) — no signup needed, just add the URLs. Then create an Inoreader Newsletter Feed for each DR-underlying company that offers an email-alert signup (confirmed for Sanofi and Novo Nordisk; check Hermès/L'Oréal/LVMH/Ferrari too) and subscribe using the generated address. Finally, add 6 Google News RSS search feeds for the underlying names — Ferrari needs a disambiguator (pair with <code>"RACE.MI"</code>), L'Oréal needs both spellings (<code>L'Oréal</code> / <code>L'Oreal</code>).</p>
+  </div>
+
+  <div class="step-box">
+    <div class="step-num">Setup 7</div>
+    <div class="step-title">Optional macro addition</div>
+    <p>Add Nikkei Asia's RSS (<code>asia.nikkei.com/rss/feed/nar</code>) to a macro/regional folder — personal, non-commercial use only per its terms.</p>
+  </div>
+
+  <div class="step-box">
+    <div class="step-num">Setup 8</div>
+    <div class="step-title">Separately, install the Settrade App</div>
+    <p>Add all 52 <code>thai_equity</code>/<code>thai_index</code> tickers to its Favorites list for push notifications.</p>
+    <div class="highlight-blue" style="margin-bottom:0;">This is SET Group's own per-ticker channel and the only piece that stays outside Inoreader — no RSS/email export exists for it.</div>
+  </div>
+
+  <h4>Daily habit</h4>
+  <p style="margin-bottom:0;">Open Inoreader, filter to unread items across both folders, cross-reference against today's <code>get_top_ranked(10)</code> output — skim only the items touching today's top-10 names (&sect;1) — then separately glance at the Settrade App's notifications for the same names.</p>
+</div>
+
+<div style="text-align:right;margin-top:-10px;"><a href="#" onclick="window.scrollTo(0,0);return false;" style="color:#2e86c1;font-size:0.82rem;text-decoration:none;">&uarr; Back to top</a></div>
+
+<!-- ============================================================ -->
+<h2 id="caveats">7. Caveats &amp; Known Gaps</h2>
+<div class="card">
+  <p>Sources that were checked and ruled out, or flagged as unconfirmed — recorded here so a future pass doesn't re-chase them without reason.</p>
+  <table>
+    <tr><th>Source</th><th>Status</th></tr>
+    <tr><td>CNBC RSS</td><td>HTTP 403 on direct fetch — bot-gated, not usable for automation.</td></tr>
+    <tr><td>Trading Economics RSS</td><td>HTTP 403 on direct fetch — bot-gated.</td></tr>
+    <tr><td>Investing.com</td><td>No per-symbol RSS exists, topic feeds only. Manual browse only.</td></tr>
+    <tr><td>PR Newswire APAC</td><td>Only broad topic-category feeds, no company/Thailand-specific option.</td></tr>
+    <tr><td>StockTitan.net</td><td>No public per-ticker RSS found (internal JSON API only).</td></tr>
+    <tr><td>IR Plus (<code>irplus.in.th</code>)</td><td>A shared Thai IR-hosting platform, not a cross-company alert source — useful as a lookup heuristic only.</td></tr>
+    <tr><td>WiSET (SET's 2026 super-app)</td><td>Alerting appears tied to actual portfolio holdings, not a free watchlist — unconfirmed, spot-check in-app before relying on it.</td></tr>
+    <tr><td>SET Member account alerting</td><td>Unconfirmed beyond gating the apps above — low priority given the Settrade App already covers per-ticker push.</td></tr>
+    <tr><td>Yahoo Finance per-ticker RSS</td><td>Mechanism is live, but Thai-side coverage is patchy (confirmed content for <code>PTT.BK</code>, empty for <code>AOT.BK</code>). Worth a per-ticker try as a supplement, not a primary source.</td></tr>
+    <tr><td>LVMH's and Ferrari's own IR pages</td><td>Heavily JS-rendered — verify manually in a browser rather than assuming a feed can be scripted against them.</td></tr>
+    <tr><td>La Tribune, Børsen, Berlingske Business</td><td>Not independently confirmed live this session — well-known outlets, but spot-check before relying on them.</td></tr>
+    <tr><td>Nasdaq Copenhagen exchange feed</td><td>Real, but Nordic-wide only — not filterable to Novo Nordisk specifically.</td></tr>
+  </table>
+</div>
+
+<div style="text-align:right;margin-top:-10px;"><a href="#" onclick="window.scrollTo(0,0);return false;" style="color:#2e86c1;font-size:0.82rem;text-decoration:none;">&uarr; Back to top</a></div>
+
+<!-- ============================================================ -->
+<h2 id="quickref">8. Quick Reference Card</h2>
+<div class="quick-ref">
+  <h3>News Monitoring Quick Reference</h3>
+  <table>
+    <tr><td style="width:110px;">DAILY (10-15m)</td><td>Pull top-10 &rarr; skim Inoreader per ticker &rarr; check Settrade App (SET names) &rarr; cross-check skip list &rarr; one macro glance &rarr; log to <code>morning_log.md</code>.</td></tr>
+    <tr><td>WEEKLY (15-20m)</td><td>Piggybacked on the existing Weekly Portfolio Review: sector context &rarr; week's macro/BoT &rarr; SET Market Alerts check &rarr; deep look at any new top-10 entrant.</td></tr>
+    <tr><td>SKIP LIST (5)</td><td>Halt/suspension. Cash-balance/caution. Fraud or regulatory investigation. Auditor qualified opinion. Sudden unscheduled C-suite exit. <strong>Everything else is informational only.</strong></td></tr>
+    <tr><td>SCOPE</td><td>Single-ticker only. No macro override here — that's the dashboard's existing Turmoil gate's job.</td></tr>
+    <tr><td>DR ADDITION</td><td>Also check the KTB/BLS DR-mechanics page for a severe ratio/conversion event.</td></tr>
+    <tr><td>RECORDING</td><td><code>data/positions/morning_log.md</code>, Reason field: "Manual override — news red flag ([type], [source])".</td></tr>
+  </table>
+</div>
+
+</div>
+
+<a href="#" class="btt" onclick="window.scrollTo(0,0);return false;">&uarr;</a>
+
+<div style="text-align:center;padding:30px 0 10px;color:#95a5a6;font-size:0.82rem;">
+  Purely human-facing, manual practice — does not touch kth/, kth_dr/, the pipeline, or the dashboard &bull; Not financial advice
+</div>
+
+</body>
+</html>
