@@ -482,12 +482,18 @@ function _flagDelta(prev, curr) {
 // badge so the ranking/morning-brief tables never display an unbuyable symbol.
 function _tickerCell(f) {
   const execTicker = f.execution_ticker || f.ticker;
-  const isDr = f.class === "dr" || (f.execution_ticker && f.execution_ticker !== f.ticker);
-  if (isDr) {
+  if (_isDrRow(f)) {
     return '<td class="ticker">' + execTicker
       + ' <span class="badge dr" title="Depositary Receipt — tracks underlying ' + f.ticker + '">DR</span></td>';
   }
   return '<td class="ticker">' + execTicker + '</td>';
+}
+function _isDrRow(f) {
+  return f.class === "dr" || (f.execution_ticker && f.execution_ticker !== f.ticker);
+}
+function _forecastPriceCell(f, executionField, rawField) {
+  const value = _isDrRow(f) ? f[executionField] : (f[executionField] ?? f[rawField]);
+  return Number.isFinite(value) && value > 0 ? value.toFixed(2) : "—";
 }
 
 // Column header definitions — shown as tooltips on hover
@@ -498,6 +504,8 @@ const COL = {
   premium: "DR-only: DR price vs. its intrinsic value = (underlying close × FX) ÷ ratio. Positive = DR trading above its underlying (expensive); negative = below (cheap). Informational only — does not affect ranking or Score.",
   close:   "Last known closing price (THB) — from the most recent trading day",
   expRet:  "Expected Return: model's predicted price change over the next 20 trading days (P50 forecast). ↑ = bullish, ↓ = bearish.",
+  target:  "Target: model's median (P50) forecast price in the tradable ticker's price scale.",
+  p95:     "P95: upper forecast price in the tradable ticker's price scale. It is an uncertainty boundary, not a guaranteed price.",
   delta:   "Δ Expected Return vs previous forecast date. ▲ = model more bullish since last run, ▼ = less bullish. Does NOT measure confidence. The ↗↘ badge on the flag shows confidence-level change.",
   band:    "Uncertainty band = (P95 − P5) ÷ Close price. Directly determines flag colour: <10% → 🟢 confident | 10–30% → 🟡 uncertain | >30% → 🔴 very uncertain. Narrow band = model is sure; wide band = model is guessing.",
   flag:    "Confidence flag based on Band width. 🟢 <10% (confident). 🟡 10–30% (moderate). 🔴 >30% (uncertain, avoid). ↗ = confidence improved vs prev forecast. ↘ = confidence downgraded (e.g. HOLD → REDUCE trigger).",
@@ -509,6 +517,8 @@ const COL = {
 const LEGEND_MORNING = `
 <div class="col-legend">
   <strong>Exp Ret</strong> Model's predicted 20-day return &nbsp;|&nbsp;
+  <strong>Target (P50)</strong> Median forecast price &nbsp;|&nbsp;
+  <strong>P95</strong> Upper forecast price boundary &nbsp;|&nbsp;
   <strong>Δ Prev</strong> Change in exp ret since last forecast (▲more bullish ▼less bullish); ↗↘ = confidence level changed &nbsp;|&nbsp;
   <strong>Band</strong> Uncertainty: &lt;10%=🟢 confident, 10–30%=🟡 uncertain, &gt;30%=🔴 avoid &nbsp;|&nbsp;
   <strong>Net Ret</strong> After friction costs
@@ -524,7 +534,9 @@ function _buildBullBearTable(rows, hasDelta) {
   if (hasDr) html += `<th title="${COL.premium}">Premium %</th>`;
   html += `<th title="${COL.close}">Close</th>
     <th title="${COL.score}">Score (?)</th>
-    <th title="${COL.expRet}">Exp Ret (?)</th>`;
+    <th title="${COL.expRet}">Exp Ret (?)</th>
+     <th scope="col" title="${COL.target}">Target</th>
+     <th scope="col" title="${COL.p95}">P95</th>`;
   if (hasDelta) html += `<th title="${COL.delta}">Δ Prev (?)</th>`;
   html += `<th title="${COL.band}">Band (?)</th>
     <th title="${COL.flag}">Flag (?)</th>
@@ -540,7 +552,9 @@ function _buildBullBearTable(rows, hasDelta) {
       + (hasDr ? _premiumCell(f) : '')
       + '<td class="num">' + ((f.exec_close ?? f.close)?.toFixed(2)||"—") + '</td>'
       + '<td class="num ' + (f.rank_score>=0?"green":"red") + '">' + f.rank_score.toFixed(2) + '</td>'
-      + '<td class="num ' + retCls + '">' + dir + ' ' + (f.exp_ret*100).toFixed(2) + '%</td>';
+      + '<td class="num ' + retCls + '">' + dir + ' ' + (f.exp_ret*100).toFixed(2) + '%</td>'
+      + '<td class="num">' + _forecastPriceCell(f, "target_price", "p50_close") + '</td>'
+      + '<td class="num">' + _forecastPriceCell(f, "p95_price", "p95_close") + '</td>';
     if (hasDelta) html += '<td class="num">' + _deltaStr(f.delta_exp_ret) + '</td>';
     html += '<td class="num">' + (f.band_width*100).toFixed(1) + '%</td>'
       + '<td>' + _flagEmoji(f.confidence) + flagChange + '</td>'
@@ -563,7 +577,9 @@ function _buildRankingTable(forecasts, hasDelta) {
   if (hasDr) rankHtml += `<th title="${COL.premium}">Premium %</th>`;
   rankHtml += `<th title="${COL.close}">Close</th>
     <th title="${COL.score}">Score (?)</th>
-    <th title="${COL.expRet}">Exp Ret (?)</th>`;
+    <th title="${COL.expRet}">Exp Ret (?)</th>
+     <th scope="col" title="${COL.target}">Target</th>
+     <th scope="col" title="${COL.p95}">P95</th>`;
   if (hasDelta) rankHtml += `<th title="${COL.delta}">Δ (?)</th>`;
   rankHtml += `<th title="${COL.band}">Band (?)</th>
     <th title="${COL.flag}">Flag (?)</th>
@@ -580,7 +596,9 @@ function _buildRankingTable(forecasts, hasDelta) {
       + (hasDr ? _premiumCell(f) : '')
       + '<td class="num">' + ((f.exec_close ?? f.close)?.toFixed(2)||"—") + '</td>'
       + '<td class="num ' + (f.rank_score>=0?"green":"red") + '">' + f.rank_score.toFixed(2) + '</td>'
-      + '<td class="num ' + retCls + '">' + dir + ' ' + (f.exp_ret*100).toFixed(2) + '%</td>';
+      + '<td class="num ' + retCls + '">' + dir + ' ' + (f.exp_ret*100).toFixed(2) + '%</td>'
+      + '<td class="num">' + _forecastPriceCell(f, "target_price", "p50_close") + '</td>'
+      + '<td class="num">' + _forecastPriceCell(f, "p95_price", "p95_close") + '</td>';
     if (hasDelta) rankHtml += '<td class="num" style="font-size:0.78em">' + _deltaStr(f.delta_exp_ret) + '</td>';
     rankHtml += '<td class="num">' + (f.band_width*100).toFixed(1) + '%</td>'
       + '<td>' + _flagEmoji(f.confidence) + flagChange + '</td></tr>';

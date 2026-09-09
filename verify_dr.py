@@ -630,6 +630,18 @@ def test_dashboard_close_column_uses_exec_close_not_underlying():
     print("PASS test_dashboard_close_column_uses_exec_close_not_underlying")
 
 
+def test_dashboard_target_prices_reject_invalid_values_and_dr_raw_fallback():
+    from pathlib import Path
+
+    src = Path("scripts/static/dashboard.html").read_text()
+    assert "function _forecastPriceCell(f, executionField, rawField)" in src
+    assert "Number.isFinite(value) && value > 0" in src
+    assert "_isDrRow(f) ? f[executionField] : (f[executionField] ?? f[rawField])" in src
+    assert src.count('_forecastPriceCell(f, "target_price", "p50_close")') == 2
+    assert src.count('_forecastPriceCell(f, "p95_price", "p95_close")') == 2
+    print("PASS test_dashboard_target_prices_reject_invalid_values_and_dr_raw_fallback")
+
+
 if __name__ == "__main__":
     import inspect
     import tempfile

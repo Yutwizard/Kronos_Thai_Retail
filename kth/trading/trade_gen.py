@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 from pathlib import Path
 from datetime import date, timedelta
 from typing import Optional
@@ -38,6 +39,24 @@ BACKTEST_METRICS = {
 
 def _safe_ticker(ticker: str) -> str:
     return ticker.replace("^", "_").replace("=", "_")
+
+
+def _execution_forecast_price(
+    underlying_close: float, forecast_price: float, execution_close: float
+) -> Optional[float]:
+    """Convert an underlying forecast to the execution ticker's price scale."""
+    try:
+        valid_scale = (
+            math.isfinite(underlying_close)
+            and underlying_close > 0
+            and math.isfinite(execution_close)
+            and execution_close > 0
+        )
+    except (TypeError, ValueError):
+        valid_scale = False
+    if not valid_scale:
+        return None
+    return forecast_price * execution_close / underlying_close
 
 
 def _tag_tiers(rows: list[dict], n: int = TOP_N) -> list[dict]:
@@ -103,6 +122,8 @@ def load_forecasts(report_date: str = None) -> list[dict]:
 
             exec_ticker = resolve_execution_ticker(ticker)
             exec_close = resolve_execution_price(ticker, exec_ticker, current_close)
+            target_price = _execution_forecast_price(current_close, p50, exec_close)
+            p95_price = _execution_forecast_price(current_close, p95, exec_close)
 
             # Friction/class must be resolved off the EXECUTION ticker — a DR
             # position pays "dr" friction (thai_equity rate), not the
@@ -126,6 +147,8 @@ def load_forecasts(report_date: str = None) -> list[dict]:
                 "ticker": ticker,
                 "execution_ticker": exec_ticker,
                 "exec_close": round(exec_close, 2),
+                "target_price": round(target_price, 2) if target_price is not None else None,
+                "p95_price": round(p95_price, 2) if p95_price is not None else None,
                 "name": resolve_display_name(ticker, get_display_name(ticker)),
                 "class": cls,
                 "sector": get_sector(exec_ticker),
