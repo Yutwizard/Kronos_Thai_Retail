@@ -45,10 +45,10 @@ def test_load_forecasts_exposes_execution_scale_targets_without_changing_raw_pri
     monkeypatch.setattr(trade_gen.pd, "read_parquet", lambda _: pd.DataFrame({
         "p5": [90.0], "p50": [110.0], "p95": [130.0], "mean": [112.0]
     }))
-    monkeypatch.setattr(
-        "kth.data.loader.load_cached",
-        lambda _: pd.DataFrame({"close": [100.0]}),
-    )
+
+    class _FakePrices:
+        def get_close(self, ticker):
+            return 100.0
 
     import kth_dr.loader_dr
     import kth_dr.trade_gen_dr
@@ -65,7 +65,7 @@ def test_load_forecasts_exposes_execution_scale_targets_without_changing_raw_pri
     monkeypatch.setattr(trade_gen, "get_currency_group", lambda _: None)
     monkeypatch.setattr(trade_gen, "get_display_name", lambda _: "Apple")
 
-    row = trade_gen.load_forecasts(report_date)[0]
+    row = trade_gen.load_forecasts(report_date, prices=_FakePrices())[0]
 
     assert row["p50_close"] == pytest.approx(110.0)
     assert row["p95_close"] == pytest.approx(130.0)
@@ -84,10 +84,10 @@ def test_load_forecasts_uses_none_for_invalid_execution_scale(monkeypatch, tmp_p
     monkeypatch.setattr(trade_gen.pd, "read_parquet", lambda _: pd.DataFrame({
         "p5": [90.0], "p50": [110.0], "p95": [130.0], "mean": [112.0]
     }))
-    monkeypatch.setattr(
-        "kth.data.loader.load_cached",
-        lambda _: pd.DataFrame({"close": [100.0]}),
-    )
+
+    class _FakePrices:
+        def get_close(self, ticker):
+            return 100.0
 
     import kth_dr.loader_dr
     import kth_dr.trade_gen_dr
@@ -104,7 +104,7 @@ def test_load_forecasts_uses_none_for_invalid_execution_scale(monkeypatch, tmp_p
     monkeypatch.setattr(trade_gen, "get_currency_group", lambda _: None)
     monkeypatch.setattr(trade_gen, "get_display_name", lambda _: "Apple")
 
-    row = trade_gen.load_forecasts(report_date)[0]
+    row = trade_gen.load_forecasts(report_date, prices=_FakePrices())[0]
 
     assert row["target_price"] is None
     assert row["p95_price"] is None

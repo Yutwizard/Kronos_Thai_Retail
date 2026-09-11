@@ -69,15 +69,18 @@ def get_positions(mode: str = "paper") -> dict:
     from kth.trading._dr_optional import get_enrich_dr_premium
     enrich_dr_premium = get_enrich_dr_premium()
 
+    from kth.data.pricestore import PriceStore
+    prices = PriceStore()
+
     enriched = []
     for ticker, pos in positions.items():
-        mark = _get_current_price(ticker)
+        mark = _get_current_price(ticker, prices)
         if mark is None or mark == 0:
             mark = 0.0  # fallback
         pnl = (mark - pos["avg_cost"]) / pos["avg_cost"] if pos["avg_cost"] > 0 else 0
         val = pos["shares"] * mark
 
-        underlying_ticker, premium_pct = enrich_dr_premium(ticker, mark, _get_current_price)
+        underlying_ticker, premium_pct = enrich_dr_premium(ticker, mark, prices.get_close)
         underlying_ticker = underlying_ticker or None
 
         enriched.append({
@@ -110,19 +113,14 @@ def get_positions(mode: str = "paper") -> dict:
     }
 
 
-def _get_current_price(ticker: str) -> float | None:
-    """Get latest close price from cached data. Logs errors instead of swallowing."""
-    import logging
-    try:
-        from kth.data.loader import load_cached
-        df = load_cached(ticker)
-        return float(df["close"].iloc[-1])
-    except FileNotFoundError:
-        logging.warning(f"_get_current_price: no cache for {ticker}")
-        return None
-    except Exception as e:
-        logging.error(f"_get_current_price: corrupt cache for {ticker}: {e}")
-        return None
+def _get_current_price(ticker: str, store=None) -> float | None:
+    """Get latest close price from cached data. Logs errors instead of swallowing.
+
+    store: an optional PriceStore for per-run memoization. Without one, reads
+    straight from disk — same as before, just behind the single seam.
+    """
+    from kth.data.pricestore import PriceStore
+    return (store or PriceStore()).get_close(ticker)
 
 
 def execute_trade(ticker: str, action: str, shares: int, fill_price: float,
@@ -172,8 +170,10 @@ def execute_trade(ticker: str, action: str, shares: int, fill_price: float,
         return {"error": f"Unknown action: {action}", "recorded": 0}
 
     # Recompute equity
+    from kth.data.pricestore import PriceStore
+    _prices = PriceStore()
     total_pos_value = sum(
-        pos["shares"] * (_get_current_price(t) or pos["avg_cost"])
+        pos["shares"] * (_get_current_price(t, _prices) or pos["avg_cost"])
         for t, pos in pf["positions"].items()
     )
     total_value = pf["cash"] + total_pos_value
@@ -196,7 +196,7 @@ def execute_trade(ticker: str, action: str, shares: int, fill_price: float,
         "portfolio_value": round(total_value, 2),
         "cash": round(pf["cash"], 2),
         "new_positions": [
-            {"ticker": t, "shares": p["shares"], "weight": round(p["shares"] * (_get_current_price(t) or p["avg_cost"]) / total_value, 4)}
+            {"ticker": t, "shares": p["shares"], "weight": round(p["shares"] * (_get_current_price(t, _prices) or p["avg_cost"]) / total_value, 4)}
             for t, p in pf["positions"].items()
         ],
         "frozen": pf["frozen"],
@@ -572,8 +572,10 @@ def rebuild_from_trades(mode: str = "paper") -> dict:
 
     pf["cash"] = round(cash, 2)
     pf["positions"] = positions
+    from kth.data.pricestore import PriceStore
+    _prices = PriceStore()
     total_pos = sum(
-        pos["shares"] * (_get_current_price(t) or pos["avg_cost"])
+        pos["shares"] * (_get_current_price(t, _prices) or pos["avg_cost"])
         for t, pos in positions.items()
     )
     total_value = round(cash + total_pos, 2)

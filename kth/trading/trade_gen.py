@@ -11,6 +11,8 @@ from typing import Optional
 import pandas as pd
 
 from kth.data.universe import UNIVERSE, FRICTION, get_ticker_class, get_display_name, get_sector, get_currency_group, get_friction, get_one_way_friction_rate
+from kth.data.loader import sanitize_ticker
+from kth.data.pricestore import PriceStore
 
 from kth.utils.model_slug import model_slug as _model_slug
 CACHE_SLUG = _model_slug("NeoQuasar/Kronos-small")
@@ -35,10 +37,6 @@ TRADABLE_TICKERS = THAI_TICKERS + DR_UNDERLYING_TICKERS
 BACKTEST_METRICS = {
     "thai_equity": {"sharpe": 1.40, "cagr": 0.3144, "max_dd": -0.1797},
 }
-
-
-def _safe_ticker(ticker: str) -> str:
-    return ticker.replace("^", "_").replace("=", "_")
 
 
 def _execution_forecast_price(
@@ -79,18 +77,19 @@ def _tag_tiers(rows: list[dict], n: int = TOP_N) -> list[dict]:
     return rows
 
 
-def load_forecasts(report_date: str = None) -> list[dict]:
+def load_forecasts(report_date: str = None, prices: PriceStore | None = None) -> list[dict]:
     """Load today's forecast cache for every tradable ticker (thai_equity +
     underlyings with a verified DR). For a DR-mapped underlying, the row also
     carries execution_ticker/exec_close so trade-gen prices the trade in THB
-    against the DR's own SET close, never the underlying's raw close."""
+    against the DR's own SET close, never the underlying's raw close.
+
+    prices: per-run PriceStore (the test seam — inject a fake, no disk)."""
     if report_date is None:
         report_date = str(date.today())
     day_dir = CACHE_DIR / report_date
     if not day_dir.exists():
         return []
 
-    from kth.data.loader import load_cached
     try:
         from kth_dr.trade_gen_dr import resolve_execution_ticker, resolve_execution_price, resolve_display_name
         from kth_dr.loader_dr import enrich_dr_premium
@@ -100,15 +99,17 @@ def load_forecasts(report_date: str = None) -> list[dict]:
         resolve_display_name = lambda t, fallback: fallback
         enrich_dr_premium = lambda t, c, get_close: ('', None)
 
+    prices = prices or PriceStore()
     rows = []
     for ticker in TRADABLE_TICKERS:
-        parquet = day_dir / f"{_safe_ticker(ticker)}.parquet"
+        parquet = day_dir / f"{sanitize_ticker(ticker)}.parquet"
         if not parquet.exists():
             continue
         try:
             fc = pd.read_parquet(parquet)
-            price_data = load_cached(ticker)
-            current_close = float(price_data["close"].iloc[-1])
+            current_close = prices.get_close(ticker)
+            if current_close is None:
+                continue
 
             p50 = float(fc["p50"].iloc[-1])
             p5 = float(fc["p5"].iloc[-1])
@@ -141,7 +142,7 @@ def load_forecasts(report_date: str = None) -> list[dict]:
             # feeds rank_score or the buy filter, so a failure here must not
             # drop the candidate from the ranking.
             _, premium_pct = enrich_dr_premium(
-                exec_ticker, exec_close, lambda t: float(load_cached(t)["close"].iloc[-1]))
+                exec_ticker, exec_close, prices.get_close)
 
             rows.append({
                 "ticker": ticker,

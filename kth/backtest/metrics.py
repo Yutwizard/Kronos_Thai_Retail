@@ -431,7 +431,10 @@ def compute_calibration(
     Returns {'coverage': float|None, 'n_samples': int, 'status': str}
     """
     from pathlib import Path as _P
-    from kth.data.loader import load_cached
+    from kth.data.loader import sanitize_ticker
+    from kth.data.pricestore import PriceStore
+
+    prices = PriceStore(str(raw_data_dir))
 
     cache_root = _P(forecast_cache_dir)
     if not cache_root.exists():
@@ -452,7 +455,7 @@ def compute_calibration(
         actual_date = fc_date + pd.Timedelta(days=pred_len)
 
         for ticker in tickers:
-            safe = ticker.replace("^", "_").replace("=", "_")
+            safe = sanitize_ticker(ticker)
             fc_path = dd / f"{safe}.parquet"
             if not fc_path.exists():
                 continue
@@ -460,7 +463,7 @@ def compute_calibration(
                 fc = pd.read_parquet(fc_path)
                 p5 = float(fc["p5"].iloc[-1])
                 p95 = float(fc["p95"].iloc[-1])
-                price_df = load_cached(ticker, cache_dir=str(raw_data_dir))
+                price_df = prices.get_ohlcv(ticker)
                 price_df = price_df.set_index("timestamps")
                 price_df.index = pd.to_datetime(price_df.index)
                 if actual_date not in price_df.index:

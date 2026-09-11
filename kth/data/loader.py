@@ -156,6 +156,19 @@ def quality_report(df: pd.DataFrame, ticker: str) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# Filename sanitization (single canonical copy — see kth.data.pricestore)
+# ---------------------------------------------------------------------------
+
+def sanitize_ticker(ticker: str) -> str:
+    """Map a ticker to its cache filename stem: ^ -> _, = -> _.
+
+    E.g. ^SET.BK -> _SET.BK, THB=X -> THB_X. One copy only — every
+    reader/writer goes through here so names can't drift apart.
+    """
+    return ticker.replace("^", "_").replace("=", "_")
+
+
+# ---------------------------------------------------------------------------
 # Batch download to cache
 # ---------------------------------------------------------------------------
 
@@ -193,7 +206,7 @@ def download_universe(
             continue
         df = to_kronos_format(raw, ticker)
         # Sanitize filename: SPY -> SPY, BTC-USD -> BTC-USD, ^SET.BK -> _SET.BK
-        safe = ticker.replace("^", "_").replace("=", "_")
+        safe = sanitize_ticker(ticker)
         outfile = cache_path / f"{safe}.parquet"
 
         if outfile.exists():
@@ -224,7 +237,7 @@ def download_universe(
 
 def load_cached(ticker: str, cache_dir: str = "./data/raw") -> pd.DataFrame:
     """Load a ticker's cached parquet. Returns Kronos-format DataFrame."""
-    safe = ticker.replace("^", "_").replace("=", "_")
+    safe = sanitize_ticker(ticker)
     path = Path(cache_dir) / f"{safe}.parquet"
     if not path.exists():
         raise FileNotFoundError(

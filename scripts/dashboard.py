@@ -42,11 +42,12 @@ def _get_cached_closes() -> dict[str, float]:
     except Exception:
         closes = {}
     # Self-heal: skip tickers whose close is wildly different from the norm
-    from kth.data.loader import load_cached
+    from kth.data.pricestore import PriceStore
+    prices = PriceStore()
     for ticker in list(closes.keys()):
         close = closes[ticker]
         try:
-            price_data = load_cached(ticker)
+            price_data = prices.get_ohlcv(ticker)
             prev = float(price_data["close"].iloc[-2]) if len(price_data) > 1 else close
             ratio = close / prev if prev else 1
             if ratio > 3 or ratio < 1/3:

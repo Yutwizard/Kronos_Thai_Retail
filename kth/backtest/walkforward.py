@@ -88,11 +88,13 @@ def precompute_forecasts(
     print(f"[precompute] Model: {kronos_th.model_name}  Cache: {cache_path}")
 
     # Pre-filter tickers that have enough data for lookback
-    from kth.data.loader import load_cached
+    from kth.data.pricestore import PriceStore
+    from kth.data.loader import sanitize_ticker
+    prices = PriceStore()
     viable = []
     for t in tickers:
         try:
-            df = load_cached(t)
+            df = prices.get_ohlcv(t)
             if len(df) >= lookback:
                 viable.append(t)
         except FileNotFoundError:
@@ -115,7 +117,7 @@ def precompute_forecasts(
         # Filter tickers not yet cached for this day
         uncached = []
         for t in tickers:
-            out_file = day_dir / f"{t.replace('^','_').replace('=','_')}.parquet"
+            out_file = day_dir / f"{sanitize_ticker(t)}.parquet"
             if not out_file.exists():
                 uncached.append(t)
 
@@ -127,7 +129,7 @@ def precompute_forecasts(
                                             lookback=lookback, calendar_freq=freq)
 
         for t, result in results.items():
-            safe = t.replace("^", "_").replace("=", "_")
+            safe = sanitize_ticker(t)
             h_df = result.horizons[pred_len].summary.copy()
             h_df["ticker"] = t
             h_df.to_parquet(day_dir / f"{safe}.parquet", index=False)
@@ -226,9 +228,11 @@ def run_walkforward(
     Cache path: config.forecast_cache_dir / {model_slug} / {date} / {ticker}.parquet
     Run precompute_forecasts() first with the same kronos_th instance.
     """
-    from kth.data.loader import load_cached
+    from kth.data.pricestore import PriceStore
     from kth.data.universe import get_ticker_class, FRICTION, get_friction
     from kth.backtest.strategy import compute_signals, compute_weights
+
+    prices = PriceStore(config.cache_dir)
 
     slug = _model_slug(kronos_th.model_name)
     forecast_cache = Path(config.forecast_cache_dir) / slug
@@ -242,7 +246,7 @@ def run_walkforward(
     eligible = []
     for t in tickers:
         try:
-            df_full = load_cached(t, config.cache_dir)
+            df_full = prices.get_ohlcv(t)
             test_start = pd.Timestamp(config.start_date)
             test_rows = df_full[df_full["timestamps"] >= test_start]
             if len(test_rows) >= config.min_ticker_history:
@@ -271,15 +275,10 @@ def run_walkforward(
     trading_days = pd.date_range(start=config.start_date, end=config.end_date, freq=freq)
 
     # ---- PRELOAD all ticker data into memory ONCE ----
-    ticker_data: dict[str, pd.DataFrame] = {}
-    for t in eligible:
-        try:
-            ticker_data[t] = load_cached(t, config.cache_dir)
-        except FileNotFoundError:
-            continue
+    ticker_data: dict[str, pd.DataFrame] = prices.batch(eligible)
 
     # Compute benchmarks once
-    benchmarks = _compute_benchmarks(config, eligible, ticker_data, freq=freq)
+    benchmarks = _compute_benchmarks(config, eligible, ticker_data, freq=freq, prices=prices)
 
     # ---- Portfolio state (UNITS-BASED) ----
     cash = 1.0
@@ -522,18 +521,19 @@ def run_walkforward(
     )
 
 
-def _compute_benchmarks(config: BacktestConfig, tickers: list[str], ticker_data: dict[str, pd.DataFrame] | None = None, freq: str = "B") -> dict[str, pd.Series]:
+def _compute_benchmarks(config: BacktestConfig, tickers: list[str], ticker_data: dict[str, pd.DataFrame] | None = None, freq: str = "B", prices=None) -> dict[str, pd.Series]:
     """Compute 4 benchmark equity curves: SET, SPY, 60_40, equal_weight.
     Accepts preloaded ticker_data dict to avoid redundant parquet reads in equal-weight benchmark.
     freq: "B" for equities (business days), "D" for crypto (calendar days)."""
-    from kth.data.loader import load_cached
+    from kth.data.pricestore import PriceStore
+    prices = prices or PriceStore(config.cache_dir)
     benchmarks = {}
     trading_days = pd.date_range(start=config.start_date, end=config.end_date, freq=freq)
     start_ts = pd.Timestamp(config.start_date)
 
     # SET buy-and-hold
     try:
-        set_df = load_cached("^SET.BK", config.cache_dir)
+        set_df = prices.get_ohlcv("^SET.BK")
         set_close = set_df.set_index("timestamps")["close"]
         set_aligned = set_close.reindex(trading_days, method="ffill").dropna()
         if len(set_aligned) > 0:
@@ -543,7 +543,7 @@ def _compute_benchmarks(config: BacktestConfig, tickers: list[str], ticker_data:
 
     # SPY buy-and-hold
     try:
-        spy_df = load_cached("SPY", config.cache_dir)
+        spy_df = prices.get_ohlcv("SPY")
         spy_close = spy_df.set_index("timestamps")["close"]
         spy_aligned = spy_close.reindex(trading_days, method="ffill").dropna()
         if len(spy_aligned) > 0:
@@ -553,8 +553,8 @@ def _compute_benchmarks(config: BacktestConfig, tickers: list[str], ticker_data:
 
     # 60/40 SPY/TLT monthly rebalance
     try:
-        spy = load_cached("SPY", config.cache_dir).set_index("timestamps")["close"]
-        tlt = load_cached("TLT", config.cache_dir).set_index("timestamps")["close"]
+        spy = prices.get_ohlcv("SPY").set_index("timestamps")["close"]
+        tlt = prices.get_ohlcv("TLT").set_index("timestamps")["close"]
         combined = pd.concat([spy.rename("spy"), tlt.rename("tlt")], axis=1).dropna()
         rebal_dates = pd.date_range(start=config.start_date, end=config.end_date, freq="MS")
         rebal_dates = rebal_dates.map(lambda d: d if d.weekday() < 5 else d + pd.offsets.BDay())
@@ -582,8 +582,7 @@ def _compute_benchmarks(config: BacktestConfig, tickers: list[str], ticker_data:
         for t in tickers:
             df_t = ticker_data.get(t) if ticker_data else None
             if df_t is None:
-                from kth.data.loader import load_cached
-                df_t = load_cached(t, config.cache_dir)
+                df_t = prices.get_ohlcv(t)
             s = df_t.set_index("timestamps")["close"]
             closes[t] = s
         price_df = pd.DataFrame(closes)
