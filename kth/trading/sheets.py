@@ -44,8 +44,9 @@ def promote_staging(sh, staging_map: dict = None, sleep_sec: float = 1.0) -> dic
 
 def build_pos_rows(positions: dict, ohlcv_dict: dict, get_sector_fn: Callable[[str], str]) -> list:
     from kth.data.universe import get_currency_group
-    from kth.trading._dr_optional import get_enrich_dr_premium
-    enrich_dr_premium = get_enrich_dr_premium()
+    from kth.data.pricestore import PriceStore
+    from kth.trading.execution import ExecutionResolver
+    resolver = ExecutionResolver(PriceStore.with_frames(ohlcv_dict or {}))
 
     rows = []
     for p in positions['positions']:
@@ -57,8 +58,7 @@ def build_pos_rows(positions: dict, ohlcv_dict: dict, get_sector_fn: Callable[[s
         pnl = (close - p['avg_cost']) * p['shares']
         pnl_pct = (close / p['avg_cost'] - 1) if p['avg_cost'] else 0
 
-        underlying_ticker, premium_pct = enrich_dr_premium(
-            p['ticker'], close, lambda t: float(ohlcv[t]['close'].iloc[-1]))
+        underlying_ticker, premium_pct = resolver.premium(p['ticker'], close)
         premium_pct = premium_pct if premium_pct is not None else ''
 
         rows.append([

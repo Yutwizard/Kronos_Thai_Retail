@@ -66,11 +66,10 @@ def get_positions(mode: str = "paper") -> dict:
                 "frozen": pf.get("frozen", False), "equity": pf["equity_curve"][-1]["value"] if pf["equity_curve"] else pf["cash"]}
 
     from kth.data.universe import get_ticker_class
-    from kth.trading._dr_optional import get_enrich_dr_premium
-    enrich_dr_premium = get_enrich_dr_premium()
-
+    from kth.trading.execution import ExecutionResolver
     from kth.data.pricestore import PriceStore
     prices = PriceStore()
+    resolver = ExecutionResolver(prices)
 
     enriched = []
     for ticker, pos in positions.items():
@@ -80,7 +79,7 @@ def get_positions(mode: str = "paper") -> dict:
         pnl = (mark - pos["avg_cost"]) / pos["avg_cost"] if pos["avg_cost"] > 0 else 0
         val = pos["shares"] * mark
 
-        underlying_ticker, premium_pct = enrich_dr_premium(ticker, mark, prices.get_close)
+        underlying_ticker, premium_pct = resolver.premium(ticker, mark)
         underlying_ticker = underlying_ticker or None
 
         enriched.append({

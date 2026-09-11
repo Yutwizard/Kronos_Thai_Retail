@@ -50,13 +50,19 @@ def test_load_forecasts_exposes_execution_scale_targets_without_changing_raw_pri
         def get_close(self, ticker):
             return 100.0
 
-    import kth_dr.loader_dr
-    import kth_dr.trade_gen_dr
+    class _FakeResolver:
+        def execution_ticker(self, ticker):
+            return "AAPL80.BK"
 
-    monkeypatch.setattr(kth_dr.trade_gen_dr, "resolve_execution_ticker", lambda _: "AAPL80.BK")
-    monkeypatch.setattr(kth_dr.trade_gen_dr, "resolve_execution_price", lambda *_: 50.0)
-    monkeypatch.setattr(kth_dr.trade_gen_dr, "resolve_display_name", lambda _, fallback: fallback)
-    monkeypatch.setattr(kth_dr.loader_dr, "enrich_dr_premium", lambda *_: ("", None))
+        def execution_price(self, underlying, exec_ticker, underlying_close):
+            return 50.0
+
+        def display_name(self, ticker, fallback):
+            return fallback
+
+        def premium(self, exec_ticker, exec_close):
+            return ("", None)
+
     monkeypatch.setattr(trade_gen, "get_ticker_class", lambda _: "thai_equity")
     monkeypatch.setattr(trade_gen, "get_friction", lambda _: {
         "commission_oneway": 0.001, "slippage_oneway": 0.001
@@ -65,7 +71,7 @@ def test_load_forecasts_exposes_execution_scale_targets_without_changing_raw_pri
     monkeypatch.setattr(trade_gen, "get_currency_group", lambda _: None)
     monkeypatch.setattr(trade_gen, "get_display_name", lambda _: "Apple")
 
-    row = trade_gen.load_forecasts(report_date, prices=_FakePrices())[0]
+    row = trade_gen.load_forecasts(report_date, prices=_FakePrices(), resolver=_FakeResolver())[0]
 
     assert row["p50_close"] == pytest.approx(110.0)
     assert row["p95_close"] == pytest.approx(130.0)
@@ -89,13 +95,19 @@ def test_load_forecasts_uses_none_for_invalid_execution_scale(monkeypatch, tmp_p
         def get_close(self, ticker):
             return 100.0
 
-    import kth_dr.loader_dr
-    import kth_dr.trade_gen_dr
+    class _FakeResolver:
+        def execution_ticker(self, ticker):
+            return "AAPL80.BK"
 
-    monkeypatch.setattr(kth_dr.trade_gen_dr, "resolve_execution_ticker", lambda _: "AAPL80.BK")
-    monkeypatch.setattr(kth_dr.trade_gen_dr, "resolve_execution_price", lambda *_: float("nan"))
-    monkeypatch.setattr(kth_dr.trade_gen_dr, "resolve_display_name", lambda _, fallback: fallback)
-    monkeypatch.setattr(kth_dr.loader_dr, "enrich_dr_premium", lambda *_: ("", None))
+        def execution_price(self, underlying, exec_ticker, underlying_close):
+            return float("nan")
+
+        def display_name(self, ticker, fallback):
+            return fallback
+
+        def premium(self, exec_ticker, exec_close):
+            return ("", None)
+
     monkeypatch.setattr(trade_gen, "get_ticker_class", lambda _: "thai_equity")
     monkeypatch.setattr(trade_gen, "get_friction", lambda _: {
         "commission_oneway": 0.001, "slippage_oneway": 0.001
@@ -104,7 +116,7 @@ def test_load_forecasts_uses_none_for_invalid_execution_scale(monkeypatch, tmp_p
     monkeypatch.setattr(trade_gen, "get_currency_group", lambda _: None)
     monkeypatch.setattr(trade_gen, "get_display_name", lambda _: "Apple")
 
-    row = trade_gen.load_forecasts(report_date, prices=_FakePrices())[0]
+    row = trade_gen.load_forecasts(report_date, prices=_FakePrices(), resolver=_FakeResolver())[0]
 
     assert row["target_price"] is None
     assert row["p95_price"] is None
