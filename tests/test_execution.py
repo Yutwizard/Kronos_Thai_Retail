@@ -33,10 +33,13 @@ def test_resolver_delegates_plain_ticker_to_kth_dr(tmp_cache):
     assert resolver.is_held_underlying(["AOT.BK"], "PTT.BK") is False
 
 
-def test_resolver_premium_needs_no_store_for_plain_ticker(tmp_cache):
-    # Non-DR premium short-circuits before any price read — an empty store
-    # (and no disk) must suffice.
-    resolver = ExecutionResolver(PriceStore(cache_dir=str(tmp_cache)))
+def test_resolver_premium_needs_no_disk_for_plain_ticker(tmp_cache):
+    # enrich_dr_premium returns early for non-DR tickers, before touching
+    # get_close — prove it with a store that explodes on any read.
+    def _boom(path):
+        raise AssertionError(f"unexpected disk read: {path}")
+
+    resolver = ExecutionResolver(PriceStore(cache_dir=str(tmp_cache), read_fn=_boom))
     assert resolver.premium("AOT.BK", 100.0) == ("", None)
 
 

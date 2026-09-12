@@ -183,6 +183,7 @@ def _one_way_friction(ticker: str) -> float:
 
 
 def generate_trade_ticket(report_date: str = None, positions: dict = None,
+                          prices: PriceStore | None = None,
                           resolver: ExecutionResolver | None = None) -> dict:
     """Generate today's trade ticket: exits, reduces, buys, cash flow.
 
@@ -192,8 +193,9 @@ def generate_trade_ticket(report_date: str = None, positions: dict = None,
     for display/rationale only. This keeps friction/sector lookups correct
     for free, since get_friction()/get_sector() key off the execution ticker.
     """
-    resolver = resolver or ExecutionResolver()
-    forecasts = load_forecasts(report_date, resolver=resolver)
+    prices = prices or PriceStore()
+    resolver = resolver or ExecutionResolver(prices)
+    forecasts = load_forecasts(report_date, prices=prices, resolver=resolver)
     if not forecasts:
         return {"error": "No forecasts available", "exits": [], "reduces": [], "buys": []}
 

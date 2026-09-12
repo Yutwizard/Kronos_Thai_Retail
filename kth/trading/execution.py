@@ -22,6 +22,9 @@ class ExecutionResolver:
 
     def __init__(self, prices: PriceStore | None = None) -> None:
         self._prices = prices or PriceStore()
+        # Separate guards per module: a half-installed kth_dr (e.g. ticker
+        # mapping present but loader missing) degrades only the missing
+        # piece to identity instead of silently discarding the whole plugin.
         try:
             from kth_dr.trade_gen_dr import (
                 resolve_execution_ticker,
@@ -29,13 +32,15 @@ class ExecutionResolver:
                 resolve_display_name,
                 is_held_underlying,
             )
-            from kth_dr.loader_dr import enrich_dr_premium
         except ImportError:
             resolve_execution_ticker = lambda t: t  # noqa: E731
             resolve_execution_price = lambda u, e, c: c  # noqa: E731
             resolve_display_name = lambda t, fallback: fallback  # noqa: E731
-            enrich_dr_premium = lambda t, c, get_close: ("", None)  # noqa: E731
             is_held_underlying = lambda held, cand: False  # noqa: E731
+        try:
+            from kth_dr.loader_dr import enrich_dr_premium
+        except ImportError:
+            enrich_dr_premium = lambda t, c, get_close: ("", None)  # noqa: E731
         self._execution_ticker = resolve_execution_ticker
         self._execution_price = resolve_execution_price
         self._display_name = resolve_display_name
