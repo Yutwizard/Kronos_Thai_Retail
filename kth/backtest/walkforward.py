@@ -229,10 +229,12 @@ def run_walkforward(
     Run precompute_forecasts() first with the same kronos_th instance.
     """
     from kth.data.pricestore import PriceStore
+    from kth.accounting.lot_ledger import LotLedger
     from kth.data.universe import get_ticker_class, FRICTION, get_friction
     from kth.backtest.strategy import compute_signals, compute_weights
 
     prices = PriceStore(config.cache_dir)
+    ledger = LotLedger()
 
     slug = _model_slug(kronos_th.model_name)
     forecast_cache = Path(config.forecast_cache_dir) / slug
@@ -290,7 +292,6 @@ def run_walkforward(
     gross_portfolio_values: list[float] = []
     mark_days: list = []
     trades_list: list[dict] = []
-    lots: dict[str, list[dict]] = {}
 
     for day_idx, day in enumerate(trading_days):
         if day_idx + 1 >= len(trading_days):
@@ -387,23 +388,7 @@ def run_walkforward(
 
                 cash += trade_value - friction_cost
                 gross_cash += trade_value
-                ticker_lots = lots.get(t, [])
-                if ticker_lots:
-                    remaining = units
-                    gross_return = 0.0
-                    while remaining > 0 and ticker_lots:
-                        lot = ticker_lots[0]
-                        matched = min(remaining, lot["units"])
-                        gross_return += (exec_price / lot["entry_price"] - 1) * (matched * lot["entry_price"])
-                        remaining -= matched
-                        if lot["units"] > matched:
-                            lot["units"] -= matched
-                        else:
-                            ticker_lots.pop(0)
-                    if not ticker_lots:
-                        lots.pop(t, None)
-                else:
-                    gross_return = 0.0
+                gross_return = ledger.record_sell(t, units, exec_price)
 
                 trades_list.append({
                     "date": day, "ticker": t, "direction": "sell",
@@ -454,22 +439,9 @@ def run_walkforward(
                 "gross_return": 0.0,
             })
             if direction == "buy":
-                lots.setdefault(t, []).append({
-                    "entry_date": day,
-                    "units": units_delta,
-                    "entry_price": exec_price,
-                })
-            elif direction == "sell" and t in lots:
-                remaining = abs(units_delta)
-                while remaining > 0 and lots[t]:
-                    lot = lots[t][0]
-                    matched = min(remaining, lot["units"])
-                    lot["units"] -= matched
-                    remaining -= matched
-                    if lot["units"] <= 0:
-                        lots[t].pop(0)
-                if not lots[t]:
-                    lots.pop(t)
+                ledger.record_buy(t, units_delta, exec_price, date=day)
+            elif direction == "sell":
+                ledger.record_sell(t, abs(units_delta), exec_price, date=day)
 
         # Update holding days
         for t in list(holdings_units.keys()):

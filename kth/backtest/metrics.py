@@ -78,24 +78,26 @@ def compute_var_cvar(daily_returns: pd.Series) -> dict:
 
 def _compute_avg_holding_period(trades: pd.DataFrame) -> float:
     """FIFO-match buy->sell per ticker, return mean holding period in days.
-    Returns 0.0 if no round-trips can be formed."""
-    from collections import deque, defaultdict
+    Returns 0.0 if no round-trips can be formed.
+
+    Delegates to LotLedger: one feed per row (share counts are absent from
+    backtest rows, so each row feeds a single unit — the date deque this
+    query reads is per-row by construction)."""
+    from kth.accounting.lot_ledger import LotLedger
     if trades.empty or "date" not in trades.columns:
         return 0.0
-    buys: dict = defaultdict(deque)
-    holding_days: list[float] = []
+    ledger = LotLedger()
     for _, t in trades.iterrows():
         ticker = t["ticker"]
         direction = str(t.get("direction", "")).lower()
         if direction == "buy":
-            buys[ticker].append(pd.Timestamp(t["date"]))
+            ledger.record_buy(ticker, 1.0, 0.0, date=t["date"])
         elif direction in ("sell", "exit"):
-            if buys[ticker]:
-                buy_date = buys[ticker].popleft()
-                holding_days.append((pd.Timestamp(t["date"]) - buy_date).days)
-    if not holding_days:
+            ledger.record_sell(ticker, 1.0, 0.0, date=t["date"])
+    periods = ledger.holding_periods()
+    if not periods:
         return 0.0
-    return float(np.mean(holding_days))
+    return float(np.mean(periods))
 
 
 def compute_trade_metrics(trades: pd.DataFrame) -> dict:
