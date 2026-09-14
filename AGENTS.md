@@ -119,3 +119,17 @@ Full numbers live in `data/backtest_results/` and `PROJECT_STRUCTURE.md`. The du
 14. `data/backtest_results/MANIFEST.md` — which backtest runs to cite (and which are stale)
 
 - DR (Depositary Receipt) integration: live. See `docs/superpowers/specs/2026-07-12-global-dr-integration-design.md`.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues (`Yutwizard/Kronos_Thai_Retail`). See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default five-role vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: root `CONTEXT.md` + `docs/adr/`. See `docs/agents/domain.md`.

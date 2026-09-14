@@ -171,6 +171,7 @@ LAYER 5: Dashboard / Report   google_suite/                          ✅ built (
                                  scripts/start_dashboard.sh              ✅ built (one-command launcher: venv + serve; data/forecasts generated on demand via UI or --generate)
                                  kth/trading/portfolio.py                ✅ built
                                  kth/trading/trade_gen.py                ✅ built
+                                 kth/trading/execution.py                ✅ built 2026-09-14 (ExecutionResolver: underlying→execution seam)
                                  kth/trading/sheets.py                   ✅ built
                                  kth/pipeline/daily.py                   ✅ built (Kaggle unattended orchestration)
                                  kth/io/kaggle_runtime.py                ✅ built (SA auth, injectable)
@@ -180,6 +181,7 @@ LAYER 5: Dashboard / Report   google_suite/                          ✅ built (
 LAYER 4: Backtest             kth/backtest/walkforward.py            ✅ built
                                 kth/backtest/strategy.py               ✅ built
                                 kth/backtest/metrics.py                 ✅ built
+                                kth/accounting/lot_ledger.py            ✅ built 2026-09-14 (single FIFO module)
                                 scripts/compare_finetune.py            ✅ built
 LAYER 3: Kronos model         kth/models/kronos_wrapper.py           ✅ built
                                 kth/models/finetune.py                  ✅ built
@@ -188,6 +190,7 @@ LAYER 3: Kronos model         kth/models/kronos_wrapper.py           ✅ built
                                 scripts/eval_holdout.py                 ✅ built
                                 checkpoints/{model}/fold{f}/best/       ✅ 9 trained
 LAYER 2: Feature pipeline     kth/data/loader.py                       ✅ done
+                                kth/data/pricestore.py                   ✅ done 2026-09-14 (single memoized OHLCV-read seam)
 LAYER 1: Universe definition  kth/data/universe.py                     ✅ done (52 tickers)
 
 ---
@@ -476,6 +479,7 @@ If our strategy doesn't beat both after frictions, we say so plainly.
 - `kth/data/universe.py` — 52-ticker SET universe (51 thai_equity incl. CPNREIT.BK, 1 thai_index), FRICTION dict, SECTOR mapping, O(1) reverse-lookup dict, `register_asset_class()` plugin hook (used by `kth_dr/`). Scope narrowed 2026-07-16 from 100 tickers/9 classes — see `archive/other-asset-classes/`
 - `kth/data/loader.py` — yfinance loader, Kronos-format conversion, parquet cache, quality checks
 - `scripts/check_data_sanity.py` — post-download sanity sweep over `data/raw/` (missing files, synthetic-data rowcount fingerprint, oversized single-day jumps, staleness). Added 2026-07-16 after an incident where offline verify scripts silently overwrote real cached prices with synthetic data — see `verify_data_layer.py`/`verify_model_layer.py` below.
+- Architecture deepening 2026-09-14 (behavior-frozen refactor, verified identical outputs): `kth/data/pricestore.py` — single memoized OHLCV-read seam (`sanitize_ticker()` canonicalized in `loader.py`); `kth/trading/execution.py` — `ExecutionResolver` owns the underlying→execution seam, `_dr_optional.py` deleted; `kth/accounting/lot_ledger.py` — one stateful FIFO module replacing 4 implementations (explicit `net_of_friction` flag, quirks preserved).
 - `verify_data_layer.py` — 5 offline tests, all pass against synthetic data (writes to an isolated tmp dir, not `data/raw`, since the 2026-07-16 fix)
 - `verify_fixes.py` — 25 regression tests for stats fixes (PSR, alignment, bootstrap, cash guard, SET+DR-only universe invariant, etc.) — all pass
 - `verify_kaggle_runtime.py` — 20 tests for Kaggle auth + pipeline orchestration (idempotency, capital reset, trade edits, BKK clock, failure path) — all pass
