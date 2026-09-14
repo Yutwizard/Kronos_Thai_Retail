@@ -66,18 +66,20 @@ def get_positions(mode: str = "paper") -> dict:
                 "frozen": pf.get("frozen", False), "equity": pf["equity_curve"][-1]["value"] if pf["equity_curve"] else pf["cash"]}
 
     from kth.data.universe import get_ticker_class
-    from kth.trading._dr_optional import get_enrich_dr_premium
-    enrich_dr_premium = get_enrich_dr_premium()
+    from kth.trading.execution import ExecutionResolver
+    from kth.data.pricestore import PriceStore
+    prices = PriceStore()
+    resolver = ExecutionResolver(prices)
 
     enriched = []
     for ticker, pos in positions.items():
-        mark = _get_current_price(ticker)
+        mark = _get_current_price(ticker, prices)
         if mark is None or mark == 0:
             mark = 0.0  # fallback
         pnl = (mark - pos["avg_cost"]) / pos["avg_cost"] if pos["avg_cost"] > 0 else 0
         val = pos["shares"] * mark
 
-        underlying_ticker, premium_pct = enrich_dr_premium(ticker, mark, _get_current_price)
+        underlying_ticker, premium_pct = resolver.premium(ticker, mark)
         underlying_ticker = underlying_ticker or None
 
         enriched.append({
@@ -110,19 +112,14 @@ def get_positions(mode: str = "paper") -> dict:
     }
 
 
-def _get_current_price(ticker: str) -> float | None:
-    """Get latest close price from cached data. Logs errors instead of swallowing."""
-    import logging
-    try:
-        from kth.data.loader import load_cached
-        df = load_cached(ticker)
-        return float(df["close"].iloc[-1])
-    except FileNotFoundError:
-        logging.warning(f"_get_current_price: no cache for {ticker}")
-        return None
-    except Exception as e:
-        logging.error(f"_get_current_price: corrupt cache for {ticker}: {e}")
-        return None
+def _get_current_price(ticker: str, store=None) -> float | None:
+    """Get latest close price from cached data. Logs errors instead of swallowing.
+
+    store: an optional PriceStore for per-run memoization. Without one, reads
+    straight from disk — same as before, just behind the single seam.
+    """
+    from kth.data.pricestore import PriceStore
+    return (store or PriceStore()).get_close(ticker)
 
 
 def execute_trade(ticker: str, action: str, shares: int, fill_price: float,
@@ -172,8 +169,10 @@ def execute_trade(ticker: str, action: str, shares: int, fill_price: float,
         return {"error": f"Unknown action: {action}", "recorded": 0}
 
     # Recompute equity
+    from kth.data.pricestore import PriceStore
+    _prices = PriceStore()
     total_pos_value = sum(
-        pos["shares"] * (_get_current_price(t) or pos["avg_cost"])
+        pos["shares"] * (_get_current_price(t, _prices) or pos["avg_cost"])
         for t, pos in pf["positions"].items()
     )
     total_value = pf["cash"] + total_pos_value
@@ -196,7 +195,7 @@ def execute_trade(ticker: str, action: str, shares: int, fill_price: float,
         "portfolio_value": round(total_value, 2),
         "cash": round(pf["cash"], 2),
         "new_positions": [
-            {"ticker": t, "shares": p["shares"], "weight": round(p["shares"] * (_get_current_price(t) or p["avg_cost"]) / total_value, 4)}
+            {"ticker": t, "shares": p["shares"], "weight": round(p["shares"] * (_get_current_price(t, _prices) or p["avg_cost"]) / total_value, 4)}
             for t, p in pf["positions"].items()
         ],
         "frozen": pf["frozen"],
@@ -262,8 +261,9 @@ def compute_metrics(mode: str = "paper") -> dict:
     pnl_mtd_pct = pnl_mtd / month_start_value if month_start_value > 0 else 0
 
     # Win rate (closed round-trips via FIFO)
+    from kth.accounting.lot_ledger import feed_paper_trades
     trades = get_trade_log(mode)
-    closed_count, wins = _compute_fifo_wins(trades)
+    closed_count, wins = feed_paper_trades(trades).wins()
     win_rate = wins / closed_count if closed_count > 0 else 0
 
     # Exposure
@@ -356,7 +356,8 @@ def get_equity_performance(mode: str = "paper") -> dict:
     trades = get_trade_log(mode)
 
     # --- Realized P&L stats (FIFO, net of friction) ---
-    realized = _compute_fifo_pnl(trades)
+    from kth.accounting.lot_ledger import feed_paper_trades
+    realized = feed_paper_trades(trades).realized_pnl()
     wins = [r for r in realized if r > 0]
     losses = [r for r in realized if r < 0]
     realized_pnl = sum(realized)
@@ -419,75 +420,6 @@ def get_equity_performance(mode: str = "paper") -> dict:
         "top_sector_weight": round(top_sector_weight, 4),
         "points": points,
     }
-
-
-def _compute_fifo_pnl(trades: list[dict]) -> list[float]:
-    """FIFO matching → net realized P&L (THB) per matched buy↔sell chunk.
-
-    Matching is PER TICKER (a sell of ticker X matches X's own oldest buys).
-    Net = (sell_price − buy_price) × shares, minus the friction attributable to
-    both the buy lot (pro-rated per share) and the sell (pro-rated per share).
-    """
-    from collections import deque, defaultdict
-    buys: dict = defaultdict(deque)  # ticker -> deque of {shares, price, fps}
-    realized: list[float] = []
-    for t in trades:
-        ticker = t["ticker"]
-        shares = int(t["shares"])
-        price = float(t["price"])
-        fric = float(t.get("friction_cost", 0) or 0)
-        if shares <= 0:
-            continue
-        if t["action"] == "buy":
-            buys[ticker].append({"shares": shares, "price": price, "fps": fric / shares})
-        elif t["action"] in ("exit", "sell", "reduce"):
-            remaining = shares
-            sell_fps = fric / shares
-            q = buys[ticker]
-            while remaining > 0 and q:
-                lot = q.popleft()
-                matched = min(remaining, lot["shares"])
-                gross = (price - lot["price"]) * matched
-                net = gross - matched * lot["fps"] - matched * sell_fps
-                realized.append(net)
-                remaining -= matched
-                if lot["shares"] > matched:
-                    q.appendleft({"shares": lot["shares"] - matched,
-                                  "price": lot["price"], "fps": lot["fps"]})
-    return realized
-
-
-def _compute_fifo_wins(trades: list[dict]) -> tuple[int, int]:
-    """FIFO matching (PER TICKER): first-bought shares are first-sold.
-
-    Returns (closed_round_trips, wins) where a round-trip = one sell event and a
-    win = a sell event whose aggregate realized gross P&L (across the buy lots it
-    consumes) is positive.
-    """
-    from collections import deque, defaultdict
-    buys: dict = defaultdict(deque)  # ticker -> deque of {shares, price}
-    wins = 0
-    closed_round_trips = 0
-    for t in trades:
-        ticker = t["ticker"]
-        if t["action"] == "buy":
-            buys[ticker].append({"shares": int(t["shares"]), "price": float(t["price"])})
-        elif t["action"] in ("exit", "sell", "reduce"):
-            remaining = int(t["shares"])
-            sale_price = float(t["price"])
-            closed_round_trips += 1
-            event_pnl = 0.0
-            q = buys[ticker]
-            while remaining > 0 and q:
-                lot = q.popleft()
-                matched = min(remaining, lot["shares"])
-                event_pnl += (sale_price - lot["price"]) * matched
-                remaining -= matched
-                if lot["shares"] > matched:
-                    q.appendleft({"shares": lot["shares"] - matched, "price": lot["price"]})
-            if event_pnl > 0:
-                wins += 1
-    return closed_round_trips, wins
 
 
 def _compute_market_state() -> str:
@@ -572,8 +504,10 @@ def rebuild_from_trades(mode: str = "paper") -> dict:
 
     pf["cash"] = round(cash, 2)
     pf["positions"] = positions
+    from kth.data.pricestore import PriceStore
+    _prices = PriceStore()
     total_pos = sum(
-        pos["shares"] * (_get_current_price(t) or pos["avg_cost"])
+        pos["shares"] * (_get_current_price(t, _prices) or pos["avg_cost"])
         for t, pos in positions.items()
     )
     total_value = round(cash + total_pos, 2)

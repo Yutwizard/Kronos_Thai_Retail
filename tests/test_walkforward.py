@@ -18,8 +18,8 @@ def test_lots_ledger_used_in_walkforward():
     import inspect
     from kth.backtest import walkforward
     source = inspect.getsource(walkforward.run_walkforward)
-    assert "lots" in source, "walkforward must use a lots ledger"
-    assert "entry_price" in source, "lots must track entry_price"
+    assert "ledger" in source, "walkforward must step a LotLedger"
+    assert "record_sell" in source, "exits must match lots through the ledger"
 
 
 def test_open_trades_blend_logic_correct():

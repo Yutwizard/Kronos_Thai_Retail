@@ -11,6 +11,9 @@ from typing import Optional
 import pandas as pd
 
 from kth.data.universe import UNIVERSE, FRICTION, get_ticker_class, get_display_name, get_sector, get_currency_group, get_friction, get_one_way_friction_rate
+from kth.data.loader import sanitize_ticker
+from kth.data.pricestore import PriceStore
+from kth.trading.execution import ExecutionResolver
 
 from kth.utils.model_slug import model_slug as _model_slug
 CACHE_SLUG = _model_slug("NeoQuasar/Kronos-small")
@@ -35,10 +38,6 @@ TRADABLE_TICKERS = THAI_TICKERS + DR_UNDERLYING_TICKERS
 BACKTEST_METRICS = {
     "thai_equity": {"sharpe": 1.40, "cagr": 0.3144, "max_dd": -0.1797},
 }
-
-
-def _safe_ticker(ticker: str) -> str:
-    return ticker.replace("^", "_").replace("=", "_")
 
 
 def _execution_forecast_price(
@@ -79,36 +78,32 @@ def _tag_tiers(rows: list[dict], n: int = TOP_N) -> list[dict]:
     return rows
 
 
-def load_forecasts(report_date: str = None) -> list[dict]:
+def load_forecasts(report_date: str = None, prices: PriceStore | None = None,
+                    resolver: ExecutionResolver | None = None) -> list[dict]:
     """Load today's forecast cache for every tradable ticker (thai_equity +
     underlyings with a verified DR). For a DR-mapped underlying, the row also
     carries execution_ticker/exec_close so trade-gen prices the trade in THB
-    against the DR's own SET close, never the underlying's raw close."""
+    against the DR's own SET close, never the underlying's raw close.
+
+    prices/resolver: per-run seams (the test surface — inject fakes, no disk)."""
     if report_date is None:
         report_date = str(date.today())
     day_dir = CACHE_DIR / report_date
     if not day_dir.exists():
         return []
 
-    from kth.data.loader import load_cached
-    try:
-        from kth_dr.trade_gen_dr import resolve_execution_ticker, resolve_execution_price, resolve_display_name
-        from kth_dr.loader_dr import enrich_dr_premium
-    except ImportError:
-        resolve_execution_ticker = lambda t: t
-        resolve_execution_price = lambda u, e, c: c
-        resolve_display_name = lambda t, fallback: fallback
-        enrich_dr_premium = lambda t, c, get_close: ('', None)
-
+    prices = prices or PriceStore()
+    resolver = resolver or ExecutionResolver(prices)
     rows = []
     for ticker in TRADABLE_TICKERS:
-        parquet = day_dir / f"{_safe_ticker(ticker)}.parquet"
+        parquet = day_dir / f"{sanitize_ticker(ticker)}.parquet"
         if not parquet.exists():
             continue
         try:
             fc = pd.read_parquet(parquet)
-            price_data = load_cached(ticker)
-            current_close = float(price_data["close"].iloc[-1])
+            current_close = prices.get_close(ticker)
+            if current_close is None:
+                continue
 
             p50 = float(fc["p50"].iloc[-1])
             p5 = float(fc["p5"].iloc[-1])
@@ -120,8 +115,8 @@ def load_forecasts(report_date: str = None) -> list[dict]:
             exp_ret = (p50 - current_close) / current_close
             band_width = (p95 - p5) / current_close
 
-            exec_ticker = resolve_execution_ticker(ticker)
-            exec_close = resolve_execution_price(ticker, exec_ticker, current_close)
+            exec_ticker = resolver.execution_ticker(ticker)
+            exec_close = resolver.execution_price(ticker, exec_ticker, current_close)
             target_price = _execution_forecast_price(current_close, p50, exec_close)
             p95_price = _execution_forecast_price(current_close, p95, exec_close)
 
@@ -140,8 +135,7 @@ def load_forecasts(report_date: str = None) -> list[dict]:
             # Display-only, mirrors get_positions()'s premium enrichment — never
             # feeds rank_score or the buy filter, so a failure here must not
             # drop the candidate from the ranking.
-            _, premium_pct = enrich_dr_premium(
-                exec_ticker, exec_close, lambda t: float(load_cached(t)["close"].iloc[-1]))
+            _, premium_pct = resolver.premium(exec_ticker, exec_close)
 
             rows.append({
                 "ticker": ticker,
@@ -149,7 +143,7 @@ def load_forecasts(report_date: str = None) -> list[dict]:
                 "exec_close": round(exec_close, 2),
                 "target_price": round(target_price, 2) if target_price is not None else None,
                 "p95_price": round(p95_price, 2) if p95_price is not None else None,
-                "name": resolve_display_name(ticker, get_display_name(ticker)),
+                "name": resolver.display_name(ticker, get_display_name(ticker)),
                 "class": cls,
                 "sector": get_sector(exec_ticker),
                 "currency_group": get_currency_group(exec_ticker),
@@ -188,7 +182,9 @@ def _one_way_friction(ticker: str) -> float:
     return get_one_way_friction_rate(ticker)
 
 
-def generate_trade_ticket(report_date: str = None, positions: dict = None) -> dict:
+def generate_trade_ticket(report_date: str = None, positions: dict = None,
+                          prices: PriceStore | None = None,
+                          resolver: ExecutionResolver | None = None) -> dict:
     """Generate today's trade ticket: exits, reduces, buys, cash flow.
 
     Every ticket item's "ticker" field is the EXECUTION ticker (what you'd
@@ -197,7 +193,9 @@ def generate_trade_ticket(report_date: str = None, positions: dict = None) -> di
     for display/rationale only. This keeps friction/sector lookups correct
     for free, since get_friction()/get_sector() key off the execution ticker.
     """
-    forecasts = load_forecasts(report_date)
+    prices = prices or PriceStore()
+    resolver = resolver or ExecutionResolver(prices)
+    forecasts = load_forecasts(report_date, prices=prices, resolver=resolver)
     if not forecasts:
         return {"error": "No forecasts available", "exits": [], "reduces": [], "buys": []}
 
@@ -285,18 +283,13 @@ def generate_trade_ticket(report_date: str = None, positions: dict = None) -> di
             if cur is not None:
                 currency_counts[cur] = currency_counts.get(cur, 0) + 1
 
-    try:
-        from kth_dr.trade_gen_dr import is_held_underlying
-    except ImportError:
-        is_held_underlying = None
-
     for rank_idx, f in enumerate(forecasts, 1):
         if len(buys) >= slots:
             break
         exec_ticker = f.get("execution_ticker", f["ticker"])
         if exec_ticker in held_tickers:
             continue
-        if is_held_underlying and is_held_underlying(list(held_tickers.keys()), f["ticker"]):
+        if resolver.is_held_underlying(list(held_tickers.keys()), f["ticker"]):
             continue  # same underlying already held directly or via a different DR
         if f["net_ret"] <= f["friction_rt"]:
             continue
