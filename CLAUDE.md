@@ -149,3 +149,17 @@ Priority order: (1) user's explicit instructions, (2) superpowers skills, (3) de
 7. [kth/pipeline/daily.py](kth/pipeline/daily.py) — daily orchestration, `run_daily_pipeline` function
 8. [kth/io/kaggle_runtime.py](kth/io/kaggle_runtime.py) — Kaggle secrets auth (injectable, offline-testable)
 9. [data/backtest_results/MANIFEST.md](data/backtest_results/MANIFEST.md) — which backtest runs to cite (and which are stale)
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues (`Yutwizard/Kronos_Thai_Retail`). See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default five-role vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: root `CONTEXT.md` + `docs/adr/`. See `docs/agents/domain.md`.
