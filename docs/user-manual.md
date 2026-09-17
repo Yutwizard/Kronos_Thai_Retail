@@ -389,12 +389,14 @@ The most credible evidence for the strategy comes from the 4 clean OOS years —
 
 | Year | Net CAGR | Sharpe | Max DD | p-value | EW CAGR | Alpha vs EW | Friction/yr |
 |------|----------|--------|--------|---------|---------|-------------|-------------|
-| **2023** | +2.6% | 0.10 | −13.1% | 0.419 ❌ | +12.8% | **−10.2pp** | 5.68% |
-| **2024** | +42.0% | 2.27 | −6.9% | **0.015 ✅** | −7.2% | **+49.2pp** | 7.54% |
-| **2025** | +33.7% | 1.03 | −24.0% | 0.257 ❌ | −9.9% | **+43.6pp** | 17.35% |
-| **2026** | +143% ann.¹ | 2.42 | −18.3% | 0.353 ❌ | +41.8% | **+101pp** | 32.78% |
+| **2023** | +9.1% | 0.42 | −15.8% | 0.313 ❌ | −5.7% | +14.9pp | 8.09% |
+| **2024** | +41.3% | 2.23 | −6.9% | **0.001 ✅✅** | −6.5% | +47.8pp | 7.03% |
+| **2025** | +34.5% | 1.05 | −23.5% | **0.027 ✅** | −9.3% | +43.8pp | 16.82% |
+| **2026**¹ | +121.3% | 2.39 | −18.3% | 0.335 ❌ | +60.8% | +60.5pp | 41.57% |
 
-> ¹ 2026 covers only 107 trading days (Jan–May 2026). Annualised figures are not representative of a full year.
+> ¹ 145 trading days (through 2026-07-25). Annualised CAGR not representative of a full year.
+>
+> Re-run 2026-07-29 (see `data/backtest_results/MANIFEST.md`) — supersedes an earlier version of this table that predated a duplicate-mark-day bug fix and a degenerate `equal_weight`/`60_40` benchmark fix.
 
 **Statistical note (corrected 2026-07-29 — see `PROJECT_STRUCTURE.md`'s "4-Year OOS Results" and `data/backtest_results/MANIFEST.md`):** 2024 (p=0.001) and 2025 (p=0.027) both clear p<0.05 unadjusted. Under Bonferroni correction for 4 OOS years (threshold p<0.0125), **2024 survives**; no other year does.
 
@@ -481,7 +483,7 @@ A 5-year expanded backtest adds the COVID crash (Q1 2020) and recovery (2020-202
 | US equity | 0.97 | 0.94 (F2) | −0.03 | ✅ Stay ZS |
 | Crypto | 0.52 | 0.46 (F0) | −0.06 | ✅ Stay ZS |
 
-> Updated with n=50 yearly backtests (2024: +43.78%/2.27, 2025: +34.92%/1.03). See §6.2.
+> Updated with n=50 yearly backtests (2024: +41.3%/2.23, 2025: +34.5%/1.05). See §6.2.
 
 **Fine-tuning did not help in any market.** All 3 markets use zero-shot Kronos-small. The 9 fine-tuned checkpoints are saved at `./checkpoints/{model}/fold{f}/best/` but not deployed. Direction accuracy improved slightly (+2.0pp for US equity) but did not translate to backtest alpha (FT Sharpe 0.94 vs ZS 0.97).
 
@@ -489,16 +491,9 @@ A 5-year expanded backtest adds the COVID crash (Q1 2020) and recovery (2020-202
 
 ### Yearly n=50 Backtests (Clean OOS, 2023-2026)
 
-High-quality backtests with n_samples=50 on the clean out-of-sample window (post training cutoff). All 4 years complete.
+High-quality backtests with n_samples=50 on the clean out-of-sample window (post training cutoff). All 4 years complete — see the **4-Year Out-of-Sample Summary** table in §6 above for the authoritative per-year Net CAGR, Sharpe, Max DD, p-value, and EW-benchmark figures (re-run 2026-07-29 after the duplicate-mark-day and degenerate-benchmark fixes — see `data/backtest_results/MANIFEST.md`). This section used to duplicate that table with pre-fix numbers plus a SET-Index column not tracked by the authoritative per-run metrics; removed here rather than left to drift out of sync again.
 
-| Year | Return | Sharpe | Max DD | Alpha EW | SET | p-value |
-|------|--------|--------|--------|----------|-----|---------|
-| **2024** | **+43.78%** | **2.27** | −6.92% | +49.0% | −1.10% | **0.015** |
-| **2025** | **+34.92%** | **1.03** | −24.00% | +27.3% | −10.04% | 0.257 |
-| **2026** | **+45.28%** | **2.42** | −18.26% | +26.5% | +20.61% | 0.353 |
-| **2023** | **+2.65%** | **0.10** | −13.08% | −1.67% | — | 0.419 |
-
-**Key insight:** n=50 improved 2025 by +12.4pp return and Sharpe +0.24 over n=10. 2026 has the highest return (+45%) but only 107 trading days — p=0.353 is not significant due to short period. 2023 was a flat year (+2.65%) — the model slightly underperformed equal-weight. Alpha is not uniform every year.
+**Key insight:** Alpha is not uniform every year. 2024 is the only year that clears the strict Bonferroni-corrected significance threshold (p<0.0125); 2025 clears the conventional p<0.05 bar but not Bonferroni; 2023 and 2026 don't reach significance at either threshold. See §6 above for full per-year detail.
 
 ---
 
