@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Architecture review — Kronos_Thai_Retail</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+      mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose" });
+    </script>
+    <style>
+      .seam { stroke-dasharray: 4 4; }
+      .leak { stroke: #dc2626; }
+      .deep { background: linear-gradient(135deg, #0f172a, #1e293b); }
+    </style>
+  </head>
+  <body class="bg-stone-50 text-slate-900 font-sans">
+    <main class="max-w-5xl mx-auto px-6 py-12 space-y-12">
+      <header class="space-y-3">
+        <p class="text-xs uppercase tracking-widest text-slate-500">Kronos_Thai_Retail · 2026-09-11</p>
+        <h1 class="font-serif text-4xl">Architecture review</h1>
+        <div class="flex flex-wrap gap-4 text-xs text-slate-600">
+          <span><span class="inline-block w-3 h-3 border border-slate-700 bg-white align-middle mr-1"></span>module</span>
+          <span><span class="inline-block w-6 border-t-2 border-dashed border-slate-500 align-middle mr-1"></span>seam</span>
+          <span><span class="inline-block w-6 border-t-2 border-red-600 align-middle mr-1"></span>leakage</span>
+          <span><span class="inline-block w-3 h-3 deep align-middle mr-1"></span>deep module</span>
+        </div>
+      </header>
+
+      <section id="candidates" class="space-y-10">
+
+        <!-- 1. LotLedger -->
+        <article id="lot-ledger" class="rounded-xl border border-slate-200 bg-white p-6 space-y-4">
+          <h2 class="font-serif text-2xl">One FIFO Lot Ledger</h2>
+          <div class="flex gap-2">
+            <span class="text-xs font-semibold uppercase tracking-wider bg-emerald-100 text-emerald-800 px-2 py-1 rounded">Strong</span>
+            <span class="text-xs uppercase tracking-wider bg-slate-100 text-slate-600 px-2 py-1 rounded">in-process</span>
+          </div>
+          <p class="font-mono text-sm text-slate-600">kth/trading/portfolio.py · kth/backtest/metrics.py · kth/backtest/walkforward.py</p>
+          <div class="grid md:grid-cols-2 gap-4">
+            <div class="rounded-lg border border-slate-200 bg-white p-4">
+              <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">Before — 4 FIFOs, no locality</p>
+              <pre class="mermaid">
+                flowchart TB
+                  P[Position close] --> F1[portfolio._compute_fifo_wins<br/>gross, no friction]
+                  P --> F2[portfolio._compute_fifo_pnl<br/>net per chunk]
+                  P --> F3[metrics._compute_avg_holding_period<br/>third deque]
+                  P --> F4[walkforward lots ledger<br/>blended entry]
+                  F1 -.leak.-> M[trade_win_rate vs profit_factor disagree]
+                  F2 -.leak.-> M
+                  classDef leak stroke:#dc2626,stroke-width:2px;
+                  class F1,F2,F3,F4,M leak
+              </pre>
+            </div>
+            <div class="rounded-lg border border-slate-200 bg-white p-4">
+              <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">After — one deep ledger</p>
+              <pre class="mermaid">
+                flowchart TB
+                  P[Position close] --> L[LotLedger<br/>append buy/sell]
+                  L --> W[wins]
+                  L --> R[realized_pnl_net]
+                  L --> H[holding_periods]
+                  P1[portfolio] -.-> L
+                  P2[metrics] -.-> L
+                  P3[walkforward] -.-> L
+                  classDef deepMod fill:#0f172a,stroke:#0f172a,color:#fff;
+                  class L deepMod
+              </pre>
+            </div>
+          </div>
+          <p><strong>Problem:</strong> Four FIFO implementations of one Position concept disagree on gross-vs-net.</p>
+          <p><strong>Solution:</strong> Deepen into one LotLedger module; all three callers delegate.</p>
+          <ul class="list-disc pl-5 text-sm space-y-1">
+            <li>locality: P&amp;L bugs concentrate in one module</li>
+            <li>leverage: one interface, three call sites agree</li>
+            <li>Tests hit one interface with synthetic Trade lists</li>
+          </ul>
+        </article>
+
+        <!-- 2. PriceStore -->
+        <article id="price-store" class="rounded-xl border border-slate-200 bg-white p-6 space-y-4">
+          <h2 class="font-serif text-2xl">OHLCV PriceStore</h2>
+          <div class="flex gap-2">
+            <span class="text-xs font-semibold uppercase tracking-wider bg-emerald-100 text-emerald-800 px-2 py-1 rounded">Strong</span>
+            <span class="text-xs uppercase tracking-wider bg-slate-100 text-slate-600 px-2 py-1 rounded">ports &amp; adapters</span>
+          </div>
+          <p class="font-mono text-sm text-slate-600">kth/data/loader.py · kth/trading/trade_gen.py · kth/trading/portfolio.py · kth/trading/sheets.py · scripts/dashboard.py · kth/pipeline/daily.py</p>
+          <div class="grid md:grid-cols-2 gap-4">
+            <div class="rounded-lg border border-slate-200 bg-white p-4">
+              <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">Before — fan-out, ~3N reads</p>
+              <pre class="mermaid">
+                flowchart LR
+                  R1[load_forecasts] --> FS[(parquet ×3N)]
+                  R2[get_positions] --> FS
+                  R3[_get_cached_closes] --> FS
+                  S1[sanitize ×6 sites] -.leak.-> FS
+                  S2[sanity filter ×3 copies] -.leak.-> FS
+                  classDef leak stroke:#dc2626,stroke-width:2px;
+                  class S1,S2 leak
+              </pre>
+            </div>
+            <div class="rounded-lg border border-slate-200 bg-white p-4">
+              <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">After — one price seam</p>
+              <pre class="mermaid">
+                flowchart LR
+                  R1[load_forecasts] --> PS[PriceStore<br/>get_close / batch]
+                  R2[get_positions] --> PS
+                  R3[dashboard] --> PS
+                  PS --> FS[(parquet)]
+                  classDef deepMod fill:#0f172a,stroke:#0f172a,color:#fff;
+                  class PS deepMod
+              </pre>
+            </div>
+          </div>
+          <p><strong>Problem:</strong> Ticker sanitization sprawls across ~6 sites; ranking does ~3N parquet reads.</p>
+          <p><strong>Solution:</strong> Deepen behind one PriceStore module with memoization; single sanitize + single sanity rule.</p>
+          <ul class="list-disc pl-5 text-sm space-y-1">
+            <li>locality: close-price logic lives in one module</li>
+            <li>leverage: Expected Return + DR Premium % share one source</li>
+            <li>Tests inject a fake store; no filesystem fixtures</li>
+            <li>Two adapters justify the seam: disk in prod, in-memory in tests</li>
+          </ul>
+        </article>
+
+        <!-- 3. DR Execution Adapter -->
+        <article id="dr-adapter" class="rounded-xl border border-slate-200 bg-white p-6 space-y-4">
+          <h2 class="font-serif text-2xl">DR Execution Adapter</h2>
+          <div class="flex gap-2">
+            <span class="text-xs font-semibold uppercase tracking-wider bg-emerald-100 text-emerald-800 px-2 py-1 rounded">Strong</span>
+            <span class="text-xs uppercase tracking-wider bg-slate-100 text-slate-600 px-2 py-1 rounded">ports &amp; adapters</span>
+          </div>
+          <p class="font-mono text-sm text-slate-600">kth/trading/trade_gen.py · kth/trading/_dr_optional.py · kth_dr/ · kth/data/universe.py</p>
+          <div class="grid md:grid-cols-2 gap-4">
+            <div class="rounded-lg border border-slate-200 bg-white p-4">
+              <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">Before — shallow pass-through</p>
+              <div class="space-y-2">
+                <div class="border border-slate-300 rounded p-2">
+                  <p class="text-xs uppercase tracking-wider">interface: _dr_optional passthrough</p>
+                  <div class="h-10 bg-slate-200 rounded mt-1"></div>
+                </div>
+                <div class="border border-slate-300 rounded p-2">
+                  <p class="text-xs uppercase tracking-wider">implementation: 11 lines, one lambda</p>
+                  <div class="h-10 bg-slate-200 rounded mt-1"></div>
+                </div>
+                <p class="text-xs text-red-700">Deletion test fails: interface ≈ implementation.</p>
+              </div>
+            </div>
+            <div class="rounded-lg border border-slate-200 bg-white p-4">
+              <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">After — deep adapter</p>
+              <div class="deep rounded p-3 text-white">
+                <p class="text-xs uppercase tracking-wider text-slate-300">ExecutionResolver interface</p>
+                <p class="font-mono text-xs mt-1">execution_price · friction · sector · currency_group · premium_pct</p>
+                <div class="mt-2 rounded bg-slate-700/60 p-2 text-xs text-slate-300">implementation absorbs the 3 lambda-fallback triples + underlying→execution mapping</div>
+              </div>
+            </div>
+          </div>
+          <p><strong>Problem:</strong> Last two DR display-price bugs: callers used underlying close, not execution close.</p>
+          <p><strong>Solution:</strong> One ExecutionResolver adapter owns the underlying→execution seam; non-DR is identity inside.</p>
+          <ul class="list-disc pl-5 text-sm space-y-1">
+            <li>locality: THB-vs-foreign translation in one seam</li>
+            <li>leverage: ranking, ticket, Position table fixed together</li>
+            <li>Interface shrinks; implementation absorbs the wrappers</li>
+          </ul>
+          <p class="text-sm bg-amber-50 border border-amber-200 rounded p-2">Touches ADR-0004: adapter must keep sector and currency_group as independent pools (AND-reject), never one merged key.</p>
+        </article>
+
+        <!-- 4. Pipeline core -->
+        <article id="pipeline-core" class="rounded-xl border border-slate-200 bg-white p-6 space-y-4">
+          <h2 class="font-serif text-2xl">One pipeline core</h2>
+          <div class="flex gap-2">
+            <span class="text-xs font-semibold uppercase tracking-wider bg-amber-100 text-amber-800 px-2 py-1 rounded">Worth exploring</span>
+            <span class="text-xs uppercase tracking-wider bg-slate-100 text-slate-600 px-2 py-1 rounded">in-process</span>
+          </div>
+          <p class="font-mono text-sm text-slate-600">scripts/dashboard.py (cmd_generate) · kth/pipeline/daily.py · kth/backtest/walkforward.py (precompute_forecasts)</p>
+          <div class="grid md:grid-cols-2 gap-4">
+            <div class="rounded-lg border border-slate-200 bg-white p-4">
+              <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">Before — two parallel pipelines</p>
+              <div class="space-y-1">
+                <div class="h-8 border-l-4 border-red-400 bg-slate-50 px-2 text-xs flex items-center">Flask cmd_generate: wipe + redo all tickers</div>
+                <div class="h-8 border-l-4 border-red-400 bg-slate-50 px-2 text-xs flex items-center">precompute_forecasts: skip cached dates</div>
+                <div class="h-8 border-l-4 border-red-400 bg-slate-50 px-2 text-xs flex items-center">CACHE_SLUG hardcoded ×3</div>
+                <div class="h-8 border-l-4 border-red-400 bg-slate-50 px-2 text-xs flex items-center">calibration computed twice, mapped once</div>
+              </div>
+            </div>
+            <div class="rounded-lg border border-slate-200 bg-white p-4">
+              <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">After — shared steps, thin entrypoints</p>
+              <div class="deep rounded p-3 text-white text-xs space-y-1">
+                <div class="rounded bg-slate-700/60 px-2 py-1">ensure_data → ensure_forecasts → build_ticket</div>
+                <div class="px-2 text-slate-300">Flask + Kaggle inject loader / model / store</div>
+                <div class="px-2 text-slate-300">dashboard.py keeps HTTP thin wrappers only</div>
+              </div>
+            </div>
+          </div>
+          <p><strong>Problem:</strong> Same morning shape, divergent wipe-vs-resume and sanity rules.</p>
+          <p><strong>Solution:</strong> Extract injectable steps + one ForecastStore module.</p>
+          <ul class="list-disc pl-5 text-sm space-y-1">
+            <li>locality: pipeline change made once</li>
+            <li>leverage: both runtimes share date/delta/calibration logic</li>
+            <li>Each step testable offline with fake loader</li>
+          </ul>
+        </article>
+
+        <!-- 5. Backtest engine -->
+        <article id="backtest-engine" class="rounded-xl border border-slate-200 bg-white p-6 space-y-4">
+          <h2 class="font-serif text-2xl">Backtest engine with depth</h2>
+          <div class="flex gap-2">
+            <span class="text-xs font-semibold uppercase tracking-wider bg-amber-100 text-amber-800 px-2 py-1 rounded">Worth exploring</span>
+            <span class="text-xs uppercase tracking-wider bg-slate-100 text-slate-600 px-2 py-1 rounded">in-process</span>
+          </div>
+          <p class="font-mono text-sm text-slate-600">kth/backtest/walkforward.py · kth/backtest/strategy.py</p>
+          <div class="grid md:grid-cols-2 gap-4">
+            <div class="rounded-lg border border-slate-200 bg-white p-4">
+              <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">Before — state scattered</p>
+              <pre class="mermaid">
+                flowchart TB
+                  S[compute_signals<br/>9 args] --> W[run_walkforward<br/>220-line day loop]
+                  H[apply_hysteresis<br/>caller decrements] -.leak.-> W
+                  W --> B[_compute_benchmarks<br/>legacy SPY curves]
+                  classDef leak stroke:#dc2626,stroke-width:2px;
+                  class H,B leak
+              </pre>
+            </div>
+            <div class="rounded-lg border border-slate-200 bg-white p-4">
+              <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">After — stateful engine</p>
+              <pre class="mermaid">
+                flowchart TB
+                  F[forecast] --> SG[signal] --> E[BacktestPortfolio<br/>targets → deltas → friction → MTM]
+                  classDef deepMod fill:#0f172a,stroke:#0f172a,color:#fff;
+                  class E deepMod
+              </pre>
+            </div>
+          </div>
+          <p><strong>Problem:</strong> Recent crashes lived in the caller, never the pure functions.</p>
+          <p><strong>Solution:</strong> Stateful BacktestPortfolio module; hysteresis + cooldown co-located; drop dead inv_vol/signal branches.</p>
+          <ul class="list-disc pl-5 text-sm space-y-1">
+            <li>locality: holding state behind one seam</li>
+            <li>Property-testable without GPU forecasts</li>
+            <li>Supports ADR-0001: loser inv_vol path leaves the hot loop</li>
+          </ul>
+        </article>
+
+        <!-- 6. portfolio.py split -->
+        <article id="portfolio-split" class="rounded-xl border border-slate-200 bg-white p-6 space-y-4">
+          <h2 class="font-serif text-2xl">Split the portfolio god-module</h2>
+          <div class="flex gap-2">
+            <span class="text-xs font-semibold uppercase tracking-wider bg-amber-100 text-amber-800 px-2 py-1 rounded">Worth exploring</span>
+            <span class="text-xs uppercase tracking-wider bg-slate-100 text-slate-600 px-2 py-1 rounded">local-substitutable</span>
+          </div>
+          <p class="font-mono text-sm text-slate-600">kth/trading/portfolio.py · kth/backtest/metrics.py · kth/pipeline/daily.py · scripts/dashboard.py</p>
+          <div class="grid md:grid-cols-2 gap-4">
+            <div class="rounded-lg border border-slate-200 bg-white p-4">
+              <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">Before — IO + math + circular call</p>
+              <pre class="mermaid">
+                flowchart TB
+                  IO[init/execute/rebuild<br/>CSV+JSON IO] --> M[compute_metrics]
+                  M -.leak.-> T[trade_gen.load_forecasts<br/>function-scope import]
+                  M --> G[get_equity_performance<br/>triple IO]
+                  classDef leak stroke:#dc2626,stroke-width:2px;
+                  class M,T leak
+              </pre>
+            </div>
+            <div class="rounded-lg border border-slate-200 bg-white p-4">
+              <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">After — pure analytics + thin stores</p>
+              <pre class="mermaid">
+                flowchart LR
+                  A[analytics<br/>pure: Sharpe, drawdown, p-value] --> E1[portfolio_store<br/>JSON/CSV]
+                  A --> E2[market_snapshot<br/>forecasts to state]
+                  F[Flask] --> A
+                  S[Sheets] --> A
+                  classDef deepMod fill:#0f172a,stroke:#0f172a,color:#fff;
+                  class A deepMod
+              </pre>
+            </div>
+          </div>
+          <p><strong>Problem:</strong> Risk math needs CSV+JSON+parquet fixtures; Flask and Sheets drift.</p>
+          <p><strong>Solution:</strong> Pure analytics module; thin store + snapshot adapters; one entry for both dashboards.</p>
+          <ul class="list-disc pl-5 text-sm space-y-1">
+            <li>locality: one definition of exposure, win_rate, friction-YTD</li>
+            <li>Risk math testable from Series/DataFrame, no disk</li>
+            <li>leverage: Flask + Sheets share the entry</li>
+          </ul>
+        </article>
+
+      </section>
+
+      <section id="top-recommendation" class="rounded-xl border-2 border-emerald-600 bg-white p-6">
+        <p class="text-xs uppercase tracking-widest text-emerald-700">Top recommendation</p>
+        <h2 class="font-serif text-2xl mt-1"><a href="#price-store" class="underline">OHLCV PriceStore</a></h2>
+        <p class="mt-2 text-sm">Every other deepening benefits from a single price seam: one close source for Expected Return and DR Premium %, killing 6-site sanitization sprawl and ~3N parquet reads while unlocking fake-store tests everywhere.</p>
+      </section>
+    </main>
+  </body>
+</html>
