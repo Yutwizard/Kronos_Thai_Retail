@@ -104,6 +104,8 @@ document.addEventListener('DOMContentLoaded', function(){
   <span class="badge">Research output only</span>
 </div>
 
+<div class="highlight"><strong>Legacy workflow.</strong> This describes the original notebook workflow (100 tickers, all asset classes). The daily pipeline (<code>kth/pipeline/daily.py</code>, automated via Kaggle or Flask) handles this automatically. The signal interpretation rules below apply to all approaches. See the Dashboard User Manual (<code>docs/dashboard-user-manual.md</code>) for the current Thai equity dashboard (49 tickers, 500K THB).</div>
+
 <div class="toc">
   <h3 style="margin-top:0; border:none; padding:0;">Contents</h3>
   <ol>
@@ -488,7 +490,7 @@ print(f'Portfolio value: {total:,.0f} THB  CAGR: {cagr:+.2%}')"</pre>
     <tr><th>Problem</th><th>Cause</th><th>Fix</th></tr>
     <tr><td>Notebook says "No module named kth"</td><td>kth package not installed</td><td><code>python -m pip install -e .</code></td></tr>
     <tr><td>GPU out of memory</td><td>Model + batch too large</td><td>Reduce <code>n_samples = 5</code> in Cell 0</td></tr>
-    <tr><td>Forecasts looking stale</td><td>Cache not refreshed</td><td>Delete <code>data/forecast_cache/NeoQuasar_Kronos-small/</code> and re-run</td></tr>
+    <tr><td>Forecasts looking stale</td><td>Shouldn't happen -- Run Pipeline always wipes and regenerates today's cache</td><td>If it does, delete <code>data/forecast_cache/NeoQuasar_Kronos-small/</code> and re-run</td></tr>
     <tr><td><code>pd.bdate_range</code> error</td><td>Old cached file</td><td>Delete forecast cache and re-run</td></tr>
     <tr><td>Missing tickers in Morning Brief</td><td>Ticker has < 400 rows of history</td><td>Check "skipped" list in Cell 3 output -- some tickers need more data</td></tr>
     <tr><td>All signals yellow</td><td>Typical on volatile days</td><td>Accept it. The model produces green signals on ~30% of days</td></tr>

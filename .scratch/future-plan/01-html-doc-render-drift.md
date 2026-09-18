@@ -44,6 +44,23 @@ so they drift silently. Two concrete symptoms:
 6. Add the legacy-workflow banner and the pointer to the Dashboard User Manual
    (49 tickers). Small, independent of the rest; can ship first.
 
+## Update 2026-09-18
+
+- **Item 6 DONE**: legacy-workflow banner added to
+  `scripts/build_operations_html.py` and `docs/operations-manual.html`
+  regenerated (uncommitted at time of writing). While doing it, the committed
+  HTML differed from the builder by one hand-edited row ("Forecasts looking
+  stale", troubleshooting table); the builder was synced first so
+  regenerating did not revert it. This is direct evidence the HTML is edited
+  by hand independently of its builder.
+- **New item 7**: `scripts/build_master_report.py` (feeds the git-ignored
+  `reports/master_backtest_report.html`) still hardcodes pre-fix numbers and
+  the retracted regime narrative: line 68 (2023 +2.6%, 2024 p=0.015), line 139
+  ("Regime finding: SET bull 2023 (EW +12.8%)... Alpha is structural"), and
+  lines 151/153 ("regime-dependent", "2023: +2.6%"). Only line 138 (the
+  Bonferroni sentence) was fixed, under ticket 02. The table rows themselves
+  come from `metrics.json` and are fine.
+
 ## Aside (not in scope)
 
 Both builders share one root cause: nothing derives HTML from Markdown. A real

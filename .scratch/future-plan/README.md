@@ -6,8 +6,8 @@ per `docs/agents/triage-labels.md`), then delete this folder.
 
 | # | Ticket | Type | GPU | Depends on |
 |---|--------|------|-----|------------|
-| 01 | HTML doc renders drifted from Markdown (user + operations manual) | docs/tooling | no | none |
-| 02 | One Correction Family for significance wording | docs | no | none |
+| 01 | HTML doc renders drifted from Markdown (user + operations manual) | docs/tooling | no | none (item 6 done; item 7 added) |
+| 02 | One Correction Family for significance wording | docs | no | none (done except optional pooled test) |
 | 03 | Volatility-regime entry threshold experiment | research | no (optional top-up) | 02 for doc edits |
 | 04 | Verify Kronos pre-training cutoff | research | no | none |
 | 05 | Forecast Cache backup policy | decision | no | none |

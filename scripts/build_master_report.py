@@ -135,7 +135,7 @@ tr:hover{{background:#eef3ff}}
     {oos_rows}
     </tbody></table>
     <div style="font-size:0.8em;color:#666;margin:4px 0">
-    <strong>Status:</strong> All 4 years ✅ complete. 2024 significant (p=0.015). No year survives Bonferroni (4 tests, threshold p&lt;0.0125).<br>
+    <strong>Status:</strong> All 4 years ✅ complete. 2024 (p=0.001) and 2025 (p=0.027) clear p&lt;0.05; under Bonferroni (4 tests, threshold p&lt;0.0125) 2024 alone survives.<br>
     <strong>Regime finding:</strong> SET bull 2023 (EW +12.8%) → strategy +2.6% (cash drag). SET bear 2024/2025 (EW −7%/−10%) → strategy +42%/+34%. Alpha is structural, not random.<br>
     <strong>Factor attribution:</strong> Beta_market=−0.009, R²=0.000 — completely market-neutral, not a momentum proxy.
     </div>

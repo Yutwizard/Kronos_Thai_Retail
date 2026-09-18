@@ -1,8 +1,20 @@
 # Ticket 02: One Correction Family for backtest significance wording
 
-**Status:** Scoped, not filed. Type: docs. No GPU.
+**Status:** Changes 1-3 DONE 2026-09-18 (uncommitted at time of writing). Only
+the optional pooled test remains. Type: docs. No GPU.
 **Decision (2026-09-18):** the 4-year OOS family (p<0.0125) is the canonical
 headline. See "Correction Family" in `CONTEXT.md`.
+
+**Correction to the analysis below:** the 9-test family is documented after
+all, in `docs/superpowers/plans/2026-06-03-post-2023-backtest-actions.md:394`
+("9 hypotheses: 3 markets x ~3 periods"). Two of those three markets (us_equity,
+crypto) were archived on 2026-07-16, so the family is obsolete, not
+unexplained. It was removed rather than relabelled.
+
+**Done:** `PROJECT_STRUCTURE.md:595` reworded; `MANIFEST.md` 9-test mentions
+and the stale "not yet updated" note replaced; `scripts/build_master_report.py`
+line 138 (hardcoded "2024 significant (p=0.015). No year survives Bonferroni")
+corrected. Other docs already used the 4-test wording.
 
 ## Problem
 

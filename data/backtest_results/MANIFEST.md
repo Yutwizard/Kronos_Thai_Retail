@@ -18,16 +18,14 @@
 > **This changes the headline conclusion.** Under the old (bugged, vs-zero)
 > comparison, 2024 was "the only year clearing p<0.05" (p=0.015). Under the
 > corrected vs-equal-weight comparison: 2024 is *more* significant
-> (p=0.001, now survives Bonferroni correction even at the strict 9-test
-> threshold p<0.0056 — previously "no year survives, 2024 is closest") and
+> (p=0.001, now survives Bonferroni correction for the 4 OOS years,
+> threshold p<0.0125 — previously "no year survives, 2024 is closest") and
 > **2025 also now clears p<0.05** (p=0.027, previously p=0.257). 2026 moves
 > the other way — was borderline (p=0.066 vs zero), now clearly
 > non-significant (p=0.335 vs the real benchmark), because 2026's equal-weight
-> benchmark itself surged in that bull run. The "only 2024 is significant"
-> framing in `PROJECT_STRUCTURE.md` (search `Bonferroni`, `only year
-> clearing`) has **not yet been updated** to match — flagged for the user to
-> decide how to revise that narrative, since it's a bigger interpretive call
-> than a number swap.
+> benchmark itself surged in that bull run. `PROJECT_STRUCTURE.md` and the
+> user-facing docs carry the corrected framing (checked 2026-09-18): 2024
+> survives Bonferroni for the 4 OOS years; 2025 clears p<0.05 unadjusted only.
 
 # Backtest Results Manifest
 
@@ -36,7 +34,7 @@
 | Directory | Period | Notes |
 |-----------|--------|-------|
 | `thai_equity_2023_n50/` | 2023 | p=0.313 (was 0.604 pre-fix) — bull market, cash drag |
-| `thai_equity_2024_n50/` | 2024 | **p=0.001 (was 0.017 pre-fix) — clears Bonferroni even at the strict 9-test threshold** |
+| `thai_equity_2024_n50/` | 2024 | **p=0.001 (was 0.017 pre-fix) — survives Bonferroni for the 4 OOS years (p<0.0125)** |
 | `thai_equity_2025_n50/` | 2025 | **p=0.027 (was 0.260 pre-fix) — now also clears p<0.05** |
 | `thai_equity_2026_n50/` | 2026 YTD | p=0.335 (was 0.066 pre-fix) — no longer borderline; real EW benchmark surged too in this bull run |
 
