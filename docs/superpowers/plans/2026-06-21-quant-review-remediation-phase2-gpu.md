@@ -1,5 +1,7 @@
 # Quant Review Remediation — Phase 2 (GPU Required) Implementation Plan
 
+> **Status 2026-09-18: do not execute as written.** None of these steps were run. Task 1 (FX) is dropped (targeted archived crypto/us_equity); Task 2 (partial fills) is deferred until capital passes ~1M THB; Task 3 continues as a CPU-only experiment off the local forecast cache; Task 4's full GPU re-run is not needed; Task 5 is a separate research ticket. See `.scratch/future-plan/README.md`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Remediate the 8 GPU-blocked issues from the quant/trader/engineer review — re-run the Kronos backtest with the fixed Phase 1 code, then address the statistical/strategy questions that depend on fresh numbers.

@@ -126,6 +126,18 @@ _Avoid_: FX group, sector (this is deliberately not folded into Sector Concentra
 An upward distortion in backtest CAGR caused by the universe containing only currently-listed tickers. Delisted Thai stocks (bankruptcies, mergers, 2020–2024) are excluded because yfinance does not expose their historical data. Estimated to inflate CAGR by ~1–3 percentage points per year for 40–60 stock universes. Formal disclosure added to `docs/backtest-methodology.html` (planned Phase 4).
 _Avoid_: Data bias, selection bias (too generic)
 
+**Correction Family**:
+The set of hypothesis tests a multiple-comparison (Bonferroni) threshold is divided across; a threshold means nothing without naming its family. The canonical family for backtest significance is the four 2023–2026 out-of-sample years, giving a threshold of p<0.0125.
+_Avoid_: Bonferroni threshold (ambiguous until the family size is stated)
+
+**Baseline Configuration**:
+The production entry/exit settings that a proposed change is compared against, day by day, in a paired test on daily active return. Distinct from the [[Equal-Weight Benchmark]], which measures stock-selection alpha rather than the effect of a rule change.
+_Avoid_: Baseline (collides with benchmark), control
+
+**Forecast Cache**:
+The persisted [[Forecast]]s for each model and date. A Backtest that changes only the decision layer (thresholds, hysteresis, holding rules) re-runs from it with no new Kronos inference; a change to the forecasts themselves requires regenerating it.
+_Avoid_: Precompute output
+
 ## Example Dialogue
 
 **Trader:** "What does today's report say?"  
