@@ -1,6 +1,7 @@
 """Pure strategy functions: signal generation, position selection, weight computation."""
 from __future__ import annotations
 
+import numpy as np
 import pandas as pd
 
 
@@ -108,3 +109,36 @@ def apply_hysteresis(
                 signals[t] = sig
                 signals_for_ranking[t] = sig
     return signals, signals_for_ranking
+
+
+def compute_median_vol_series(
+    ticker_data: dict[str, pd.DataFrame],
+    vol_lookback: int = 20,
+) -> pd.Series:
+    """Daily cross-sectional median of each ticker's rolling std of daily returns.
+
+    Each value uses only closes up to and including its own date.
+    """
+    vols = {}
+    for ticker, df in ticker_data.items():
+        close = df.set_index(pd.to_datetime(df["timestamps"]))["close"]
+        vols[ticker] = close.pct_change(fill_method=None).rolling(vol_lookback).std()
+    return pd.DataFrame(vols).median(axis=1, skipna=True).dropna()
+
+
+def compute_regime_adjusted_threshold(
+    base_threshold: float,
+    base_buffer: float,
+    vol_series: pd.Series,
+    day: pd.Timestamp,
+    percentile: float = 80.0,
+    min_history: int = 252,
+    multiplier: float = 2.0,
+) -> tuple[float, float]:
+    """Raise the entry buffer when today's median volatility is historically high."""
+    history = vol_series[vol_series.index < day]
+    if len(history) < min_history:
+        return base_threshold, base_buffer
+    if day in vol_series.index and vol_series.loc[day] > np.percentile(history.to_numpy(), percentile):
+        return base_threshold, base_buffer * multiplier
+    return base_threshold, base_buffer

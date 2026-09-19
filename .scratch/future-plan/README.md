@@ -6,6 +6,7 @@ per `docs/agents/triage-labels.md`), then delete this folder.
 
 | # | Ticket | Type | GPU | Depends on |
 |---|--------|------|-----|------------|
+| 00 | **Historical forecast cache is not point-in-time (look-ahead)** — found 2026-09-18; code fix done 2026-09-19, quantify + re-run + re-evaluate still open, blocks 03 | bug + re-validation | yes, to re-validate | none |
 | 01 | HTML doc renders drifted from Markdown (user + operations manual) | docs/tooling | no | none (item 6 done; item 7 added) |
 | 02 | One Correction Family for significance wording | docs | no | none (done except optional pooled test) |
 | 03 | Volatility-regime entry threshold experiment | research | no (optional top-up) | 02 for doc edits |

@@ -1,5 +1,13 @@
 # Ticket 03: Volatility-regime entry threshold experiment (CPU-only)
 
+**BLOCKED 2026-09-18 by ticket 00.** Implemented and tested (3 seams, off by
+default: `compute_median_vol_series`, `compute_regime_adjusted_threshold`,
+`evaluate_variant_vs_baseline`, `BacktestConfig.regime_buffer_multiplier`,
+`scripts/run_vol_regime_experiment.py`), but the run aborted because the baseline
+no longer reproduces the stored metrics, and the reason is a look-ahead flaw in
+the historical forecast cache. Do not run or interpret the experiment until the
+cache is regenerated point-in-time. The "no GPU" premise below is wrong until then.
+
 **Status:** Scoped, not filed. Type: research experiment. No GPU needed for
 the core work.
 **Source:** trimmed Task 3 of

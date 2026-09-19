@@ -53,6 +53,7 @@ class BacktestConfig:
     min_holding_days: int = 5
     max_holding_days: int | None = None
     cooldown_days: int | None = None
+    regime_buffer_multiplier: float | None = None
     max_positions: int = 5
     position_sizing: str = "equal"
     inv_vol_window: int = 20
@@ -125,10 +126,21 @@ def precompute_forecasts(
             continue
 
         print(f"[{day_str}] {len(uncached)} tickers to forecast...")
-        results = kronos_th.forecast_batch(uncached, pred_lens=[pred_len], n_samples=n_samples,
+        # Point-in-time: hand the model only bars up to `day`. Passing ticker names
+        # makes forecast_batch load the full history, conditioning every historical
+        # day on the latest data (look-ahead).
+        frames = []
+        for t in uncached:
+            full = prices.get_ohlcv(t)
+            frames.append(full[full["timestamps"] <= day].reset_index(drop=True))
+        results = kronos_th.forecast_batch(frames, pred_lens=[pred_len], n_samples=n_samples,
                                             lookback=lookback, calendar_freq=freq)
 
-        for t, result in results.items():
+        # forecast_batch keys DataFrame inputs as "df_{i}" by enumerate index.
+        for i, t in enumerate(uncached):
+            result = results.get(f"df_{i}")
+            if result is None:
+                continue
             safe = sanitize_ticker(t)
             h_df = result.horizons[pred_len].summary.copy()
             h_df["ticker"] = t
@@ -141,6 +153,20 @@ def precompute_forecasts(
             }
             with open(day_dir / f"{safe}_meta.json", "w") as f:
                 json.dump(meta, f)
+
+
+def require_point_in_time_forecast(fc_file: Path, day: pd.Timestamp) -> None:
+    """Refuse a cached forecast that was conditioned on data after its own date."""
+    meta_file = fc_file.with_name(f"{fc_file.stem}_meta.json")
+    if not meta_file.exists():
+        raise ValueError(f"{fc_file}: no metadata, cannot verify it is point-in-time")
+    meta = json.loads(meta_file.read_text())
+    if pd.Timestamp(meta["lookback_end"]).normalize() > day.normalize():
+        raise ValueError(
+            f"{fc_file} was conditioned on data through {meta['lookback_end']}, after its own "
+            f"date {day.date()}: not point-in-time (look-ahead). Regenerate it with "
+            f"precompute_forecasts() into a fresh cache dir."
+        )
 
 
 # ---- Module-level cache classes (NOT inside the loop) ----
@@ -279,6 +305,11 @@ def run_walkforward(
     # ---- PRELOAD all ticker data into memory ONCE ----
     ticker_data: dict[str, pd.DataFrame] = prices.batch(eligible)
 
+    regime_vol_series = None
+    if config.regime_buffer_multiplier is not None:
+        from kth.backtest.strategy import compute_median_vol_series
+        regime_vol_series = compute_median_vol_series(ticker_data)
+
     # Compute benchmarks once
     benchmarks = _compute_benchmarks(config, eligible, ticker_data, freq=freq, prices=prices)
 
@@ -312,6 +343,7 @@ def run_walkforward(
             fc_file = forecast_cache / day_str / f"{safe}.parquet"
             if not fc_file.exists():
                 continue
+            require_point_in_time_forecast(fc_file, day)
             fc_df = pd.read_parquet(fc_file)
             forecasts[t] = _CachedResult(fc_df, config.pred_len)
             df_t = ticker_data.get(t)
@@ -327,10 +359,16 @@ def run_walkforward(
                 del cooldown_remaining[t]
 
         raw_signals = compute_signals(forecasts, last_closes, config.long_threshold, config.pred_len)
-        from kth.backtest.strategy import apply_hysteresis
+        from kth.backtest.strategy import apply_hysteresis, compute_regime_adjusted_threshold
+        entry_buffer = config.entry_buffer
+        if regime_vol_series is not None:
+            _, entry_buffer = compute_regime_adjusted_threshold(
+                config.long_threshold, config.entry_buffer, regime_vol_series, day,
+                multiplier=config.regime_buffer_multiplier,
+            )
         signals, signals_for_ranking = apply_hysteresis(
             raw_signals, holdings_units, holding_days,
-            config.long_threshold, config.entry_buffer, config.min_holding_days,
+            config.long_threshold, entry_buffer, config.min_holding_days,
             max_holding_days=config.max_holding_days,
             cooldown_days=config.cooldown_days,
             cooldown_remaining=cooldown_remaining,

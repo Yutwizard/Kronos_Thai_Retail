@@ -129,3 +129,39 @@ def test_calibration_no_cache_returns_insufficient(tmp_path):
     r = compute_calibration(str(tmp_path / "nope"), str(tmp_path), ["AAPL"])
     assert r["status"] == "insufficient_data"
     assert r["n_samples"] == 0
+
+
+def _active_by_year(daily_means, noise=0.001, n=250, seed=0):
+    rng = np.random.default_rng(seed)
+    return {y: m + rng.normal(0, noise, n) for y, m in daily_means.items()}
+
+
+def test_variant_with_steady_positive_edge_in_every_year_is_adopted():
+    from kth.backtest.metrics import evaluate_variant_vs_baseline
+
+    active = _active_by_year({"2023": 0.002, "2024": 0.002, "2025": 0.002, "2026": 0.002})
+    verdict = evaluate_variant_vs_baseline(active, n_bootstrap=300, seed=1)
+
+    assert verdict["adopt"] is True
+    assert verdict["clean_loss_years"] == []
+
+
+def test_variant_with_no_edge_is_rejected():
+    from kth.backtest.metrics import evaluate_variant_vs_baseline
+
+    active = _active_by_year({"2023": 0.0, "2024": 0.0, "2025": 0.0, "2026": 0.0}, noise=0.01)
+    verdict = evaluate_variant_vs_baseline(active, n_bootstrap=300, seed=1)
+
+    assert verdict["adopt"] is False
+
+
+def test_variant_is_rejected_when_one_year_is_a_clean_loss_even_if_pooled_edge_is_positive():
+    from kth.backtest.metrics import evaluate_variant_vs_baseline
+
+    # pooled mean = (3 * 0.004 - 0.004) / 4 = +0.002/day, but 2024 is clearly negative
+    active = _active_by_year({"2023": 0.004, "2024": -0.004, "2025": 0.004, "2026": 0.004})
+    verdict = evaluate_variant_vs_baseline(active, n_bootstrap=300, seed=1)
+
+    assert verdict["pooled"]["ci_2_5_annualized"] > 0
+    assert verdict["clean_loss_years"] == ["2024"]
+    assert verdict["adopt"] is False

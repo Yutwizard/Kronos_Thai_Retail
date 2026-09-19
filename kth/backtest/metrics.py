@@ -489,3 +489,49 @@ def compute_calibration(
         "n_samples": total,
         "status": "overconfident" if coverage > 0.95 else "ok",
     }
+
+
+def evaluate_variant_vs_baseline(
+    active_by_year: dict[str, np.ndarray],
+    n_bootstrap: int = 10000,
+    seed: int = 42,
+) -> dict:
+    """Acceptance rule for a strategy variant, from paired daily active returns."""
+    pooled = _block_bootstrap_mean_ci(np.concatenate(list(active_by_year.values())), n_bootstrap, seed)
+    by_year = {y: _block_bootstrap_mean_ci(a, n_bootstrap, seed) for y, a in active_by_year.items()}
+    clean_loss_years = [y for y, r in by_year.items() if r["ci_97_5_annualized"] < 0]
+    return {
+        "adopt": pooled["ci_2_5_annualized"] > 0 and not clean_loss_years,
+        "pooled": pooled,
+        "by_year": by_year,
+        "clean_loss_years": clean_loss_years,
+    }
+
+
+def _block_bootstrap_mean_ci(
+    active: np.ndarray,
+    n_bootstrap: int,
+    seed: int,
+    periods_per_year: int = 252,
+) -> dict:
+    """Stationary block bootstrap CI on the mean of a daily series (same block
+    scheme as compute_sharpe_ci), annualized."""
+    n = len(active)
+    expected_block = max(int(n ** (1 / 3)), 2)
+    rng = np.random.default_rng(seed)
+    means = np.empty(n_bootstrap)
+    for b in range(n_bootstrap):
+        sample = np.empty(n)
+        idx = 0
+        while idx < n:
+            block_len = min(rng.geometric(1.0 / expected_block), n - idx)
+            start = rng.integers(0, n)
+            sample[idx:idx + block_len] = active[(start + np.arange(block_len)) % n]
+            idx += block_len
+        means[b] = sample.mean()
+    return {
+        "n_obs": n,
+        "observed_mean_annualized": float(active.mean() * periods_per_year),
+        "ci_2_5_annualized": float(np.percentile(means, 2.5) * periods_per_year),
+        "ci_97_5_annualized": float(np.percentile(means, 97.5) * periods_per_year),
+    }
