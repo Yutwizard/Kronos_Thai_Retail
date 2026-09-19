@@ -37,6 +37,25 @@ encodes future price movement. It also explains the drift in item 1: the stored
 runs used raw prices as of 2026-07-29, and re-downloaded adjusted prices rescale
 the denominator against a fixed numerator.
 
+## Sample result (2026-09-19)
+
+Regenerated 7 trading days (every 3rd day of March 2024, 50 tickers, n=50) point-in-time
+into `data/forecast_cache_pit` on the local GTX 1060 (~9.5 min per day), then
+`scripts/compare_pit_sample.py` against the old cache:
+
+| | old cache | point-in-time |
+|---|---|---|
+| median abs signal (p50/close - 1) | 29.8% | 3.7% |
+| mean rank IC vs realized 20d return | +0.156 | +0.186 |
+| mean Spearman old vs new signal | -0.09 | |
+| top-5 picks in common | 0.4 of 5 | |
+
+New folders violating point-in-time: 0 of 350. Reading: the old and new signals are
+essentially unrelated and pick almost entirely different stocks, so the existing
+backtests do not describe the strategy the pipeline actually runs. The IC figures
+are NOT evidence either way (7 dates, overlapping 20-day windows, one month); the
+point-in-time signal is at least not worse in this sample.
+
 ## Likely affected
 
 Everything computed from this cache: the n50 results 2023-2026 and their
