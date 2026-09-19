@@ -14,7 +14,6 @@ import argparse
 import pandas as pd
 
 from kth.backtest.walkforward import precompute_forecasts
-from kth.data.loader import load_cached
 from kth.data.universe import UNIVERSE
 from kth.models.kronos_wrapper import KronosTH
 
@@ -27,12 +26,12 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("start")
     ap.add_argument("end")
-    ap.add_argument("--step", type=int, default=1, help="use every Nth trading day")
+    ap.add_argument("--step", type=int, default=1, help="use every Nth business day")
     args = ap.parse_args()
 
     tickers = [t for t, _, _ in UNIVERSE["thai_equity"]]
-    ref = pd.to_datetime(load_cached("PTT.BK")["timestamps"])
-    days = [d for d in ref if pd.Timestamp(args.start) <= d <= pd.Timestamp(args.end)][:: args.step]
+    # Every business day, holidays included, exactly as run_walkforward walks them.
+    days = list(pd.bdate_range(args.start, args.end))[:: args.step]
     print(f"{len(days)} trading days: {days[0].date()} .. {days[-1].date()}  ({len(tickers)} tickers)")
 
     th = KronosTH.from_pretrained(MODEL, device="cuda")

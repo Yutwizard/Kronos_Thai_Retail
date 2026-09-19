@@ -75,7 +75,14 @@ recent 60 folders), and the equal-weight/SET benchmarks.
    untouched. `scripts/backfill_forecast.py` already truncated correctly.
 2. **Quantify** on a small sample (e.g. one month, 50 tickers) regenerated
    point-in-time, and compare signals and results with the old cache.
-3. **Re-run** the authoritative years with point-in-time forecasts. Phase 2's
+3. **Re-run** the authoritative years with point-in-time forecasts. **2024 IN PROGRESS**
+   (started 2026-09-19 09:12 +07 on the local GTX 1060, ~9.5 min per business day, 255 days
+   left, ETA about 40 hours). Resumable: rerun
+   `scripts/regenerate_forecast_sample.py 2024-01-01 2024-12-31`, then
+   `scripts/run_pit_backtest.py 2024`, which refuses an incomplete cache. Progress:
+   `ls data/forecast_cache_pit/NeoQuasar_Kronos-small | wc -l` (target ~262); finished
+   marker `data/logs/pit_2024.done`; result `data/logs/pit_backtest_2024.log`. Work can be
+   split with a faster GPU by copying day folders between machines. Original text: Phase 2's
    original estimate (8-12 T4 GPU-hours per year) applies after all; the
    "CPU-only" premise for ticket 03 only holds once the cache is valid.
 4. **Re-evaluate** every conclusion listed above; until then treat backtest
