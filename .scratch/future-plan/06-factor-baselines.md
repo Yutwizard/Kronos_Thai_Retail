@@ -34,3 +34,19 @@ Run 2026-09-21 (`scripts/run_factor_baselines.py`, log `data/logs/factor_baselin
 Momentum passes the pre-registered rule narrowly. Active return is positive in 3 of 4 years but
 no single year is significant (2026 slightly negative). Survivorship bias, 3.6 years and 3 shots
 mean this is a lead to confirm out of sample (e.g. the live paper track or 2020-2022), not proof.
+
+## Holdout confirmation 2020-01-02 .. 2022-12-30 (same fixed rule, run 2026-09-21)
+
+`run_factor_baselines.py 2020-01-02 2022-12-30`, log `data/logs/factor_baselines_2020_2022.log`,
+725 days, 47-49 eligible tickers. Equal-weight +13.8% CAGR.
+
+| | CAGR | pooled active (95% CI) | one-sided p | adopt |
+|---|---|---|---|---|
+| momentum 12-1 | +24.2% | +9.4% [-10.0%, +27.5%] | 0.156 | no |
+| low vol 60d | +1.1% | -12.5% [-21.4%, -3.9%] | 0.9985 | no (clean loss 2020) |
+| reversal 1m | +4.9% | -7.1% [-20.2%, +6.5%] | 0.861 | no |
+
+Momentum does not confirm at the pre-registered bar: same sign and similar size (+9.4% vs +12.8%),
+positive in 2020 and 2021, negative in 2022, but the CI comfortably includes zero. Low vol was
+significantly worse than equal-weight in this window. Conclusion: no factor is a validated
+edge over equal-weight; momentum stays a weak, unconfirmed lead.

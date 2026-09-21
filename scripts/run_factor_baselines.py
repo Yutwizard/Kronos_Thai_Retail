@@ -1,7 +1,9 @@
 """Pre-registered factor baselines vs equal-weight (ticket .scratch/future-plan/06).
 
-Usage: venv/bin/python scripts/run_factor_baselines.py
+Usage: venv/bin/python scripts/run_factor_baselines.py [START END]   (default 2023-01-02 2026-07-25)
 """
+import sys
+
 import numpy as np
 import pandas as pd
 
@@ -83,9 +85,10 @@ def main():
     close = load_closes()
     ret = close.pct_change(fill_method=None)
     elig = close.notna() & (close.notna().cumsum() >= MIN_HIST)
-    days = ret.loc[START:END].index
+    start, end = (sys.argv[1], sys.argv[2]) if len(sys.argv) > 2 else (START, END)
+    days = ret.loc[start:end].index
     bench, bench_to = simulate(ret, elig, None, days)
-    print(f"days {len(days)}  eligible tickers at end: {int(elig.iloc[-1].sum())}")
+    print(f"days {len(days)}  eligible tickers {int(elig.loc[days[0]].sum())} at start, {int(elig.loc[days[-1]].sum())} at end")
     b = stats(bench)
     print(f"{'equal_weight':16s} CAGR {b['cagr']:+7.1%}  Sharpe {b['sharpe']:5.2f}  maxDD {b['maxdd']:6.1%}  turnover {bench_to:5.1f}x/yr")
     for name, score in signals(close, ret).items():
