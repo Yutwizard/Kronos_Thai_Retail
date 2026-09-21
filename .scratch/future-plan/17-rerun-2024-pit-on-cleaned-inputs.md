@@ -18,7 +18,7 @@ Ticket 00 re-ran the 2024 point-in-time backtest and found CAGR -26.2%, Sharpe -
 - "Signal appears positive on cleaned inputs": cleaned active-return CI lower bound above 0 and rank IC CI lower bound above 0. Even then nothing is adopted: it is one window, one shot, the other years would also need cleaned reruns, and no unseen historical window remains. The consequence would be a new pre-registration, not a change to the product.
 - No parameter, strategy setting or window is changed after seeing the result.
 
-## Cost and prerequisites (to confirm before approval)
+## Cost and prerequisites (superseded by 'Measured facts' below)
 - Number of forecasts: about 13,100 (262 dates x about 50 tickers). The compute time of the original run is not recorded in the repo; estimate it on a small batch first.
 - Kronos-small needs the local model weights and torch (`requirements-ml.txt`); a GPU is strongly preferred (Kaggle or Colab are the project's GPU runtimes).
 
@@ -26,3 +26,31 @@ Ticket 00 re-ran the 2024 point-in-time backtest and found CAGR -26.2%, Sharpe -
 1. Approve the rerun, or decide the 2024 result is left as "not re-checked" and only flagged.
 2. Compute choice: Kaggle/Colab GPU (recommended), or local CPU.
 3. Whether to also rerun 2023 and 2025-2026 windows later (ticket 00 deliberately did not re-run them); not part of this ticket.
+
+## Measured facts (2026-09-21, no result peeking)
+- Compute: this machine has a CUDA GPU (GTX 1060, 6 GB), torch 2.5.1+cu121, and the Kronos-small weights in the local HF cache. Timing of `forecast_batch` with the original settings (lookback 400, pred_len 20, n_samples 50): 9 frames 100 s, 49 frames 545 s, about 11 s per forecast, about 9 minutes per date of about 50 tickers, peak GPU memory only 765 MiB (compute-bound). Ticket 00 records about 9.5 minutes per date on the same GPU, so the original 2024 run took about 40 hours here. Forecasts from the timing run were discarded and never evaluated.
+- Full rerun: 262 dates x about 9 min = about 40 hours. Generation is idempotent per date (`precompute_forecasts` skips cached dates), so it can run unattended in chunks and be resumed. A Kaggle/Colab T4 was not measured.
+- Prerequisite gap: `kth/data/clean.py` cleans closes only. Kronos needs full OHLCV(+amount) windows, so the loader must first gain a frame-level function (drop stub dates and the ticker's own stub rows across all columns, scale open/high/low/close and amount for the TRUE.BK break) with a self-test.
+- Original signal quality, existing 2024 PIT cache (`scripts/pit_signal_quality.py`): mean rank IC -0.104, 95% CI [-0.214, +0.024] (262 days, block bootstrap, overlapping 20-day windows). The interval includes 0, so the "-0.10" quoted elsewhere is not statistically distinguishable from zero.
+- Exploratory split of that IC by period (descriptive only, overlapping windows, small n, NOT a test): Jan-Feb (windows nearly clean, mean 0.2 stub rows) -0.102 [-0.182, -0.010]; Mar-May -0.003 [-0.117, +0.114]; Jun-Aug -0.037 [-0.289, +0.263]; Sep-Dec (heaviest contamination, about 45 stub rows) -0.231 [-0.308, -0.142]. No monotonic dose-response: the nearly clean months already show a negative IC, and the mid-year months are near zero. So contamination is not an obvious sole cause of the negative result, and the raw data cannot settle it.
+
+## Options (need the user's choice)
+- A. Full rerun on the local GPU: about 40 h, resumable, answers both the IC and the -26% backtest question.
+- B. Staged (recommended): Stage 1 = cleaned forecasts on every 5th business day of 2024 (53 dates, about 8.5 h), IC comparison only; Stage 2 = the other 209 dates (about 33 h) and the full backtest only if the gate below says so.
+- C. Kaggle/Colab T4: unmeasured, needs upload/setup; only worth it if the machine cannot be tied up for days.
+- D. Do nothing: leave the 2024 result flagged "not re-checked".
+
+## Staged design (option B, frozen before running if approved)
+- Stage 1 dates: `pd.bdate_range("2024-01-01", "2024-12-31")[::5]` (53 dates), every frozen thai_equity ticker with 400 real rows after cleaning. Cleaned input as defined above; same model, n_samples, seed and point-in-time guard as the original run; output to `data/forecast_cache_pit_clean/`.
+- Metric: mean daily rank IC of the 20-day forecast vs the realised 20-day return, computed with `scripts/pit_signal_quality.py` logic (parameterised on the cache directory) for the cleaned and the original cache on the SAME 53 dates, plus the paired per-date difference (cleaned minus original); block-bootstrap 95% CIs.
+- Gate, fixed now:
+  - G1: cleaned IC CI lower bound above 0, or paired-difference CI lower bound above 0 -> run Stage 2 and the full backtest comparison of this ticket.
+  - G2: paired-difference CI includes 0 AND cleaned IC CI upper bound below 0 -> STOP: cleaning does not change the signal; the 2024 loss is not a contamination artifact; the -26% stands as originally measured.
+  - G3: anything else (both CIs include 0) -> inconclusive; stop and ask the user whether the further 33 h is worth it.
+- Power warning: 53 dates with overlapping 20-day windows give low power, so G2 will rarely trigger and G3 is the most likely outcome. Say so in any write-up.
+- No parameter, ticker list, date or window changes after seeing Stage 1.
+
+## Open before approval
+1. Option A, B (recommended), C or D.
+2. Compute: local GPU unattended (recommended for B, 8.5 h for Stage 1) or Kaggle/Colab.
+3. Approve the gate rules G1-G3 and the prerequisite loader extension (frame-level cleaning with a self-test), which I would write first.

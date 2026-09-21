@@ -23,7 +23,7 @@ per `docs/agents/triage-labels.md`), then delete this folder.
 | 13 | Tested clean-data loader + `^SET.BK` repair retry | DONE 2026-09-21: `kth/data/clean.py` + `verify_clean_data.py`, reproduces the ticket-09 cleaned frame exactly; `^SET.BK` repair blocked (Yahoo returns one row). |
 | 14 | Ticket 06 factor baselines on cleaned data | DONE 2026-09-21: momentum lead withdrawn on cleaned data (p 0.0379 vs bar 0.0167); nothing adopted. |
 | 15 | LightGBM sign-flip diagnostic | TODO, optional, diagnostic only |
-| 17 | Rerun 2024 PIT forecasts on cleaned inputs | DRAFT 2026-09-21, needs approval and a compute choice; after 13 |
+| 17 | Rerun 2024 PIT forecasts on cleaned inputs | DRAFT 2026-09-21: measured ~11 s/forecast (~40 h full, ~8.5 h for a staged 53-date first stage); needs the user's choice of option and compute. |
 | 16 | Non-arXiv literature on SET / emerging-market strategies | TODO, optional |
 
 Sequence, gates and the multiple-testing register: `PLAN-next-research.md`.
