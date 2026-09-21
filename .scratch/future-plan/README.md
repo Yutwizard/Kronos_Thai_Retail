@@ -20,7 +20,7 @@ per `docs/agents/triage-labels.md`), then delete this folder.
 | 11 | Pre-committed review rule for the live paper track | APPROVED 2026-09-21; review script `scripts/live_track_review.py` written and self-tested on synthetic data only. First review due 2026-12-30 (futility), edge decision 2027-06-30. |
 
 | 12 | Stub-row impact on Kronos input windows (2024 PIT, live) | DONE 2026-09-21: MATERIAL (76.9% of 2024 windows affected, 48.6% heavy; live about 1.3% of input rows). Follow-up 17. |
-| 13 | Tested clean-data loader + `^SET.BK` repair retry | TODO, after 12 |
+| 13 | Tested clean-data loader + `^SET.BK` repair retry | DONE 2026-09-21: `kth/data/clean.py` + `verify_clean_data.py`, reproduces the ticket-09 cleaned frame exactly; `^SET.BK` repair blocked (Yahoo returns one row). |
 | 14 | Ticket 06 factor baselines on cleaned data | TODO, after 13; robustness of the existing family |
 | 15 | LightGBM sign-flip diagnostic | TODO, optional, diagnostic only |
 | 17 | Rerun 2024 PIT forecasts on cleaned inputs | DRAFT 2026-09-21, needs approval and a compute choice; after 13 |
