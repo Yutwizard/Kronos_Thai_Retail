@@ -14,6 +14,10 @@ per `docs/agents/triage-labels.md`), then delete this folder.
 | 05 | Forecast Cache backup policy | Partly done: PIT 2024 cache and live folders (2026-06-22 on) tarred to ~/backups. Old contaminated cache needs no backup. Decide a recurring copy of live folders + data/raw. |
 | 06 | Factor baselines vs equal-weight (pre-registered) | Done: momentum passed 2023-2026 narrowly, did not confirm on 2020-2022. |
 | 07 | Entry/exit variants and stop-loss on clean windows | Done: no variant rescues the strategy; stops made 2024 worse. |
+| 08 | arXiv 2020-2026 strategy literature, ranked shortlist of 20 | Done 2026-09-21: no paper gives a cost-robust, out-of-sample, long-only stock edge. |
+| 09 | Pre-registered SET test of 3 literature candidates | Run 2026-09-21: none adopted (LightGBM ranker, VP-MACD overlay, SMA200 filter all fail the discovery bar). |
+| 10 | Trend filter (SMA200) drawdown check on untouched 2018-2019 window | Run 2026-09-21: neither the stock-level nor the index-level filter improved Sharpe; drawdown lower but return given up or unchanged. Closed. |
+| 11 | Pre-committed review rule for the live paper track | DRAFT 2026-09-21, awaiting approval of 4 open points. |
 
 Overall verdict: no valid evidence of an edge over equal-weight buy-and-hold. Live paper trading (since 2026-06) is the only clean forward test; review after ~6 months against equal-weight with a pre-committed rule.
 
