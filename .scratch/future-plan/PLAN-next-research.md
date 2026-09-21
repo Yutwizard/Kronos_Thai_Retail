@@ -2,6 +2,9 @@
 
 Sequence, dependencies, gates and the multiple-testing budget for tickets 12-16. Tickets are files here because `gh` is not installed (see README). Do one ticket at a time; each ticket names its own stop condition.
 
+## Result of step 1 (2026-09-21)
+Ticket 12 returned MATERIAL: 76.9% of the 2024 PIT input windows contained at least 4 stub rows and 48.6% at least 20 (about 11% of rows by December). New ticket 17 (rerun of the 2024 PIT forecasts on cleaned inputs) is drafted and inserted after ticket 13; it needs the user's approval and a compute choice. Steps 13 and 14 are unchanged.
+
 ## Why this order
 The 2026-09-21 data audit (ticket 09) found Yahoo stub rows on 57 dates (49 in 2024) and unadjusted corporate-action breaks in the cache. Every earlier result, including the point-in-time 2024 backtest (ticket 00) and the live forecasts, was computed from that cache. So the first job is to learn whether those results are affected, then fix the data once, then re-check the one marginal lead, and only then spend effort on new ideas.
 
