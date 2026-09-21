@@ -1,5 +1,7 @@
 # Kronos-TH — Local Dashboard User Manual (Flask)
 
+> **Backtest results invalidated 2026-09-21.** Historical backtest numbers here were computed on a forecast cache that was not point-in-time (look-ahead). A point-in-time 2024 re-run gives CAGR −26.2%, Sharpe −1.19, p=0.24, 17pp behind equal-weight (stored: +41.3%, 2.23, p=0.001). Do not cite the results or significance claims. The live daily pipeline is unaffected. See `.scratch/future-plan/00-forecast-cache-lookahead.md`.
+
 > **Reference manual — detailed step-by-step procedures.**
 >
 > **Read this first:** [Getting Started Guide](getting-started.md) — installation, glossary, paper trading basics, day-by-day first week walkthrough.

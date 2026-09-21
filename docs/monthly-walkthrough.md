@@ -1,5 +1,7 @@
 # One Month of Daily Operations — Walkthrough
 
+> **Backtest results invalidated 2026-09-21.** Historical backtest numbers here were computed on a forecast cache that was not point-in-time (look-ahead). A point-in-time 2024 re-run gives CAGR −26.2%, Sharpe −1.19, p=0.24, 17pp behind equal-weight (stored: +41.3%, 2.23, p=0.001). Do not cite the results or significance claims. The live daily pipeline is unaffected. See `.scratch/future-plan/00-forecast-cache-lookahead.md`.
+
 > A day-by-day simulation of using the Kronos-TH system for 21 trading days.
 > Starting portfolio: 1,000,000 THB. Allocation: Thai equity 40%, Cash 60%.
 > All signals, allocations, and outcomes shown with exact step-by-step actions.

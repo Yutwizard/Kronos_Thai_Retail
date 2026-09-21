@@ -1,5 +1,7 @@
 # Daily Paper Trading Guide — Kronos-TH (Flask Dashboard)
 
+> **Backtest results invalidated 2026-09-21.** Historical backtest numbers here were computed on a forecast cache that was not point-in-time (look-ahead). A point-in-time 2024 re-run gives CAGR −26.2%, Sharpe −1.19, p=0.24, 17pp behind equal-weight (stored: +41.3%, 2.23, p=0.001). Do not cite the results or significance claims. The live daily pipeline is unaffected. See `.scratch/future-plan/00-forecast-cache-lookahead.md`.
+
 > **Recommended workflow: run the pipeline in the EVENING after market closes.**
 > This uses today's close prices and means tomorrow morning you just open the
 > dashboard and trade — no waiting 12 minutes before market opens.
