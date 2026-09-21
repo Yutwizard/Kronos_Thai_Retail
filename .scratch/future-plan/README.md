@@ -19,6 +19,14 @@ per `docs/agents/triage-labels.md`), then delete this folder.
 | 10 | Trend filter (SMA200) drawdown check on untouched 2018-2019 window | Run 2026-09-21: neither the stock-level nor the index-level filter improved Sharpe; drawdown lower but return given up or unchanged. Closed. |
 | 11 | Pre-committed review rule for the live paper track | APPROVED 2026-09-21; review script `scripts/live_track_review.py` written and self-tested on synthetic data only. First review due 2026-12-30 (futility), edge decision 2027-06-30. |
 
+| 12 | Stub-row impact on Kronos input windows (2024 PIT, live) | TODO, read-only; step 1 of PLAN-next-research.md |
+| 13 | Tested clean-data loader + `^SET.BK` repair retry | TODO, after 12 |
+| 14 | Ticket 06 factor baselines on cleaned data | TODO, after 13; robustness of the existing family |
+| 15 | LightGBM sign-flip diagnostic | TODO, optional, diagnostic only |
+| 16 | Non-arXiv literature on SET / emerging-market strategies | TODO, optional |
+
+Sequence, gates and the multiple-testing register: `PLAN-next-research.md`.
+
 Overall verdict: no valid evidence of an edge over equal-weight buy-and-hold. Live paper trading (since 2026-06) is the only clean forward test; review after ~6 months against equal-weight with a pre-committed rule.
 
 Done already: BANPU.BK fix in `CLAUDE.md` (history restored to 2,381 rows;
