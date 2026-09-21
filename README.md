@@ -137,6 +137,8 @@ kronos-th/
 
 ## Honest caveats
 
+0. **Status (2026-09-21): a forecasting and monitoring tool, not a demonstrated way to beat the market.** The historical backtests that suggested an edge used a look-ahead forecast cache. On point-in-time forecasts, 2024 loses (CAGR −26%, Sharpe −1.19, 17pp behind equal-weight), the signal's rank IC is −0.10, and entry/exit/stop-loss variants did not fix it. Simple momentum beat equal-weight in 2023-2026 but did not confirm on 2020-2022. Paper trading since 2026-06 is the only clean forward test; no real capital until it shows an edge. Details: `.scratch/future-plan/`.
+
 1. **Kronos is a forecasting model, not an alpha machine.** The Kronos authors state explicitly: raw signals aren't a strategy. We add strategy + risk layers on top.
 2. **Thai stocks may be out-of-distribution.** Kronos was pre-trained on 45 global exchanges. It probably saw some Thai data, but mid-cap SET stocks are less represented than US mega-caps. Fine-tuning on the Thai universe (notebook 04) is meant to close this gap.
 3. **Backtests lie.** Even with realistic frictions baked in, survivorship bias, look-ahead, and regime shifts are everywhere. Treat backtest numbers as a sanity floor, not a forecast of future returns.

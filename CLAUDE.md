@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Kronos-TH is a **research-first, Kaggle-scheduled** forecasting tool for Thai retail investors. It wraps the [Kronos](https://github.com/shiyu-coder/Kronos) financial foundation model to produce probabilistic daily-bar forecasts for SET-listed Thai equities and DR (Depositary Receipts) of major foreign stocks tradable on the SET in Thai baht. (Scope narrowed 2026-07-16 from a broader multi-asset universe — see `archive/other-asset-classes/`.)
 
+**Status (2026-09-21): treat this as a forecasting/monitoring tool, not a proven edge.** The historical backtests were look-ahead-contaminated; point-in-time evidence (2024 backtest, signal IC, entry/exit/stop variants) shows no edge over equal-weight buy-and-hold. See `.scratch/future-plan/00`, `06`. Do not present it as beating the market.
+
 **Primary runtime is Kaggle Notebooks (T4 GPU, scheduled daily).** Colab is the backup runtime. Local scripts exist for offline verification — yfinance is often blocked in sandboxes. Code review fixes applied 2026-06-21 (PSR, equity curve alignment, open_trades blending); stored backtest numbers are stale pending GPU re-run (see `data/backtest_results/MANIFEST.md`).
 
 ## Commands
