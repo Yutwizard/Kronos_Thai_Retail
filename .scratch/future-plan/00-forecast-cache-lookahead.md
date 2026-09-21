@@ -56,6 +56,28 @@ backtests do not describe the strategy the pipeline actually runs. The IC figure
 are NOT evidence either way (7 dates, overlapping 20-day windows, one month); the
 point-in-time signal is at least not worse in this sample.
 
+## 2024 point-in-time result (2026-09-21)
+
+Full year, 262 business days, 51 tickers, baseline config, `scripts/run_pit_backtest.py 2024`
+(saved in `data/backtest_results/pit/thai_equity_2024_n50/`, log `data/logs/pit_backtest_2024.log`):
+
+| 2024 | point-in-time | stored (look-ahead) |
+|---|---|---|
+| CAGR | -26.2% | +41.3% |
+| Sharpe | -1.19 | 2.23 |
+| Max drawdown | -32.0% | -6.9% |
+| p-value | 0.24 | 0.001 |
+| Alpha vs equal-weight | -17.1pp | +40.2pp |
+| Annual turnover | 72.9x | 22.8x |
+| Friction paid | 18.1% | 7.3% |
+
+The flagship 2024 claim does not survive. The honest signal is small (~3.7% median), so
+positions flip often (3x turnover, 18% friction). Caveats: one year, one configuration; the
+1%+0.5% entry threshold was tuned on the contaminated signal, so it is suspect too.
+Decision 2026-09-21: do not spend ~40 GPU-hours per year re-running 2023/2025/2026 now; treat
+all stored backtest numbers as invalid and the live paper-trading record as the only clean evidence.
+Ticket 03 stays blocked (its baseline would have to be re-derived on a PIT cache).
+
 ## Likely affected
 
 Everything computed from this cache: the n50 results 2023-2026 and their
@@ -75,7 +97,7 @@ recent 60 folders), and the equal-weight/SET benchmarks.
    untouched. `scripts/backfill_forecast.py` already truncated correctly.
 2. **Quantify** on a small sample (e.g. one month, 50 tickers) regenerated
    point-in-time, and compare signals and results with the old cache.
-3. **Re-run** the authoritative years with point-in-time forecasts. **2024 IN PROGRESS**
+3. **Re-run** the authoritative years with point-in-time forecasts. **2024 DONE 2026-09-21 (see "2024 point-in-time result"); 2023/2025/2026 NOT re-run by decision (see below).** Original 2024 run notes:
    (started 2026-09-19 09:12 +07 on the local GTX 1060, ~9.5 min per business day, 255 days
    left, ETA about 40 hours). Resumable: rerun
    `scripts/regenerate_forecast_sample.py 2024-01-01 2024-12-31`, then
