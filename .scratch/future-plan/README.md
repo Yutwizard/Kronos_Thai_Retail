@@ -4,14 +4,18 @@ Not yet filed as GitHub issues: `gh` is not installed here. File each with
 `gh issue create` once available (see `docs/agents/issue-tracker.md`, labels
 per `docs/agents/triage-labels.md`), then delete this folder.
 
-| # | Ticket | Type | GPU | Depends on |
-|---|--------|------|-----|------------|
-| 00 | **Historical forecast cache is not point-in-time (look-ahead)** — found 2026-09-18; code fix done 2026-09-19, quantify + re-run + re-evaluate still open, blocks 03 | bug + re-validation | yes, to re-validate | none |
-| 01 | HTML doc renders drifted from Markdown (user + operations manual) | docs/tooling | no | none (item 6 done; item 7 added) |
-| 02 | One Correction Family for significance wording | docs | no | none (done except optional pooled test) |
-| 03 | Volatility-regime entry threshold experiment | research | no (optional top-up) | 02 for doc edits |
-| 04 | Verify Kronos pre-training cutoff | research | no | none |
-| 05 | Forecast Cache backup policy | decision | no | none |
+| # | Ticket | Status (2026-09-21) |
+|---|--------|------|
+| 00 | Historical forecast cache not point-in-time (look-ahead) | Fixed in code; 2024 re-run done: strategy loses (CAGR -26%, IC -0.10). 2023/2025/2026 deliberately NOT re-run. |
+| 01 | HTML doc renders drifted from Markdown | Superseded for results: invalidation notice added to all HTML/MD docs via the builders. Remaining structure drift is low priority. |
+| 02 | One Correction Family for significance wording | Done except optional pooled test (moot: the numbers are invalid). |
+| 03 | Volatility-regime entry threshold experiment | CLOSED as moot: no valid baseline edge to improve; code kept, off by default. |
+| 04 | Verify Kronos pre-training cutoff | CLOSED as low value: only mattered for interpreting backtests that now fail. |
+| 05 | Forecast Cache backup policy | Partly done: PIT 2024 cache and live folders (2026-06-22 on) tarred to ~/backups. Old contaminated cache needs no backup. Decide a recurring copy of live folders + data/raw. |
+| 06 | Factor baselines vs equal-weight (pre-registered) | Done: momentum passed 2023-2026 narrowly, did not confirm on 2020-2022. |
+| 07 | Entry/exit variants and stop-loss on clean windows | Done: no variant rescues the strategy; stops made 2024 worse. |
+
+Overall verdict: no valid evidence of an edge over equal-weight buy-and-hold. Live paper trading (since 2026-06) is the only clean forward test; review after ~6 months against equal-weight with a pre-committed rule.
 
 Done already: BANPU.BK fix in `CLAUDE.md` (history restored to 2,381 rows;
 still to watch: a 38-day data gap ending 2026-09-18, thin liquidity).
