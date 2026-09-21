@@ -1,5 +1,7 @@
 # Kronos-TH — Project Structure & Design Review
 
+> **INVALIDATED 2026-09-21 — do not cite the historical backtest numbers below.** The forecast cache they were computed on was not point-in-time (each day's forecast was conditioned on data through 2026-05-15). A point-in-time re-run of 2024 gives CAGR −26.2%, Sharpe −1.19, p=0.24, −17pp vs equal-weight (stored: +41.3%, 2.23, p=0.001). Other years were not re-run. Details: `.scratch/future-plan/00-forecast-cache-lookahead.md`. The live daily pipeline is unaffected.
+
 > **Single-document review of the Kronos-TH project.**
 > Read this top-to-bottom before writing any more code. The goal is to confirm scope, design choices, and tradeoffs so we don't build the wrong thing.
 

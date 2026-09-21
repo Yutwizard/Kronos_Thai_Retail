@@ -48,7 +48,7 @@ Defined in `kth/data/universe.py`. 52 tickers across 2 asset classes:
 - ✅ **Data layer** (`kth/data/`): universe (52 tickers, 2 classes) + DR plugin (`kth_dr/`), yfinance loader, Kronos-format conversion, caching, quality checks. Run `scripts/check_data_sanity.py` after any real download to catch corrupted/stale cache files.
 - ✅ **Kronos model** (`kth/models/`): wrapper, bridge, finetune with SGDR training, checkpoint loader.
 - ✅ **Backtest engine** (`kth/backtest/`): walk-forward with benchmarks, friction costs, full metrics. PSR, equity curve alignment, and open_trades bugs fixed 2026-06-21 (stored numbers stale pending GPU re-run).
-- ✅ **Backtest results**: Thai equity (CAGR +31%, Sharpe 1.40). US equity/crypto backtests archived — see `archive/other-asset-classes/data/backtest_results/`.
+- ⚠️ **Backtest results INVALIDATED 2026-09-21** (look-ahead in the forecast cache; a point-in-time 2024 re-run gives CAGR −26%, Sharpe −1.19 — see `.scratch/future-plan/00-forecast-cache-lookahead.md`). Formerly claimed Thai equity CAGR +31%, Sharpe 1.40. US equity/crypto backtests archived — see `archive/other-asset-classes/data/backtest_results/`.
 - ✅ **Fine-tuning**: thai_equity fine-tuning did not beat zero-shot; deploys zero-shot. (us_equity/crypto fine-tune results archived alongside their backtests — those classes are no longer in scope, not merely "staying zero-shot".)
 - ✅ **DR integration** (`kth_dr/`): plugin extending the universe via `register_asset_class()`; discovery/verification workflow in `data/dr/README.md`, current verified list in `data/dr/mapping.json`.
 - ✅ **Kaggle scheduled pipeline** (`kth/pipeline/`, `kth/io/`, `kaggle/`): unattended daily pipeline with 6 injectable seams, idempotent upserts, failure alerting. `run_pipeline.py --dry-run` for offline smoke tests.
@@ -150,7 +150,7 @@ kronos-th/
    Do not expect a low-allocation BEAR band just because SET looks bullish —
    see CLAUDE.md's Research Decisions and `.scratch/regime-conditional-alpha/`.
 5. **Free data has limits.** yfinance is wonderful and free but rate-limited; intraday is restricted to last 60 days (which is why this project is daily-only — see earlier conversation). For production-grade Thai equity data you'd need a paid source like SET SMART or EOD Historical.
-6. **Stored backtest numbers are stale.** The 2026-06-21 code review found critical statistical bugs (PSR formula, equity curve alignment, open_trades blending, FIFO lot ledger). Fixes are applied but stored `data/backtest_results/*/metrics.json` files were computed before these fixes. A GPU re-run is required. See `data/backtest_results/MANIFEST.md`.
+6. **Stored backtest numbers are invalid (look-ahead cache, found 2026-09-18).** Also stale for the reasons below. The 2026-06-21 code review found critical statistical bugs (PSR formula, equity curve alignment, open_trades blending, FIFO lot ledger). Fixes are applied but stored `data/backtest_results/*/metrics.json` files were computed before these fixes. A GPU re-run is required. See `data/backtest_results/MANIFEST.md`.
 
 ## License
 

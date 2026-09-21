@@ -1,4 +1,7 @@
 > **Re-run completed 2026-07-29.** These numbers superseded two bugs, not one:
+
+> **INVALIDATED 2026-09-21 — do not cite the historical backtest numbers below.** The forecast cache they were computed on was not point-in-time (each day's forecast was conditioned on data through 2026-05-15). A point-in-time re-run of 2024 gives CAGR −26.2%, Sharpe −1.19, p=0.24, −17pp vs equal-weight (stored: +41.3%, 2.23, p=0.001). Other years were not re-run. Details: `.scratch/future-plan/00-forecast-cache-lookahead.md`. The live daily pipeline is unaffected.
+
 > (1) the originally-flagged 2026-06-21 fixes (equity curve alignment, PSR
 > formula, open_trades blending) had never actually been re-run, because (2)
 > `run_walkforward`'s last loop iteration re-marked the same day twice,
