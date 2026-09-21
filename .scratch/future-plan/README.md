@@ -17,7 +17,7 @@ per `docs/agents/triage-labels.md`), then delete this folder.
 | 08 | arXiv 2020-2026 strategy literature, ranked shortlist of 20 | Done 2026-09-21: no paper gives a cost-robust, out-of-sample, long-only stock edge. |
 | 09 | Pre-registered SET test of 3 literature candidates | Run 2026-09-21: none adopted (LightGBM ranker, VP-MACD overlay, SMA200 filter all fail the discovery bar). |
 | 10 | Trend filter (SMA200) drawdown check on untouched 2018-2019 window | Run 2026-09-21: neither the stock-level nor the index-level filter improved Sharpe; drawdown lower but return given up or unchanged. Closed. |
-| 11 | Pre-committed review rule for the live paper track | APPROVED 2026-09-21: window from 2026-06-26 close, two-stage review (futility 2026-12-30, edge decision 2027-06-30). Review script not yet written. |
+| 11 | Pre-committed review rule for the live paper track | APPROVED 2026-09-21; review script `scripts/live_track_review.py` written and self-tested on synthetic data only. First review due 2026-12-30 (futility), edge decision 2027-06-30. |
 
 Overall verdict: no valid evidence of an edge over equal-weight buy-and-hold. Live paper trading (since 2026-06) is the only clean forward test; review after ~6 months against equal-weight with a pre-committed rule.
 
