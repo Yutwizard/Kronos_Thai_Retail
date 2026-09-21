@@ -142,3 +142,20 @@ def compute_regime_adjusted_threshold(
     if day in vol_series.index and vol_series.loc[day] > np.percentile(history.to_numpy(), percentile):
         return base_threshold, base_buffer * multiplier
     return base_threshold, base_buffer
+
+
+def find_stopped_positions(
+    held_closes: dict[str, float],
+    entry_prices: dict[str, float],
+    peak_prices: dict[str, float],
+    stop_loss: float | None = None,
+    trailing_stop: float | None = None,
+) -> set[str]:
+    """Held tickers whose latest close is at or below the fixed stop (from entry) or the trailing stop (from peak)."""
+    stopped = set()
+    for t, close in held_closes.items():
+        if stop_loss is not None and close <= entry_prices[t] * (1 - stop_loss):
+            stopped.add(t)
+        elif trailing_stop is not None and close <= peak_prices[t] * (1 - trailing_stop):
+            stopped.add(t)
+    return stopped

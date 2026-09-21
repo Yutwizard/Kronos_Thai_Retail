@@ -281,3 +281,30 @@ def test_cached_forecast_without_metadata_is_refused_as_unverifiable(tmp_path):
 
     with pytest.raises(ValueError, match="cannot verify"):
         require_point_in_time_forecast(fc_file, pd.Timestamp("2023-06-01"))
+
+
+def test_stop_loss_triggers_when_close_falls_to_the_stop_level_below_entry():
+    from kth.backtest.strategy import find_stopped_positions
+    stopped = find_stopped_positions(
+        held_closes={"A": 92.0, "B": 93.0}, entry_prices={"A": 100.0, "B": 100.0},
+        peak_prices={"A": 100.0, "B": 100.0}, stop_loss=0.08)
+    assert stopped == {"A"}
+
+
+def test_trailing_stop_measures_from_the_peak_not_the_entry():
+    from kth.backtest.strategy import find_stopped_positions
+    stopped = find_stopped_positions(
+        held_closes={"A": 110.0, "B": 130.0}, entry_prices={"A": 100.0, "B": 100.0},
+        peak_prices={"A": 125.0, "B": 135.0}, trailing_stop=0.10)
+    assert stopped == {"A"}
+
+
+def test_no_stops_configured_stops_nothing():
+    from kth.backtest.strategy import find_stopped_positions
+    assert find_stopped_positions({"A": 1.0}, {"A": 100.0}, {"A": 100.0}) == set()
+
+
+def test_stop_settings_default_off_in_backtest_config():
+    from kth.backtest.walkforward import BacktestConfig
+    c = BacktestConfig()
+    assert c.stop_loss is None and c.trailing_stop is None

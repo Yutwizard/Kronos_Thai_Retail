@@ -54,6 +54,9 @@ class BacktestConfig:
     max_holding_days: int | None = None
     cooldown_days: int | None = None
     regime_buffer_multiplier: float | None = None
+    stop_loss: float | None = None
+    trailing_stop: float | None = None
+    stop_cooldown_days: int = 5
     max_positions: int = 5
     position_sizing: str = "equal"
     inv_vol_window: int = 20
@@ -319,6 +322,8 @@ def run_walkforward(
     holdings_units: dict[str, float] = {}
     holding_days: dict[str, int] = {}
     cooldown_remaining: dict[str, int] = {}
+    entry_prices: dict[str, float] = {}
+    peak_prices: dict[str, float] = {}
     portfolio_values: list[float] = []
     gross_portfolio_values: list[float] = []
     mark_days: list = []
@@ -373,6 +378,21 @@ def run_walkforward(
             cooldown_days=config.cooldown_days,
             cooldown_remaining=cooldown_remaining,
         )
+
+        if config.stop_loss is not None or config.trailing_stop is not None:
+            from kth.backtest.strategy import find_stopped_positions
+            held_closes = {}
+            for t in holdings_units:
+                df_t = ticker_data.get(t)
+                mask = df_t["timestamps"] <= day
+                if t in entry_prices and mask.any():
+                    held_closes[t] = float(df_t.loc[mask, "close"].iloc[-1])
+                    peak_prices[t] = max(peak_prices[t], held_closes[t])
+            for t in find_stopped_positions(held_closes, entry_prices, peak_prices,
+                                            config.stop_loss, config.trailing_stop):
+                signals[t] = 0
+                signals_for_ranking.pop(t, None)
+                cooldown_remaining[t] = config.stop_cooldown_days
 
         # --- 3. POSITION SIZING ---
         ranked = sorted(signals_for_ranking.keys(), key=lambda t: signals_for_ranking[t], reverse=True)
@@ -435,6 +455,8 @@ def run_walkforward(
                 })
                 del holdings_units[t]
                 holding_days.pop(t, None)
+                entry_prices.pop(t, None)
+                peak_prices.pop(t, None)
 
         # Open/adjust positions
         for t, tw in target_weights.items():
@@ -466,10 +488,15 @@ def run_walkforward(
             cash -= trade_value + friction_cost
             gross_cash -= trade_value
 
+            if current_units <= 0:
+                entry_prices[t] = exec_price
+                peak_prices[t] = exec_price
             holdings_units[t] = holdings_units.get(t, 0) + units_delta
             if holdings_units[t] <= 1e-10:
                 del holdings_units[t]
                 holding_days.pop(t, None)
+                entry_prices.pop(t, None)
+                peak_prices.pop(t, None)
 
             trades_list.append({
                 "date": day, "ticker": t, "direction": direction,
