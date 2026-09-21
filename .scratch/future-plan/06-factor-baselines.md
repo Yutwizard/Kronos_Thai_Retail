@@ -50,3 +50,6 @@ Momentum does not confirm at the pre-registered bar: same sign and similar size 
 positive in 2020 and 2021, negative in 2022, but the CI comfortably includes zero. Low vol was
 significantly worse than equal-weight in this window. Conclusion: no factor is a validated
 edge over equal-weight; momentum stays a weak, unconfirmed lead.
+
+## Update 2026-09-21 (ticket 14): on cleaned data the momentum lead is withdrawn
+Re-run on the stub-cleaned cache with the TRUE.BK break scaled (same design, same 0.0167 bar): momentum pooled active +10.7% [-1.4%, +22.5%], one-sided p 0.0379, so it no longer passes the discovery bar. The original run reproduced exactly (p 0.0144). Low vol and reversal unchanged. Details: `14-factor-baselines-on-cleaned-data.md`.
