@@ -24,7 +24,7 @@ per `docs/agents/triage-labels.md`), then delete this folder.
 | 14 | Ticket 06 factor baselines on cleaned data | DONE 2026-09-21: momentum lead withdrawn on cleaned data (p 0.0379 vs bar 0.0167); nothing adopted. |
 | 15 | LightGBM sign-flip diagnostic | TODO, optional, diagnostic only |
 | 17 | Rerun 2024 PIT forecasts on cleaned inputs | CLOSED 2026-09-22: Stage 1 (53-date sample) found no detectable IC change from cleaning (gate G3); user chose not to run Stage 2. 2024 result stands. |
-| 16 | Non-arXiv literature on SET / emerging-market strategies | TODO, optional |
+| 16 | Non-arXiv literature on SET / emerging-market strategies | DONE 2026-09-22: 5 papers verified; Thai literature is mostly long-short/fundamentals-based, none fits the price-only rubric well except a technical-trading-rules paper and a price-only momentum factor. Nothing tested. |
 
 Sequence, gates and the multiple-testing register: `PLAN-next-research.md`.
 
