@@ -1,6 +1,6 @@
 # Ticket 17: rerun the 2024 point-in-time forecasts on cleaned inputs (DRAFT, needs approval)
 
-STATUS: Stage 1 DONE 2026-09-22. VERDICT: G3, inconclusive. Stopped per the frozen gate; Stage 2 (~33h) NOT run, awaiting the user. Opened by the MATERIAL verdict of ticket 12. Depends on ticket 13 (clean loader). Needs the user's approval and a compute choice (GPU, or slow CPU).
+STATUS: CLOSED 2026-09-22 (user decision: do not run Stage 2). VERDICT: G3, inconclusive on a 53-date sample; stub-row contamination does not look like the explanation for the 2024 result. Stage 2 (~33h) NOT run. Opened by the MATERIAL verdict of ticket 12. Depends on ticket 13 (clean loader). Needs the user's approval and a compute choice (GPU, or slow CPU).
 
 ## Question
 Ticket 00 re-ran the 2024 point-in-time backtest and found CAGR -26.2%, Sharpe -1.19, one-sided p 0.24 against equal-weight, rank IC -0.10. Ticket 12 showed the 2024 model inputs contained up to about 11% stub rows. Does that loss survive when the same forecasts are regenerated from cleaned inputs?
@@ -78,3 +78,6 @@ G3: inconclusive. The paired-difference CI includes 0 (rules out G1) and the cle
 
 ## Decision needed from the user
 Per Option B's design: G3 means STOP and ask, not automatically proceed. Continuing to Stage 2 (the other 209 dates, about 33h, then the full backtest comparison) would only confirm this null result more precisely; it would not plausibly reverse it, since the mean shifted in the wrong direction. Recommended: do NOT run Stage 2; record the 2024 result as "checked for stub-row contamination on a 53-date sample, no detectable effect found" and close this ticket. Leave the option to run Stage 2 open if the user wants full-year confirmation regardless.
+
+## Closure (2026-09-22)
+User decision: close without running Stage 2. Recorded conclusion: the 2024 point-in-time result (CAGR -26.2%, rank IC -0.104, ticket 00) was checked for stub-row contamination on a 53-date sample (every 5th business day of 2024) and no detectable effect was found (IC -0.1088 original vs -0.1139 cleaned, paired-difference 95% CI [-0.0243, +0.0141]). The 2024 finding stands as originally measured; it is not attributable to the data-quality problems found in the 2026-09-21 audit. Full-year confirmation (Stage 2) remains an option if ever wanted, but is not planned.

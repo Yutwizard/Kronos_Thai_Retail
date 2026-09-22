@@ -5,6 +5,9 @@ Sequence, dependencies, gates and the multiple-testing budget for tickets 12-16.
 ## Result of step 1 (2026-09-21)
 Ticket 12 returned MATERIAL: 76.9% of the 2024 PIT input windows contained at least 4 stub rows and 48.6% at least 20 (about 11% of rows by December). New ticket 17 (rerun of the 2024 PIT forecasts on cleaned inputs) is drafted and inserted after ticket 13; it needs the user's approval and a compute choice. Steps 13 and 14 are unchanged.
 
+## Result of ticket 17 (2026-09-22)
+Stage 1 (53-date sample) found no detectable change in signal quality from cleaning (gate G3, inconclusive but centered near zero). User chose to close the ticket without running Stage 2 (~33h). The 2024 point-in-time result stands: it is not attributable to the stub-row data-quality problem found in ticket 09's audit.
+
 ## Why this order
 The 2026-09-21 data audit (ticket 09) found Yahoo stub rows on 57 dates (49 in 2024) and unadjusted corporate-action breaks in the cache. Every earlier result, including the point-in-time 2024 backtest (ticket 00) and the live forecasts, was computed from that cache. So the first job is to learn whether those results are affected, then fix the data once, then re-check the one marginal lead, and only then spend effort on new ideas.
 
