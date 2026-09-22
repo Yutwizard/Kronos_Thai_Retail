@@ -26,3 +26,4 @@ google_suite/preview.html
 # graphify knowledge-graph output (regenerable via /graphify)
 graphify-out/
 data/forecast_cache_pit/
+data/forecast_cache_pit_clean/

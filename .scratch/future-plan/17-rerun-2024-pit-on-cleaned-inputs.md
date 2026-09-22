@@ -1,6 +1,6 @@
 # Ticket 17: rerun the 2024 point-in-time forecasts on cleaned inputs (DRAFT, needs approval)
 
-STATUS: DRAFT 2026-09-21, NOT approved, NOTHING RUN. Opened by the MATERIAL verdict of ticket 12. Depends on ticket 13 (clean loader). Needs the user's approval and a compute choice (GPU, or slow CPU).
+STATUS: Stage 1 DONE 2026-09-22. VERDICT: G3, inconclusive. Stopped per the frozen gate; Stage 2 (~33h) NOT run, awaiting the user. Opened by the MATERIAL verdict of ticket 12. Depends on ticket 13 (clean loader). Needs the user's approval and a compute choice (GPU, or slow CPU).
 
 ## Question
 Ticket 00 re-ran the 2024 point-in-time backtest and found CAGR -26.2%, Sharpe -1.19, one-sided p 0.24 against equal-weight, rank IC -0.10. Ticket 12 showed the 2024 model inputs contained up to about 11% stub rows. Does that loss survive when the same forecasts are regenerated from cleaned inputs?
@@ -54,3 +54,27 @@ Ticket 00 re-ran the 2024 point-in-time backtest and found CAGR -26.2%, Sharpe -
 1. Option A, B (recommended), C or D.
 2. Compute: local GPU unattended (recommended for B, 8.5 h for Stage 1) or Kaggle/Colab.
 3. Approve the gate rules G1-G3 and the prerequisite loader extension (frame-level cleaning with a self-test), which I would write first.
+
+## Stage 1 results (run 2026-09-21/22, GPU: local GTX 1060)
+- Generation: `scripts/run_pit_stage1_clean.py`, log `data/logs/pit_stage1_clean.log`. All 53 dates completed, 50 of 51 tickers forecast per date (1 ticker -- the same one skipped by the original run for insufficient history -- lacks a full 400-row window even after cleaning), 0 errors, 0 point-in-time violations (`lookback_end` never after its own date). Cleaning removed 57 stub dates and applied the TRUE.BK break; 49 of 51 tickers had at least one of their own stub rows removed from their input history. Wall time: about 6h30m for 53 dates (~7.4 min/date), a bit faster than the ~9 min/date estimate.
+- Comparison: `scripts/compare_pit_stage1_ic.py`, log `data/logs/pit_stage1_ic_comparison.log`. Same 53 dates, same realised-return series (unclean, since it is a fact about what happened, not a model input) for both sides, so the comparison isolates the effect of cleaning the model's input only.
+
+| | mean rank IC | 95% CI | n |
+|---|---|---|---|
+| original cache, same 53 dates | -0.1088 | [-0.2117, +0.0027] | 53 |
+| cleaned Stage-1 rerun | -0.1139 | [-0.2202, +0.0028] | 53 |
+| paired difference (cleaned - original) | -0.0051 | [-0.0243, +0.0141] | 53 |
+
+Cleaned IC was higher than original on 24 of 53 dates (close to a coin flip).
+
+### Gate outcome
+G3: inconclusive. The paired-difference CI includes 0 (rules out G1) and the cleaned IC's CI also includes 0 (rules out G2, which needed the cleaned CI entirely below 0). Per the frozen rule, the run stops here and the remaining ~33 hours (Stage 2 + the full backtest) is not spent without asking the user.
+
+## Reading
+- Cleaning the model's inputs did not detectably change the 2024 signal quality in either direction, on this sample. The point estimate moved from -0.109 to -0.114 (slightly worse, not better), and the paired difference is centered at essentially zero with a tight-ish CI that still straddles it.
+- This is consistent with the ticket-12 exploratory split, which already showed no dose-response between stub density and IC (the least-contaminated months were already negative). Stub contamination in the model's 400-row input window does not look like the explanation for the 2024 signal's weakness.
+- It does NOT prove the signal has no value or that cleaning would never matter over a longer sample; 53 dates with overlapping 20-day windows is low power, as flagged before running.
+- No change to the standing conclusion: 2024 point-in-time still shows a weak-to-negative signal (IC not distinguishable from zero even before cleaning), and this Stage-1 check gives no evidence that the raw stub-row problem was hiding a better signal.
+
+## Decision needed from the user
+Per Option B's design: G3 means STOP and ask, not automatically proceed. Continuing to Stage 2 (the other 209 dates, about 33h, then the full backtest comparison) would only confirm this null result more precisely; it would not plausibly reverse it, since the mean shifted in the wrong direction. Recommended: do NOT run Stage 2; record the 2024 result as "checked for stub-row contamination on a 53-date sample, no detectable effect found" and close this ticket. Leave the option to run Stage 2 open if the user wants full-year confirmation regardless.

@@ -12,7 +12,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from kth.data.clean import CleanReport, load_clean_closes, stub_mask
+from kth.data.clean import CleanReport, load_clean_closes, load_clean_frames, stub_mask
 
 
 def write(cache: Path, ticker: str, close, volume=None, stub_rows=()):
@@ -105,6 +105,53 @@ with tempfile.TemporaryDirectory() as d:
     print("=" * 70)
     after = digest(cache)
     assert all(after[k] == v for k, v in before.items())
+    print("  OK")
+
+with tempfile.TemporaryDirectory() as d:
+    cache = Path(d)
+    n = 30
+    rng = np.random.default_rng(2)
+    base = 20 * np.exp(np.cumsum(rng.normal(0, 0.01, n)))
+    dates = write(cache, "A.BK", base, stub_rows=(10, 20))  # data-wide stub at 10, lone stub at 20
+    write(cache, "B.BK", base * 1.5, stub_rows=(10,))
+    write(cache, "C.BK", base * 0.7, stub_rows=(10,))
+    write(cache, "D.BK", base * 2.0)
+    brk = np.concatenate([np.full(15, 5.0) * (1 + 0.001 * np.arange(15)), np.full(15, 8.0) * (1 + 0.001 * np.arange(15))])
+    write(cache, "BRK.BK", brk)
+    before = digest(cache)
+
+    print("\n" + "=" * 70)
+    print("TEST 7: load_clean_frames -- data-wide date dropped, lone stub row removed, columns intact")
+    print("=" * 70)
+    dbrk = pd.bdate_range("2024-01-01", periods=30)[15]
+    frames, rep7 = load_clean_frames(["A.BK", "B.BK", "C.BK", "D.BK", "BRK.BK"], cache_dir=str(cache),
+                                      breaks={"BRK.BK": [(str(dbrk.date()), "test")]})
+    assert set(frames) == {"A.BK", "B.BK", "C.BK", "D.BK", "BRK.BK"}
+    assert list(frames["A.BK"].columns) == ["timestamps", "open", "high", "low", "close", "volume", "amount"]
+    assert dates[10] not in set(frames["A.BK"]["timestamps"]), "data-wide stub date not dropped"
+    assert dates[20] not in set(frames["A.BK"]["timestamps"]), "lone stub row not removed from the frame"
+    assert len(frames["D.BK"]) == n - 1, "unaffected ticker should only lose the data-wide date"
+    assert rep7.dropped_dates == [dates[10]]
+    assert rep7.ticker_stub_rows.get("A.BK") == 1
+    print("  OK")
+
+    print("\n" + "=" * 70)
+    print("TEST 8: load_clean_frames break scaling matches load_clean_closes on the same data")
+    print("=" * 70)
+    close8, _, rep8 = load_clean_closes(["A.BK", "B.BK", "C.BK", "D.BK", "BRK.BK"], cache_dir=str(cache),
+                                         breaks={"BRK.BK": [(str(dbrk.date()), "test")]})
+    f_close = frames["BRK.BK"].set_index("timestamps")["close"].reindex(close8.index)
+    assert np.allclose(f_close.to_numpy(), close8["BRK.BK"].to_numpy(), equal_nan=True), "frame close disagrees with load_clean_closes"
+    assert rep7.applied_breaks == rep8.applied_breaks
+    hlc_ratio = (frames["BRK.BK"]["high"] / frames["BRK.BK"]["close"]).to_numpy()
+    assert np.allclose(hlc_ratio, 1.01, atol=1e-9), "high/close ratio should be preserved by the scaling"
+    assert np.allclose(frames["BRK.BK"]["amount"].to_numpy(), (frames["BRK.BK"]["close"] * frames["BRK.BK"]["volume"]).to_numpy())
+    print("  OK")
+
+    print("\n" + "=" * 70)
+    print("TEST 9: load_clean_frames never modifies the cache")
+    print("=" * 70)
+    assert digest(cache) == before
     print("  OK")
 
 print("\nAll clean-data checks passed.")

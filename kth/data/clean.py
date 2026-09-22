@@ -94,3 +94,61 @@ def load_clean_closes(
 
     report.ticker_stub_rows = {t: int((~real[t]).sum()) for t in real.columns if (~real[t]).any()}
     return close, real, report
+
+
+OHLCV_COLS = ["open", "high", "low", "close", "volume", "amount"]
+
+
+def load_clean_frames(
+    tickers,
+    cache_dir: str = "data/raw",
+    drop_stub_share: float = 0.5,
+    breaks: dict | None = None,
+) -> tuple[dict[str, pd.DataFrame], CleanReport]:
+    """Full-OHLCV version of load_clean_closes, for consumers (e.g. the Kronos model) that need the whole
+    candle, not just the close. Returns {ticker: Kronos-format DataFrame with stub dates and the ticker's own
+    stub rows dropped, and known breaks applied to open/high/low/close/amount}. No 'real' mask: rows judged not
+    real are simply removed rather than kept-and-flagged, since a model input cannot use a boolean mask.
+    """
+    breaks = KNOWN_BREAKS if breaks is None else breaks
+    raw = {t: load_cached(t, cache_dir) for t in tickers}
+    for df in raw.values():
+        df["timestamps"] = pd.to_datetime(df["timestamps"])
+
+    stub_by_date: dict[pd.Timestamp, int] = {}
+    total_by_date: dict[pd.Timestamp, int] = {}
+    for df in raw.values():
+        is_stub = stub_mask(df)
+        for ts, s in zip(df["timestamps"], is_stub):
+            total_by_date[ts] = total_by_date.get(ts, 0) + 1
+            if s:
+                stub_by_date[ts] = stub_by_date.get(ts, 0) + 1
+    dropped_dates = [d for d, tot in total_by_date.items() if stub_by_date.get(d, 0) / tot >= drop_stub_share]
+    dropped_set = set(dropped_dates)
+
+    report = CleanReport(dropped_dates=sorted(dropped_dates))
+    out = {}
+    for t, df in raw.items():
+        keep = ~df["timestamps"].isin(dropped_set) & ~stub_mask(df)
+        n_own_stub = int((~keep & ~df["timestamps"].isin(dropped_set)).sum())
+        if n_own_stub:
+            report.ticker_stub_rows[t] = n_own_stub
+        d = df.loc[keep].reset_index(drop=True)
+        for day, why in breaks.get(t, []):
+            day = pd.Timestamp(day)
+            idx = d.index[d["timestamps"] == day]
+            if not len(idx) or idx[0] == 0:
+                report.skipped_breaks.append((t, str(day.date()), "break date not in cleaned calendar for this ticker"))
+                continue
+            i = idx[0]
+            prev_close, cur_close = d["close"].iloc[i - 1], d["close"].iloc[i]
+            if not (np.isfinite(prev_close) and np.isfinite(cur_close) and prev_close > 0):
+                report.skipped_breaks.append((t, str(day.date()), "no valid prices around the break"))
+                continue
+            factor = float(cur_close / prev_close)  # same close-to-close convention as load_clean_closes
+            for col in ("open", "high", "low", "close"):
+                d.loc[: i - 1, col] = d[col].iloc[:i] * factor
+            d.loc[: i - 1, "amount"] = d["close"].iloc[:i] * d["volume"].iloc[:i]
+            report.applied_breaks.append((t, str(day.date()), round(factor, 6)))
+        out[t] = d
+    return out, report
