@@ -22,7 +22,7 @@ per `docs/agents/triage-labels.md`), then delete this folder.
 | 12 | Stub-row impact on Kronos input windows (2024 PIT, live) | DONE 2026-09-21: MATERIAL (76.9% of 2024 windows affected, 48.6% heavy; live about 1.3% of input rows). Follow-up 17. |
 | 13 | Tested clean-data loader + `^SET.BK` repair retry | DONE 2026-09-21: `kth/data/clean.py` + `verify_clean_data.py`, reproduces the ticket-09 cleaned frame exactly; `^SET.BK` repair blocked (Yahoo returns one row). |
 | 14 | Ticket 06 factor baselines on cleaned data | DONE 2026-09-21: momentum lead withdrawn on cleaned data (p 0.0379 vs bar 0.0167); nothing adopted. |
-| 15 | LightGBM sign-flip diagnostic | TODO, optional, diagnostic only |
+| 15 | LightGBM sign-flip diagnostic | DONE 2026-09-23: mostly explained by data drift (the raw cache is not stable across days -- a bigger finding than planned) plus a near-zero, noise-like signal (IC CI spans zero both windows) and adv_20d's scale sensitivity. Nothing adopted. |
 | 17 | Rerun 2024 PIT forecasts on cleaned inputs | CLOSED 2026-09-22: Stage 1 (53-date sample) found no detectable IC change from cleaning (gate G3); user chose not to run Stage 2. 2024 result stands. |
 | 16 | Non-arXiv literature on SET / emerging-market strategies | DONE 2026-09-22: 5 papers verified; Thai literature is mostly long-short/fundamentals-based, none fits the price-only rubric well except a technical-trading-rules paper and a price-only momentum factor. Nothing tested. |
 
