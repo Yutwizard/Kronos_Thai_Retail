@@ -88,44 +88,82 @@ def load_trades(path: Path) -> pd.DataFrame:
     bad = set(t["action"]) - {"buy", "exit"}
     if bad:
         raise ValueError(f"unknown trade actions in log: {bad}")
+    t["row"] = t.index  # position in the log, the key of the ticket-19 fill-factor file
     return t.sort_values("date", kind="stable").reset_index(drop=True)
+
+
+def add_apply_dates(trades: pd.DataFrame, close: pd.DataFrame, positions_dir: Path, fc_root: Path) -> pd.DataFrame:
+    """Ticket 19 Q6: a trade applies on the LATER of its intended session (the ticker's first priced session after
+    the source forecast's lookback_end; source rule in audit_live_fills.py) and its log date: never before the order
+    could fill, never before it was recorded. A recorded `fill_date` (Q7, from 2026-09-24) is used as is."""
+    from audit_live_fills import lookback_end_for, source_ticket_date
+    out = []
+    for _, r in trades.iterrows():
+        if "fill_date" in trades.columns and pd.notna(r.get("fill_date")) and str(r["fill_date"]).strip():
+            out.append(pd.Timestamp(r["fill_date"]).normalize())
+            continue
+        src = source_ticket_date(r, positions_dir)
+        lb = lookback_end_for(r, src, fc_root)
+        d = r["date"]
+        if lb is not None and r["ticker"] in close.columns:
+            later = close[r["ticker"]].dropna().index
+            later = later[later > lb]
+            if len(later):
+                d = max(later[0], r["date"])
+        out.append(d)
+    t = trades.assign(apply_date=out)
+    return t.sort_values(["apply_date", "row"], kind="stable").reset_index(drop=True)
 
 
 # ---------------------------------------------------------------------------
 # Live book and benchmark
 # ---------------------------------------------------------------------------
-def live_values(trades: pd.DataFrame, close: pd.DataFrame, start, end, capital=INITIAL_CAPITAL) -> pd.Series:
+def live_values(trades: pd.DataFrame, close: pd.DataFrame, start, end, capital=INITIAL_CAPITAL,
+                fill_factors: dict | None = None) -> pd.Series:
     """Daily portfolio value = cash + shares x close, rebuilt from the trade log. Trades dated on or before
-    `start` set the starting state; later trades apply on their own date (or the next calendar date)."""
+    `start` set the starting state; later trades apply on their date (`apply_date` if present, ticket 19 Q6,
+    else the log date), or the next calendar date.
+    fill_factors (ticket 19 Q5, only when the pre-review audit requires it): {log row: F = adj/unadj close on the
+    trade date}. Holdings are then tracked as effective shares n / F, so a buy is worth exactly its cost that day
+    and an exit's cash includes the dividends earned while held (total-return accounting, like the benchmark)."""
     cal = close.loc[start:end].index
     px = close.ffill(limit=10)
-    cash, shares = float(capital), {}
+    when = "apply_date" if "apply_date" in trades.columns else "date"
+    cash, shares, eff = float(capital), {}, {}
+
+    def factor(row):
+        f = (fill_factors or {}).get(int(getattr(row, "row", -1)))
+        return 1.0 if f is None else float(f)
 
     def apply(row):
         nonlocal cash
         gross = row.shares * row.price
+        held = shares.get(row.ticker, 0)
         if row.action == "buy":
             cash -= gross + row.friction_cost
-            shares[row.ticker] = shares.get(row.ticker, 0) + row.shares
+            shares[row.ticker] = held + row.shares
+            eff[row.ticker] = eff.get(row.ticker, 0.0) + row.shares / factor(row)
         else:
-            cash += gross - row.friction_cost
-            shares[row.ticker] = shares.get(row.ticker, 0) - row.shares
-            if shares[row.ticker] < 0:
-                raise ValueError(f"sold more than held: {row.ticker} on {row.date.date()}")
-    pre = trades[trades["date"] <= pd.Timestamp(start)]
+            if row.shares > held:
+                raise ValueError(f"sold more than held: {row.ticker} on {getattr(row, when).date()}")
+            removed = eff.get(row.ticker, 0.0) * row.shares / held
+            cash += removed * row.price * factor(row) - row.friction_cost
+            shares[row.ticker] = held - row.shares
+            eff[row.ticker] = eff.get(row.ticker, 0.0) - removed
+    pre = trades[trades[when] <= pd.Timestamp(start)]
     for row in pre.itertuples():
         apply(row)
-    post = trades[trades["date"] > pd.Timestamp(start)].reset_index(drop=True)
+    post = trades[trades[when] > pd.Timestamp(start)].reset_index(drop=True)
     out, k = {}, 0
     for d in cal:
-        while k < len(post) and post.loc[k, "date"] <= d:
-            apply(post.loc[k])
+        while k < len(post) and post.loc[k, when] <= d:
+            apply(next(post.iloc[[k]].itertuples()))
             k += 1
-        held = {t: n for t, n in shares.items() if n}
+        held = {t: e for t, e in eff.items() if shares.get(t)}
         missing = [t for t in held if t not in px.columns]
         if missing:
             raise KeyError(f"held tickers without price data: {missing}")
-        out[d] = cash + sum(n * px.loc[d, t] for t, n in held.items())
+        out[d] = cash + sum(e * px.loc[d, t] for t, e in held.items())
     return pd.Series(out)
 
 
@@ -255,13 +293,15 @@ def guard(review: str | None, as_of: date) -> None:
 # ---------------------------------------------------------------------------
 # Orchestration
 # ---------------------------------------------------------------------------
-def run_review(root: Path, eq, dr, review: str, as_of, start=WINDOW_START, capital=INITIAL_CAPITAL) -> dict:
+def run_review(root: Path, eq, dr, review: str, as_of, start=WINDOW_START, capital=INITIAL_CAPITAL,
+               fill_factors: dict | None = None) -> dict:
     tickers = list(eq) + list(dr)
     close, real = load_frames(root / "raw", tickers)
     close, real, dropped = drop_stub_dates(close, real)
-    trades = load_trades(root / "positions" / "trade_log.csv")
+    trades = add_apply_dates(load_trades(root / "positions" / "trade_log.csv"), close, root / "positions",
+                             root / "forecast_cache" / MODEL_DIR)
     end = pd.Timestamp(as_of)
-    live = live_values(trades, close, start, end, capital)
+    live = live_values(trades, close, start, end, capital, fill_factors)
     live_ret = live.pct_change().dropna()
     bench = benchmark_returns(close, real, start, end)
     common = live_ret.index.intersection(bench.index)
@@ -283,6 +323,8 @@ def run_review(root: Path, eq, dr, review: str, as_of, start=WINDOW_START, capit
         "stub_calendar_dates_dropped": len(dropped),
         "trading_days_without_trade_ticket": sorted(str(d.date()) for d in common if str(d.date()) not in tickets),
         "trades_in_log": int(len(trades)),
+        "trades_applied_after_log_date": int((trades["apply_date"] > trades["date"]).sum()),
+        "total_return_fill_factors_used": fill_factors is not None,
         "ic_forecast_dates_used": int(len(ic)),
         "input_window_stub_rows": input_window_stub_share(root / "forecast_cache" / MODEL_DIR, root / "raw", eq, start, as_of),
     }
@@ -355,6 +397,28 @@ def selftest() -> None:
     # exit: sell 10 @12 on last day with friction 2 -> cash 899 + 120 - 2
     t2 = pd.concat([trades, pd.DataFrame([dict(date=idx[5], ticker="A.BK", action="exit", shares=10, price=12.0, friction_cost=2.0)])], ignore_index=True)
     assert abs(live_values(t2, close, idx[1], idx[-1], capital=1000.0).iloc[-1] - (899 + 120 - 2)) < 1e-9
+    # 1b) ticket 19 Q5: F = 0.9 on the buy (later dividends of 10%), 1.0 on the exit. A buy is worth its cost on
+    # the day (10 shares/0.9 x adjusted close 9 = 100), and the exit's cash adds the dividend: 10/0.9 x 12 x 1.0
+    adj = pd.DataFrame({"A.BK": [9, 9, 9, 10.8, 12, 12.0]}, index=idx)
+    t3 = pd.concat([trades.assign(row=0), pd.DataFrame([dict(date=idx[5], ticker="A.BK", action="exit", shares=10,
+                   price=12.0, friction_cost=0.0, row=1)])], ignore_index=True)
+    v3 = live_values(t3, adj, idx[1], idx[-1], capital=1000.0, fill_factors={0: 0.9, 1: 1.0})
+    assert abs(v3.loc[idx[2]] - (899.0 + 100.0)) < 1e-9, v3
+    assert abs(v3.iloc[-1] - (899.0 + 10 / 0.9 * 12.0)) < 1e-9, v3
+    assert abs(live_values(t3, adj, idx[1], idx[-1], capital=1000.0).loc[idx[2]] - (899.0 + 90.0)) < 1e-9  # unfixed
+    # 1c) ticket 19 Q6: a trade logged on d2 from a forecast with lookback_end d2 applies on d3
+    with tempfile.TemporaryDirectory() as d:
+        d = Path(d); fc = d / "fc"; (fc / str(idx[2].date())).mkdir(parents=True)
+        (fc / str(idx[2].date()) / "A.BK_meta.json").write_text(json.dumps({"lookback_end": str(idx[2])}))
+        (d / f"trade_ticket_{idx[2].date()}.json").write_text(json.dumps({"buys": [{"ticker": "A.BK"}]}))
+        ta = add_apply_dates(trades.assign(row=0), close, d, fc)
+        assert ta.loc[0, "apply_date"] == idx[3], ta
+        va = live_values(ta, close, idx[1], idx[-1], capital=1000.0)
+        assert abs(va.loc[idx[2]] - 1000.0) < 1e-9 and abs(va.loc[idx[3]] - (899.0 + 120.0)) < 1e-9, va
+        late = trades.assign(row=0, date=idx[4])  # entered two sessions after its intended one -> the log date
+        assert add_apply_dates(late, close, d, fc).loc[0, "apply_date"] == idx[4]
+        filled = trades.assign(row=0, fill_date=str(idx[5].date()))  # a recorded fill_date wins
+        assert add_apply_dates(filled, close, d, fc).loc[0, "apply_date"] == idx[5]
     # 2) benchmark: two flat tickers, first day pays ONE_WAY on turnover 1.0
     c2 = pd.DataFrame({"A": [10.0] * 6, "B": [5.0] * 6}, index=idx); r2 = pd.DataFrame(True, index=idx, columns=["A", "B"])
     b = benchmark_returns(c2, r2, idx[1], idx[-1])
@@ -403,7 +467,7 @@ def selftest() -> None:
         (fc / "2026-07-01" / "A.BK_meta.json").write_text(json.dumps({"lookback_end": str(idx7[7])}))
         got = input_window_stub_share(fc, d / "raw", ["A.BK"], WINDOW_START, idx7[-1], lookback=5)
         assert got == {"windows": 1, "mean_stub_rows_per_window": 2.0, "share_windows_ge_4_stub_rows": 0.0, "max_stub_rows": 2}, got
-    print("selftest passed (live value, benchmark cost, price-only eligibility, stub dates, decision rules, guard, rank IC, stub-window count)")
+    print("selftest passed (live value, benchmark cost, price-only eligibility, stub dates, decision rules, guard, rank IC, stub-window count, fill factors, apply dates)")
 
 
 def synthetic_run() -> None:
@@ -421,6 +485,7 @@ def main() -> None:
     ap.add_argument("--review", choices=list(REVIEW_DATES))
     ap.add_argument("--as-of", default=str(date.today()))
     ap.add_argument("--root", default="data")
+    ap.add_argument("--fill-factors", help="ticket-19 factor file; used only if it says apply_total_return_fix")
     a = ap.parse_args()
     if a.selftest:
         return selftest()
@@ -437,7 +502,17 @@ def main() -> None:
         print(f"data: snapshot {root.resolve()} (hash check OK)")
     else:
         print(f"data: {root.resolve()} (NOT a frozen snapshot; ticket 11 addendum asks for one)")
-    res = run_review(root, FROZEN_THAI_EQUITY, FROZEN_DR, a.review, as_of)
+    factors = None
+    if a.fill_factors:
+        ff = json.loads(Path(a.fill_factors).read_text())
+        if ff["snapshot"] != root.name:
+            raise SystemExit(f"fill factors are for snapshot {ff['snapshot']}, not {root.name}; rerun the ticket-19 audit")
+        if ff["apply_total_return_fix"]:
+            factors = {int(k): v for k, v in ff["F_by_row"].items()}
+        print(f"ticket-19 audit: apply_total_return_fix={ff['apply_total_return_fix']}")
+    else:
+        print("WARNING: no --fill-factors; ticket 11 addendum B asks for the ticket-19 audit on this snapshot first")
+    res = run_review(root, FROZEN_THAI_EQUITY, FROZEN_DR, a.review, as_of, fill_factors=factors)
     print_report(res, a.review, as_of)
 
 

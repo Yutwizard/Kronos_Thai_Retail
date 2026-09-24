@@ -117,10 +117,10 @@ def source_ticket_date(row, positions_dir: Path) -> str | None:
     return None
 
 
-def lookback_end_for(row, source_day: str | None) -> pd.Timestamp | None:
+def lookback_end_for(row, source_day: str | None, fc_root: Path | None = None) -> pd.Timestamp | None:
     if source_day is None:
         return None
-    m = SNAPSHOT / "forecast_cache" / MODEL_DIR / source_day / f"{row['ticker']}_meta.json"
+    m = (fc_root or SNAPSHOT / "forecast_cache" / MODEL_DIR) / source_day / f"{row['ticker']}_meta.json"
     if m.exists():
         return pd.Timestamp(json.loads(m.read_text())["lookback_end"]).normalize()
     return pd.Timestamp(source_day)
@@ -235,9 +235,13 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--selftest", action="store_true")
     ap.add_argument("--download", action="store_true")
+    ap.add_argument("--snapshot", help="snapshot folder to audit (default: the 2026-09-23 one; reviews pass theirs)")
     a = ap.parse_args()
     if a.selftest:
         return selftest()
+    global SNAPSHOT
+    if a.snapshot:
+        SNAPSHOT = Path(a.snapshot)
     trades = pd.read_csv(SNAPSHOT / "positions" / "trade_log.csv", parse_dates=["date", "forecast_date"])
     if a.download:
         return download(sorted(trades["ticker"].unique()))
@@ -256,6 +260,12 @@ def main() -> None:
         flag = "  <-- MISMATCH" if f_lt_1 != bool(divs) else ""
         print(f"  {t}: {divs or m.get('error', 'none')}{flag}")
     print("\nSUMMARY", json.dumps(summary, indent=2, default=str))
+    # Per-trade factors for live_track_review.py --fill-factors (ticket 19 Q5): used only if the rule says so.
+    factors = {"snapshot": SNAPSHOT.name, "apply_total_return_fix": summary["apply_total_return_fix"],
+               "F_by_row": {int(i): (None if pd.isna(f) else float(f)) for i, f in out["F"].items()}}
+    fpath = AUDIT_DIR.parent / f"fill_factors_{SNAPSHOT.name}.json"
+    fpath.write_text(json.dumps(factors, indent=2))
+    print(f"factors written to {fpath} (apply_total_return_fix={summary['apply_total_return_fix']})")
 
 
 if __name__ == "__main__":
