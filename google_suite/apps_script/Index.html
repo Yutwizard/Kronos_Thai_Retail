@@ -1016,7 +1016,7 @@ function renderForecasts(forecasts, forecastHistory) {
         '<th scope="col" title="Expected return / uncertainty band — higher = stronger, more confident signal">Rank Score</th>' +
         '<th scope="col" title="Expected 20-day return from today\'s close price">Exp Return</th>' +
         (hasDelta ? '<th scope="col" title="Change in expected return vs previous pipeline run. ▲ = model more bullish, ▼ = less bullish">Δ Prev</th>' : '') +
-        '<th scope="col" title="Band width: green &lt;10% (confident), yellow 10-30%, red &gt;30% (uncertain)">Confidence</th>' +
+        '<th scope="col" title="Model-confidence from band width: green &lt;10%, yellow 10-30%, red &gt;30%. The model&#39;s own view only: in the 2024 test its P5-P95 band held 35% of 20-day outcomes, not 90% (ticket 18)">Confidence</th>' +
         '<th scope="col" title="Expected return minus round-trip friction costs">Net Return</th>' +
         '<th scope="col" title="Median (p50) price forecast — what the model thinks the price will be in 20 days">P50 Price</th>' +
         '<th scope="col">Sector</th>' +

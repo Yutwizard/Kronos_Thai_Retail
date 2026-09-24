@@ -449,7 +449,7 @@ function updatePositions(pos, fcMap) {
   html += `<div class="col-legend">
     <strong>Exp Ret</strong> Model's 20-day forecast from latest close &nbsp;|&nbsp;
     <strong>Δ Prev</strong> Change vs previous pipeline run &nbsp;|&nbsp;
-    <strong>Band</strong> Uncertainty: &lt;10%=🟢 10–30%=🟡 &gt;30%=🔴 &nbsp;|&nbsp;
+    <strong>Band</strong> Model uncertainty: &lt;10%=🟢 10–30%=🟡 &gt;30%=🔴 (overconfident in the 2024 test: held 35% of outcomes, not 90%) &nbsp;|&nbsp;
     ${drNote}Row: green=bullish hold, orange=reduce, red=exit &nbsp;|&nbsp;
     ${dataNote}
   </div>`;
@@ -503,12 +503,12 @@ const COL = {
   currency: "DR-only: the underlying's currency (HKD, JPY, EUR...), capturing FX exposure and correlated market-close timing. Capped at 2 DR positions per currency, independently of Sector. Not applicable to thai_equity.",
   premium: "DR-only: DR price vs. its intrinsic value = (underlying close × FX) ÷ ratio. Positive = DR trading above its underlying (expensive); negative = below (cheap). Informational only — does not affect ranking or Score.",
   close:   "Last known closing price (THB) — from the most recent trading day",
-  expRet:  "Expected Return: model's predicted price change over the next 20 trading days (P50 forecast). ↑ = bullish, ↓ = bearish.",
+  expRet:  "Expected Return: model's predicted price change over the next 20 trading days (P50 forecast). ↑ = bullish, ↓ = bearish. In the 2024 test the P50 was less accurate than assuming no change (ticket 18).",
   target:  "Target: model's median (P50) forecast price in the tradable ticker's price scale.",
-  p95:     "P95: upper forecast price in the tradable ticker's price scale. It is an uncertainty boundary, not a guaranteed price.",
+  p95:     "P95: upper forecast price in the tradable ticker's price scale. Not a guaranteed price and not a reliable upper bound. Tested 2024: the P5–P95 band held only 35% of 20-day outcomes (should be 90%) and the P50 missed by more than a no-change forecast (ticket 18). Treat it as model output, not a risk range.",
   delta:   "Δ Expected Return vs previous forecast date. ▲ = model more bullish since last run, ▼ = less bullish. Does NOT measure confidence. The ↗↘ badge on the flag shows confidence-level change.",
-  band:    "Uncertainty band = (P95 − P5) ÷ Close price. Directly determines flag colour: <10% → 🟢 confident | 10–30% → 🟡 uncertain | >30% → 🔴 very uncertain. Narrow band = model is sure; wide band = model is guessing.",
-  flag:    "Confidence flag based on Band width. 🟢 <10% (confident). 🟡 10–30% (moderate). 🔴 >30% (uncertain, avoid). ↗ = confidence improved vs prev forecast. ↘ = confidence downgraded (e.g. HOLD → REDUCE trigger).",
+  band:    "Uncertainty band = (P95 − P5) ÷ Close price. Directly determines flag colour: <10% → 🟢 confident | 10–30% → 🟡 uncertain | >30% → 🔴 very uncertain. A narrow band is the model's own confidence, not proof it is right. Tested 2024: the P5–P95 band held only 35% of 20-day outcomes (should be 90%) and the P50 missed by more than a no-change forecast (ticket 18). Treat it as model output, not a risk range.",
+  flag:    "Model-confidence flag based on Band width (the model's own view; its bands proved overconfident in the 2024 test, ticket 18). 🟢 <10%. 🟡 10–30%. 🔴 >30% (avoid). ↗ = confidence improved vs prev forecast. ↘ = confidence downgraded (e.g. HOLD → REDUCE trigger).",
   netRet:  "Net Return = Expected Return minus round-trip friction cost (commission + slippage). This is what you actually keep after trading costs.",
   rank:    "Rank by signal strength (expected return ÷ band width). Higher rank = stronger, more confident signal.",
   score:   "Rank score = Expected Return ÷ Uncertainty Band. Higher (more positive) = stronger bullish signal. Lower (more negative) = stronger bearish signal.",
@@ -520,7 +520,7 @@ const LEGEND_MORNING = `
   <strong>Target (P50)</strong> Median forecast price &nbsp;|&nbsp;
   <strong>P95</strong> Upper forecast price boundary &nbsp;|&nbsp;
   <strong>Δ Prev</strong> Change in exp ret since last forecast (▲more bullish ▼less bullish); ↗↘ = confidence level changed &nbsp;|&nbsp;
-  <strong>Band</strong> Uncertainty: &lt;10%=🟢 confident, 10–30%=🟡 uncertain, &gt;30%=🔴 avoid &nbsp;|&nbsp;
+  <strong>Band</strong> Model uncertainty: &lt;10%=🟢, 10–30%=🟡, &gt;30%=🔴 avoid (overconfident in the 2024 test: held 35% of outcomes, not 90%) &nbsp;|&nbsp;
   <strong>Net Ret</strong> After friction costs
 </div>`;
 
