@@ -28,6 +28,8 @@ Correction families already spent on the SET data windows 2018-2026:
 - Ticket 09: 3 literature candidates (family threshold 0.05/3); none adopted.
 - Ticket 10: 2 trend filters on the untouched 2018-2019 window (0.05/2); none passed.
 - Ticket 14 (below) re-runs 06's family on cleaned data; it does NOT open a new family and keeps threshold 0.05/3.
+- Forward, proposed 2026-09-23 (ticket 20, DRAFT): Kronos live book (frozen 0.05) + S1 momentum + S2 SMA200 as one register entry of 3; S1/S2 at 0.05/3 each. Ticket 11 addendum A2 adds a second look at the Kronos edge question at 24 months (p < 0.025).
+- Not counted: ticket 18 (forecast accuracy vs naive, no trading rule) and ticket 19 (data-input audit).
 No unseen SET window is left except data that has not happened yet: the live track (ticket 11). A new candidate from ticket 16 therefore has no clean historical window to be tested on; it should be tested by adding it to the forward paper track with a pre-committed rule, not by another backtest on 2018-2026.
 
 ## Standing rules
@@ -35,3 +37,6 @@ No unseen SET window is left except data that has not happened yet: the live tra
 - Say "abstract read" vs "full text read"; never cite a search summary as fact.
 - Never compare the live track with its benchmark before the ticket-11 review dates (data-input checks are allowed).
 - No change to the ticket-11 rule after seeing live results.
+
+## 2026-09-23 review (user "agree" to all six items)
+Done: live-evidence snapshots (ticket 05), `compute_calibration` fixed (trading-day horizon, unelapsed forecasts skipped, both directions labelled), stub share added to the review process log (ticket 12). Drafted, need approval: ticket 11 addendum A, tickets 18, 19, 20. Recommended order: 11-A, then 19 (before 2026-12-30), then 18, then 20 (start 2026-11).

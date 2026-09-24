@@ -56,3 +56,31 @@ Written and tested on synthetic data only. It has NOT read the real live track, 
   - Process log reported with every review: trading days in the window, dropped stub dates, trading days with no `trade_ticket_<date>.json`, number of trades in the log, forecast dates used for the IC. It is not used to adjust any result.
 - Known limitation: paper fills are taken at the logged prices, which may be optimistic (see the twelve-month decision rule).
 - Frozen ticker lists are hard-coded in the script and match the lists above.
+
+## Addendum A (written 2026-09-23, BEFORE any live-vs-benchmark comparison) -- DRAFT, needs approval of QA1-QA3
+Nothing above is changed. This adds what the rule left open. Written blind: no benchmark, active return or live IC has been computed.
+
+### A1. Honest power at twelve months (the original power warning covered six months only)
+- Active return: about 250 daily observations. With tracking error 15-25% a year, the standard error of the annualised mean active return is about 15-25%, so the 95% CI half-width is about 30-50%. The EDGE CANDIDATE rule (CI lower bound > 0) is met only by a true edge of roughly +30% a year or more. A realistic +5-10% edge will almost always come out NO EDGE.
+- Rank IC: forecasts overlap on a 20-day horizon, so 250 dates carry about 12 independent observations. With a per-date IC spread of 0.15-0.20 the standard error of the mean IC is about 0.04-0.06, so the IC CI excludes 0 only if the true IC is about 0.10 or more. Useful stock-selection ICs are usually 0.02-0.05.
+- Therefore a NO EDGE verdict at twelve months means "not shown", not "shown absent". No document may describe it as evidence that no edge exists.
+
+### A2. Continuation after the twelve-month review (new, pre-committed)
+- If the twelve-month verdict is NO EDGE and the result is not clearly negative (clearly negative = both the pooled active-return CI and the rank-IC CI entirely below 0, the FUTILE definition), the track continues unchanged to a **24-month review at the SET close of 2028-06-30**, evaluated over the whole window from 2026-06-26.
+- If the twelve-month verdict is EDGE CANDIDATE, the paper track also continues to 24 months (a real-money discussion may run in parallel, per the original rule).
+- If clearly negative at twelve months: stop the edge question; the recommendation (user decides) is monitoring-only use, as in the six-month FUTILE rule.
+- 24-month EDGE CANDIDATE: the same four conditions as twelve months, except one-sided p < 0.025 (a second look at the same question; the twelve-month look keeps its frozen 0.05, so the combined false-positive rate is at most about 0.075, stated openly), and "positive in each half" becomes "positive in each of the two twelve-month halves".
+- Expected power at 24 months is still low (standard error about 11-18% a year; IC standard error about 0.03-0.04). There is no further extension after 24 months: the result then stands as final.
+- Any change to the live trading rules still restarts the window (original rule).
+
+### A3. Data the reviews must read (ticket 05)
+- Every review runs on a frozen snapshot, taken after the review date's pipeline run: `python scripts/live_track_review.py --review <name> --root ~/backups/kronos-th-snapshots/<snapshot>`. The script checks the snapshot's hashes and refuses on a mismatch. The snapshot name is reported with the result.
+- The process log now also reports the stub share of the live input windows (ticket 12, reporting only).
+
+### A4. Known accounting bias to be settled before 2026-12-30 (ticket 19)
+Fills are logged at nominal SET prices, but the review values holdings with dividend-adjusted closes (`auto_adjust=True`), while the benchmark is adjusted throughout. Each holding bought before a later ex-dividend date therefore starts with an artificial loss of about the dividends paid afterwards, which biases the comparison against the live book. Ticket 19 measures the size from data inputs only (no performance is computed) and proposes one fix, to be approved before the six-month review. Applying that fix is a correction to the implementation, not to the decision rule.
+
+### Questions (recommended answers first)
+- QA1: Approve A2's 24-month continuation with p < 0.025 at 24 months? **Recommended: yes.**
+- QA2: Continue the paper track to 24 months even after an EDGE CANDIDATE at twelve months? **Recommended: yes.**
+- QA3: Require every review to run on a hash-checked snapshot (A3)? **Recommended: yes.**

@@ -54,3 +54,7 @@ MATERIAL (76.9% affected, 48.6% heavy, against thresholds of 10% and 2%).
 ## Decision (per this ticket)
 - No inference was run here. Follow-up ticket 17 defines a rerun of the 2024 PIT forecasts on cleaned inputs, with a comparison rule fixed in advance. It needs the clean loader (ticket 13) and the user's approval, including the compute choice.
 - Live windows: report only. Two recommendations for the user, neither applied: (1) have the daily pipeline skip stub rows when building the 400-row input; (2) add the stub share of the live input windows to the ticket-11 review process log (reporting only, never used to adjust a result, rule unchanged).
+
+## User decision (2026-09-23)
+- (1) Pipeline change: NOT applied. Changing the live model input would restart the ticket-11 window.
+- (2) Applied as reporting only: `scripts/live_track_review.py` now reports `input_window_stub_rows` (windows, mean stub rows per 400-row window, share with at least 4, max) in the process log. It feeds no decision rule.
