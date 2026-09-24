@@ -25,7 +25,7 @@ per `docs/agents/triage-labels.md`), then delete this folder.
 | 15 | LightGBM sign-flip diagnostic | DONE 2026-09-23: mostly explained by data drift (the raw cache is not stable across days -- a bigger finding than planned) plus a near-zero, noise-like signal (IC CI spans zero both windows) and adv_20d's scale sensitivity. Nothing adopted. |
 | 17 | Rerun 2024 PIT forecasts on cleaned inputs | CLOSED 2026-09-22: Stage 1 (53-date sample) found no detectable IC change from cleaning (gate G3); user chose not to run Stage 2. 2024 result stands. |
 | 16 | Non-arXiv literature on SET / emerging-market strategies | DONE 2026-09-22: 5 papers verified; Thai literature is mostly long-short/fundamentals-based, none fits the price-only rubric well except a technical-trading-rules paper and a price-only momentum factor. Nothing tested. |
-| 18 | Kronos forecast quality vs naive baselines (2024 PIT) | APPROVED 2026-09-24, runs after 19. Tests the "forecasting tool" claim; opens no correction family. |
+| 18 | Kronos forecast quality vs naive baselines (2024 PIT) | RUN 2026-09-24: WORSE than naive at every horizon (h=20 pinball +0.022 [+0.017, +0.028]; 90% band covers 35%). "Forecasting tool" claim not supported for 2024; doc wording is the user's call. |
 | 19 | Live fill realism + dividend-adjustment bias in the review | RUN 2026-09-24: fills not flagged (class C 6.5% trades / 3.1% value); net dividend bias 0.126% of capital, fix NOT applied; 17 of 46 trades logged before their fill session. Open Q5-Q7. |
 | 20 | Forward shadow books: momentum 12-1, SMA200 | APPROVED 2026-09-24; build before 2026-11-02. |
 
