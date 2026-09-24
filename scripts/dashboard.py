@@ -296,6 +296,13 @@ def api_trades():
             return jsonify({"error": "Missing trades array", "recorded": 0}), 400
         trades = data.get("trades", [])
         errors = _validate_trade_request(trades)
+        fill_date = data.get("fill_date")
+        if fill_date:
+            try:
+                if datetime.strptime(fill_date, "%Y-%m-%d").date() > date.today():
+                    errors.append(f"fill_date {fill_date} is in the future")
+            except (TypeError, ValueError):
+                errors.append(f"fill_date must be YYYY-MM-DD, got {fill_date!r}")
         if errors:
             return jsonify({"error": "Validation failed", "details": errors}), 400
         results = []
@@ -308,6 +315,8 @@ def api_trades():
                 mode=data.get("mode", TRADING_MODE),
                 order_type=t.get("order_type", "market"),
                 rationale=t.get("rationale", ""),
+                fill_date=fill_date,
+                forecast_date=data.get("date"),  # the trade ticket's date, sent by the confirm dialog
             )
             results.append(r)
         total_recorded = sum(r.get("recorded", 0) for r in results)

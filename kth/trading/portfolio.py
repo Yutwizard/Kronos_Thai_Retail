@@ -124,8 +124,11 @@ def _get_current_price(ticker: str, store=None) -> float | None:
 
 def execute_trade(ticker: str, action: str, shares: int, fill_price: float,
                   mode: str = "paper", order_type: str = "market",
-                  rationale: str = "") -> dict:
-    """Execute a trade: update portfolio, log trade, recompute equity."""
+                  rationale: str = "", fill_date: str | None = None,
+                  forecast_date: str | None = None) -> dict:
+    """Execute a trade: update portfolio, log trade, recompute equity.
+    fill_date: the session the trade filled in (default today); forecast_date: the trade ticket it came from
+    (default the latest trade ticket on or before the fill date). Ticket 19 Q7."""
     pf = init_portfolio(mode)
 
     if pf.get("frozen", False):
@@ -163,7 +166,8 @@ def execute_trade(ticker: str, action: str, shares: int, fill_price: float,
         if not pos:
             return {"error": f"No position in {ticker}", "recorded": 0}
         actual = min(shares, pos["shares"])
-        return execute_trade(ticker, "exit", actual, fill_price, mode, order_type, rationale)
+        return execute_trade(ticker, "exit", actual, fill_price, mode, order_type, rationale,
+                             fill_date, forecast_date)
 
     else:
         return {"error": f"Unknown action: {action}", "recorded": 0}
@@ -188,7 +192,8 @@ def execute_trade(ticker: str, action: str, shares: int, fill_price: float,
     _save_portfolio(mode, pf)
 
     # Log trade
-    _log_trade(ticker, action, shares, fill_price, order_type, mode, rationale, friction_cost)
+    _log_trade(ticker, action, shares, fill_price, order_type, mode, rationale, friction_cost,
+               fill_date=fill_date, forecast_date=forecast_date)
 
     return {
         "recorded": 1,
@@ -203,17 +208,42 @@ def execute_trade(ticker: str, action: str, shares: int, fill_price: float,
     }
 
 
+TRADE_LOG_COLUMNS = ["date", "ticker", "action", "shares", "price", "order_type", "mode", "rationale",
+                     "friction_cost", "model_version", "forecast_date", "fill_date", "entered_on"]
+
+
+def _latest_ticket_date(on_or_before: str) -> str:
+    days = sorted(p.stem.replace("trade_ticket_", "") for p in POSITIONS_DIR.glob("trade_ticket_*.json"))
+    days = [d for d in days if d <= on_or_before]
+    return days[-1] if days else ""
+
+
 def _log_trade(ticker: str, action: str, shares: int, price: float,
-               order_type: str, mode: str, rationale: str, friction: float):
+               order_type: str, mode: str, rationale: str, friction: float,
+               fill_date: str | None = None, forecast_date: str | None = None):
+    """Append one row. `date` is the fill date (the session the trade filled in); `fill_date` repeats it when the
+    user stated it; `entered_on` is when it was typed; `forecast_date` is the source trade ticket's date. Before
+    2026-09-24 `date` and `forecast_date` were both just the entry date (ticket 19)."""
     path = _trade_log_path()
-    file_exists = path.exists()
+    if path.exists():
+        with open(path, newline="") as f:
+            reader = csv.DictReader(f)
+            header, rows = reader.fieldnames or [], list(reader)
+        if header != TRADE_LOG_COLUMNS:  # add the new columns to an older log, blanks for past rows
+            tmp = path.with_suffix(".tmp")
+            with open(tmp, "w", newline="") as f:
+                w = csv.DictWriter(f, fieldnames=TRADE_LOG_COLUMNS, extrasaction="ignore")
+                w.writeheader()
+                w.writerows(rows)
+            os.replace(tmp, path)
+    day = fill_date or str(date.today())
     with open(path, "a", newline="") as f:
         w = csv.writer(f)
-        if not file_exists:
-            w.writerow(["date", "ticker", "action", "shares", "price", "order_type",
-                        "mode", "rationale", "friction_cost", "model_version", "forecast_date"])
-        w.writerow([str(date.today()), ticker, action, shares, price, order_type,
-                    mode, rationale, round(friction, 2), MODEL_VERSION, str(date.today())])
+        if f.tell() == 0:
+            w.writerow(TRADE_LOG_COLUMNS)
+        w.writerow([day, ticker, action, shares, price, order_type, mode, rationale, round(friction, 2),
+                    MODEL_VERSION, forecast_date or _latest_ticket_date(day), fill_date or "",
+                    datetime.now().isoformat(timespec="seconds")])
 
 
 def get_trade_log(mode: str = None) -> list[dict]:

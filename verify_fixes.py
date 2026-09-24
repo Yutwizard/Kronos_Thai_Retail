@@ -374,6 +374,38 @@ def test_calibration_uses_trading_day_horizon(tmp):
     print("PASS test_calibration_uses_trading_day_horizon")
 
 
+def test_trade_log_records_fill_date_and_source_ticket(tmp):
+    """Ticket 19 Q7: an old 11-column log gains fill_date/entered_on (past rows kept, blanks), `date` is the stated
+    fill date, and forecast_date is the latest trade ticket on or before it (it used to be the entry date)."""
+    import csv
+    from pathlib import Path
+    import kth.trading.portfolio as pf
+
+    tmp = Path(tmp)
+    old_dir = pf.POSITIONS_DIR
+    pf.POSITIONS_DIR = tmp
+    try:
+        with open(tmp / "trade_log.csv", "w", newline="") as f:
+            w = csv.writer(f)
+            w.writerow(pf.TRADE_LOG_COLUMNS[:11])
+            w.writerow(["2026-09-01", "PTT.BK", "buy", 100, 33.0, "limit", "paper", "r", 8.84, "m", "2026-09-01"])
+        for day in ("2026-09-02", "2026-09-04"):
+            (tmp / f"trade_ticket_{day}.json").write_text("{}")
+        pf._log_trade("PTT.BK", "exit", 100, 34.0, "market", "paper", "", 9.1, fill_date="2026-09-03")
+        pf._log_trade("PTT.BK", "buy", 100, 35.0, "limit", "paper", "", 9.4, fill_date="2026-09-04",
+                      forecast_date="2026-09-02")
+        with open(tmp / "trade_log.csv", newline="") as f:
+            rows = list(csv.DictReader(f))
+        assert list(rows[0].keys()) == pf.TRADE_LOG_COLUMNS, rows[0].keys()
+        assert rows[0]["date"] == "2026-09-01" and rows[0]["fill_date"] == "" and rows[0]["entered_on"] == ""
+        assert rows[1]["date"] == "2026-09-03" and rows[1]["fill_date"] == "2026-09-03"
+        assert rows[1]["forecast_date"] == "2026-09-02" and rows[1]["entered_on"]  # latest ticket <= fill date
+        assert rows[2]["forecast_date"] == "2026-09-02"  # an explicit source ticket wins
+    finally:
+        pf.POSITIONS_DIR = old_dir
+    print("PASS test_trade_log_records_fill_date_and_source_ticket")
+
+
 if __name__ == "__main__":
     import inspect
     import tempfile
