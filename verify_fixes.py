@@ -343,6 +343,37 @@ def test_tier_tagging_all_bull_when_total_at_most_n():
     print("PASS test_tier_tagging_all_bull_when_total_at_most_n")
 
 
+def test_calibration_uses_trading_day_horizon(tmp):
+    """compute_calibration compares the step-20 band with the close 20 TRADING days after
+    lookback_end, skips forecasts whose horizon has not elapsed, and labels both directions."""
+    import json
+    from pathlib import Path
+    from kth.backtest.metrics import compute_calibration
+
+    tmp = Path(tmp)
+    raw, fc_root = tmp / "raw", tmp / "fc"
+    raw.mkdir()
+    days = pd.bdate_range("2026-01-01", periods=60)
+    close = pd.Series(100.0, index=days)
+    close.iloc[20:] = 200.0  # 20 trading days after day 0 the price is 200; 20 CALENDAR days later still 100
+    pd.DataFrame({"timestamps": days, "open": close.values, "high": close.values, "low": close.values,
+                  "close": close.values, "volume": 1.0, "amount": close.values}).to_parquet(raw / "A.BK.parquet")
+
+    def write(day, lo, hi):
+        d = fc_root / str(day.date()); d.mkdir(parents=True)
+        pd.DataFrame({"timestamps": range(1, 21), "p5": lo, "p95": hi}).to_parquet(d / "A.BK.parquet")
+        (d / "A.BK_meta.json").write_text(json.dumps({"lookback_end": str(day)}))
+
+    for day in days[:12]:  # elapsed: band [190, 210] contains the price 20 trading days later
+        write(day, 190.0, 210.0)
+    for day in days[45:]:  # not elapsed: a comparison with the latest close (200) would count as hits
+        write(day, 0.0, 1.0)
+    cal = compute_calibration(fc_root, raw, ["A.BK"], pred_len=20, lookback_days=100)
+    assert cal["n_samples"] == 12, cal  # the 15 unelapsed forecasts are skipped
+    assert cal["coverage"] == 1.0 and cal["status"] == "too_wide", cal
+    print("PASS test_calibration_uses_trading_day_horizon")
+
+
 if __name__ == "__main__":
     import inspect
     import tempfile

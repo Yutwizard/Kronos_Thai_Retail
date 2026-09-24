@@ -187,6 +187,32 @@ def rank_ic_series(fc_root: Path, close: pd.DataFrame, tickers, start, as_of) ->
     return pd.Series(out, dtype=float)
 
 
+def input_window_stub_share(fc_root: Path, raw_dir: Path, tickers, start, as_of, lookback: int = 400) -> dict:
+    """Process log only (ticket 12): stub rows inside each forecast's 400-row model input window, read from
+    the ticker's own raw rows up to its `lookback_end`. Never used to adjust a result."""
+    stub_rows, windows = {}, []
+    for t in tickers:
+        p = raw_dir / f"{sanitize(t)}.parquet"
+        if p.exists():
+            d = pd.read_parquet(p)
+            flat = (d["volume"] == 0) & (d["open"] == d["high"]) & (d["high"] == d["low"]) & (d["low"] == d["close"])
+            stub_rows[t] = pd.Series(flat.to_numpy(), index=pd.to_datetime(d["timestamps"]).dt.normalize())
+    for folder in sorted(p for p in fc_root.iterdir() if p.is_dir()):
+        day = pd.Timestamp(folder.name)
+        if day < pd.Timestamp(start) or day > pd.Timestamp(as_of):
+            continue
+        for t, flat in stub_rows.items():
+            m = folder / f"{t}_meta.json"
+            if m.exists():
+                lb = pd.Timestamp(json.loads(m.read_text())["lookback_end"]).normalize()
+                windows.append(int(flat.loc[:lb].tail(lookback).sum()))
+    if not windows:
+        return {"windows": 0}
+    w = np.array(windows)
+    return {"windows": int(len(w)), "mean_stub_rows_per_window": round(float(w.mean()), 2),
+            "share_windows_ge_4_stub_rows": round(float((w >= 4).mean()), 3), "max_stub_rows": int(w.max())}
+
+
 def mean_ci(x: np.ndarray, seed: int = BLOCK_SEED) -> tuple[float, float, float]:
     """Stationary block bootstrap 95% CI of a mean (not annualised)."""
     n = len(x)
@@ -258,6 +284,7 @@ def run_review(root: Path, eq, dr, review: str, as_of, start=WINDOW_START, capit
         "trading_days_without_trade_ticket": sorted(str(d.date()) for d in common if str(d.date()) not in tickets),
         "trades_in_log": int(len(trades)),
         "ic_forecast_dates_used": int(len(ic)),
+        "input_window_stub_rows": input_window_stub_share(root / "forecast_cache" / MODEL_DIR, root / "raw", eq, start, as_of),
     }
     return {"live_total_return": float(live.iloc[-1] / live.iloc[0] - 1), "bench_total_return": float((1 + bench.loc[common]).prod() - 1),
             "pooled_active_ann": pl["observed_mean_annualized"], "active_ci": (pl["ci_2_5_annualized"], pl["ci_97_5_annualized"]),
@@ -367,7 +394,16 @@ def selftest() -> None:
         # horizon not elapsed => those dates are skipped: stop as-of early and the series shortens
         ic_short = rank_ic_series(Path(d) / "forecast_cache" / MODEL_DIR, close, eq, WINDOW_START, dates[-1] - pd.Timedelta(days=60))
         assert len(ic_short) < len(ic0)
-    print("selftest passed (live value, benchmark cost, price-only eligibility, stub dates, decision rules, guard, rank IC)")
+    # 7) process-log stub count: 3 stub rows before lookback_end, 1 after (must not count), lookback 5
+    with tempfile.TemporaryDirectory() as d:
+        d = Path(d); (d / "raw").mkdir(); fc = d / "fc"; (fc / "2026-07-01").mkdir(parents=True)
+        idx7 = pd.bdate_range("2026-06-22", periods=10)
+        vol = [1, 1, 0, 1, 0, 0, 1, 1, 1, 0]
+        pd.DataFrame({"timestamps": idx7, "open": 5.0, "high": 5.0, "low": 5.0, "close": 5.0, "volume": vol}).to_parquet(d / "raw" / "A.BK.parquet")
+        (fc / "2026-07-01" / "A.BK_meta.json").write_text(json.dumps({"lookback_end": str(idx7[7])}))
+        got = input_window_stub_share(fc, d / "raw", ["A.BK"], WINDOW_START, idx7[-1], lookback=5)
+        assert got == {"windows": 1, "mean_stub_rows_per_window": 2.0, "share_windows_ge_4_stub_rows": 0.0, "max_stub_rows": 2}, got
+    print("selftest passed (live value, benchmark cost, price-only eligibility, stub dates, decision rules, guard, rank IC, stub-window count)")
 
 
 def synthetic_run() -> None:
@@ -392,7 +428,16 @@ def main() -> None:
         return synthetic_run()
     as_of = date.fromisoformat(a.as_of)
     guard(a.review, as_of)
-    res = run_review(Path(a.root), FROZEN_THAI_EQUITY, FROZEN_DR, a.review, as_of)
+    root = Path(a.root)
+    if (root / "MANIFEST.sha256").exists():  # a frozen snapshot from snapshot_live_data.py
+        from snapshot_live_data import verify
+        bad = verify(root)
+        if bad:
+            raise SystemExit(f"snapshot {root} fails its hash check ({len(bad)} files), first: {bad[:3]}")
+        print(f"data: snapshot {root.resolve()} (hash check OK)")
+    else:
+        print(f"data: {root.resolve()} (NOT a frozen snapshot; ticket 11 addendum asks for one)")
+    res = run_review(root, FROZEN_THAI_EQUITY, FROZEN_DR, a.review, as_of)
     print_report(res, a.review, as_of)
 
 

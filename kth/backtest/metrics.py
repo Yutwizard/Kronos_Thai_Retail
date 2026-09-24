@@ -428,10 +428,16 @@ def compute_calibration(
     lookback_days: int = 60,
 ) -> dict:
     """P5/P95 coverage: fraction of actual prices that fell within the forecast band.
-    Iterates over actual cached forecast directories (keyed by trading day, not
-    calendar day) and checks the outcome pred_len trading days later.
+
+    For each of the latest `lookback_days` forecast folders, the band at step `pred_len` is
+    compared with the close `pred_len` TRADING days after the forecast's base date
+    (`lookback_end` from its _meta.json, else the folder date). Forecasts whose horizon has
+    not elapsed yet are skipped, never compared with the latest close.
+    The band is nominally 90%, so status is 'too_narrow' (overconfident) below 0.80,
+    'too_wide' (underconfident) above 0.95, else 'ok'.
     Returns {'coverage': float|None, 'n_samples': int, 'status': str}
     """
+    import json as _json
     from pathlib import Path as _P
     from kth.data.loader import sanitize_ticker
     from kth.data.pricestore import PriceStore
@@ -448,13 +454,13 @@ def compute_calibration(
         reverse=True,
     )[:lookback_days]
 
+    closes: dict = {}
     hits, total = 0, 0
     for dd in date_dirs:
         try:
             fc_date = pd.Timestamp(dd.name)
         except ValueError:
             continue
-        actual_date = fc_date + pd.Timedelta(days=pred_len)
 
         for ticker in tickers:
             safe = sanitize_ticker(ticker)
@@ -462,19 +468,23 @@ def compute_calibration(
             if not fc_path.exists():
                 continue
             try:
+                meta_path = dd / f"{safe}_meta.json"
+                base_date = fc_date
+                if meta_path.exists():
+                    base_date = pd.Timestamp(_json.loads(meta_path.read_text())["lookback_end"]).normalize()
                 fc = pd.read_parquet(fc_path)
-                p5 = float(fc["p5"].iloc[-1])
-                p95 = float(fc["p95"].iloc[-1])
-                price_df = prices.get_ohlcv(ticker)
-                price_df = price_df.set_index("timestamps")
-                price_df.index = pd.to_datetime(price_df.index)
-                if actual_date not in price_df.index:
-                    idx = price_df.index.get_indexer([actual_date], method="ffill")[0]
-                    if idx < 0:
-                        continue
-                else:
-                    idx = price_df.index.get_loc(actual_date)
-                actual_close = float(price_df.iloc[idx]["close"])
+                step = fc.loc[fc["timestamps"] == pred_len] if "timestamps" in fc.columns else fc.iloc[[-1]]
+                if step.empty:
+                    continue
+                p5, p95 = float(step["p5"].iloc[0]), float(step["p95"].iloc[0])
+                if ticker not in closes:
+                    df = prices.get_ohlcv(ticker)
+                    closes[ticker] = df.set_index(pd.to_datetime(df["timestamps"]))["close"]
+                close = closes[ticker]
+                base_idx = close.index.get_indexer([base_date], method="ffill")[0]
+                if base_idx < 0 or base_idx + pred_len >= len(close):
+                    continue  # no base price, or horizon not elapsed yet
+                actual_close = float(close.iloc[base_idx + pred_len])
                 total += 1
                 if p5 <= actual_close <= p95:
                     hits += 1
@@ -484,10 +494,11 @@ def compute_calibration(
     if total < 10:
         return {"coverage": None, "n_samples": total, "status": "insufficient_data"}
     coverage = hits / total
+    status = "too_narrow" if coverage < 0.80 else "too_wide" if coverage > 0.95 else "ok"
     return {
         "coverage": round(coverage, 3),
         "n_samples": total,
-        "status": "overconfident" if coverage > 0.95 else "ok",
+        "status": status,
     }
 
 

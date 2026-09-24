@@ -618,6 +618,20 @@ def cmd_generate():
         log(f"STEP3_FAILED: {e}")
         return 1
 
+    # Step 4: freeze the live-track evidence (ticket 05). Never fails the pipeline.
+    log("STEP4: snapshot_live_data.py")
+    try:
+        result = subprocess.run(
+            [sys.executable, "scripts/snapshot_live_data.py"],
+            capture_output=True, text=True, timeout=600,
+        )
+        for line in result.stdout.splitlines():
+            if line.startswith("WARNING"):
+                log(f"STEP4_WARN: {line}")
+        log("STEP4_OK" if result.returncode == 0 else f"STEP4_FAILED: {result.stderr[-200:]}")
+    except Exception as e:
+        log(f"STEP4_FAILED: {e}")
+
     log("PIPELINE_OK")
     return 0
 

@@ -518,7 +518,7 @@ try:
         elif cov < 0.85:
             banner_status = 'monitor'    # below 90% target
         elif cov > 0.95:
-            banner_status = 'overconfident'  # function already flags this, but make explicit
+            banner_status = 'overconfident'  # legacy key read by Code.gs/Index.html: bands too WIDE (underconfident)
         else:
             banner_status = 'on_track'   # 0.85-0.95 inclusive
         calibration_ws.append_row([

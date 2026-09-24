@@ -319,6 +319,7 @@ def _compute_calibration_data(ohlcv_dict: dict, today_str: str) -> dict | None:
             elif cov < 0.85:
                 banner_status = 'monitor'
             elif cov > 0.95:
+                # Legacy key read by Code.gs/Index.html; it means bands too WIDE (underconfident).
                 banner_status = 'overconfident'
             else:
                 banner_status = 'on_track'
