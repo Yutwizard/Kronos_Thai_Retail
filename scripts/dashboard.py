@@ -627,6 +627,19 @@ def cmd_generate():
         log(f"STEP3_FAILED: {e}")
         return 1
 
+    # Step 3b: forward shadow books (ticket 20) -- append next month's candidate picks. Never fails the pipeline
+    # and never touches the Kronos live book; runs before the snapshot so the picks are captured.
+    log("STEP3b: shadow_books.py --record")
+    try:
+        result = subprocess.run(
+            [sys.executable, "scripts/shadow_books.py", "--record"],
+            capture_output=True, text=True, timeout=300,
+        )
+        msg = (result.stdout.strip().splitlines() or [""])[-1]
+        log(f"STEP3b_OK: {msg}" if result.returncode == 0 else f"STEP3b_FAILED: {result.stderr[-200:]}")
+    except Exception as e:
+        log(f"STEP3b_FAILED: {e}")
+
     # Step 4: freeze the live-track evidence (ticket 05). Never fails the pipeline.
     log("STEP4: snapshot_live_data.py")
     try:

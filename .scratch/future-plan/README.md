@@ -27,7 +27,7 @@ per `docs/agents/triage-labels.md`), then delete this folder.
 | 16 | Non-arXiv literature on SET / emerging-market strategies | DONE 2026-09-22: 5 papers verified; Thai literature is mostly long-short/fundamentals-based, none fits the price-only rubric well except a technical-trading-rules paper and a price-only momentum factor. Nothing tested. |
 | 18 | Kronos forecast quality vs naive baselines (2024 PIT) | RUN 2026-09-24: WORSE than naive at every horizon (h=20 pinball +0.022 [+0.017, +0.028]; 90% band covers 35%). "Forecasting tool" claim not supported for 2024; doc wording is the user's call. |
 | 19 | Live fill realism + dividend-adjustment bias in the review | RUN 2026-09-24 (corrected same day): fills not flagged (class C 6.5% trades / 3.1% value); net dividend bias 0.126%, fix not applied; 2 of 46 trades logged before their session (first-run figure of 17 withdrawn: log `forecast_date` is the entry date); 11 off-ticket trades. Q5-Q7 approved. |
-| 20 | Forward shadow books: momentum 12-1, SMA200 | APPROVED 2026-09-24; build before 2026-11-02. |
+| 20 | Forward shadow books: momentum 12-1, SMA200 | BUILT 2026-09-24: `scripts/shadow_books.py`, pipeline STEP3b; candidates recorded from 2026-10-20, window starts 2026-11-02; reviews 2027-05-03 (futility), 2027-11-01 (decision), 2028-11-01. Run the pipeline on each month's last SET session. |
 
 Sequence, gates and the multiple-testing register: `PLAN-next-research.md`.
 
