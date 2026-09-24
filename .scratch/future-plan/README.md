@@ -17,7 +17,7 @@ per `docs/agents/triage-labels.md`), then delete this folder.
 | 08 | arXiv 2020-2026 strategy literature, ranked shortlist of 20 | Done 2026-09-21: no paper gives a cost-robust, out-of-sample, long-only stock edge. |
 | 09 | Pre-registered SET test of 3 literature candidates | Run 2026-09-21: none adopted (LightGBM ranker, VP-MACD overlay, SMA200 filter all fail the discovery bar). |
 | 10 | Trend filter (SMA200) drawdown check on untouched 2018-2019 window | Run 2026-09-21: neither the stock-level nor the index-level filter improved Sharpe; drawdown lower but return given up or unchanged. Closed. |
-| 11 | Pre-committed review rule for the live paper track | APPROVED 2026-09-21; review script `scripts/live_track_review.py` written and self-tested on synthetic data only. First review due 2026-12-30 (futility), edge decision 2027-06-30. Addendum A (2026-09-23, DRAFT QA1-QA3): 12-month power, 24-month continuation, snapshot-only reviews, dividend-adjustment bias (ticket 19). |
+| 11 | Pre-committed review rule for the live paper track | APPROVED 2026-09-21; review script `scripts/live_track_review.py` written and self-tested on synthetic data only. First review due 2026-12-30 (futility), edge decision 2027-06-30. Addendum A (APPROVED 2026-09-24): 12-month power, 24-month continuation, snapshot-only reviews, dividend-adjustment bias (ticket 19). |
 
 | 12 | Stub-row impact on Kronos input windows (2024 PIT, live) | DONE 2026-09-21: MATERIAL (76.9% of 2024 windows affected, 48.6% heavy; live about 1.3% of input rows). Follow-up 17. 2026-09-23: pipeline unchanged; stub share added to the review process log. |
 | 13 | Tested clean-data loader + `^SET.BK` repair retry | DONE 2026-09-21: `kth/data/clean.py` + `verify_clean_data.py`, reproduces the ticket-09 cleaned frame exactly; `^SET.BK` repair blocked (Yahoo returns one row). |
@@ -25,9 +25,9 @@ per `docs/agents/triage-labels.md`), then delete this folder.
 | 15 | LightGBM sign-flip diagnostic | DONE 2026-09-23: mostly explained by data drift (the raw cache is not stable across days -- a bigger finding than planned) plus a near-zero, noise-like signal (IC CI spans zero both windows) and adv_20d's scale sensitivity. Nothing adopted. |
 | 17 | Rerun 2024 PIT forecasts on cleaned inputs | CLOSED 2026-09-22: Stage 1 (53-date sample) found no detectable IC change from cleaning (gate G3); user chose not to run Stage 2. 2024 result stands. |
 | 16 | Non-arXiv literature on SET / emerging-market strategies | DONE 2026-09-22: 5 papers verified; Thai literature is mostly long-short/fundamentals-based, none fits the price-only rubric well except a technical-trading-rules paper and a price-only momentum factor. Nothing tested. |
-| 18 | Kronos forecast quality vs naive baselines (2024 PIT) | DRAFT 2026-09-23, needs approval (Q1-Q4). Tests the "forecasting tool" claim; opens no correction family. |
-| 19 | Live fill realism + dividend-adjustment bias in the review | DRAFT 2026-09-23, needs approval (Q1-Q4). Do before 2026-12-30. |
-| 20 | Forward shadow books: momentum 12-1, SMA200 | DRAFT 2026-09-23, needs approval (Q1-Q5). After 05 (done) and ticket-11 addendum A. |
+| 18 | Kronos forecast quality vs naive baselines (2024 PIT) | APPROVED 2026-09-24, runs after 19. Tests the "forecasting tool" claim; opens no correction family. |
+| 19 | Live fill realism + dividend-adjustment bias in the review | RUN 2026-09-24: fills not flagged (class C 6.5% trades / 3.1% value); net dividend bias 0.126% of capital, fix NOT applied; 17 of 46 trades logged before their fill session. Open Q5-Q7. |
+| 20 | Forward shadow books: momentum 12-1, SMA200 | APPROVED 2026-09-24; build before 2026-11-02. |
 
 Sequence, gates and the multiple-testing register: `PLAN-next-research.md`.
 

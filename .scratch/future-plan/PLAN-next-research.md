@@ -28,7 +28,7 @@ Correction families already spent on the SET data windows 2018-2026:
 - Ticket 09: 3 literature candidates (family threshold 0.05/3); none adopted.
 - Ticket 10: 2 trend filters on the untouched 2018-2019 window (0.05/2); none passed.
 - Ticket 14 (below) re-runs 06's family on cleaned data; it does NOT open a new family and keeps threshold 0.05/3.
-- Forward, proposed 2026-09-23 (ticket 20, DRAFT): Kronos live book (frozen 0.05) + S1 momentum + S2 SMA200 as one register entry of 3; S1/S2 at 0.05/3 each. Ticket 11 addendum A2 adds a second look at the Kronos edge question at 24 months (p < 0.025).
+- Forward, approved 2026-09-24 (ticket 20): Kronos live book (frozen 0.05) + S1 momentum + S2 SMA200 as one register entry of 3; S1/S2 at 0.05/3 each. Ticket 11 addendum A2 adds a second look at the Kronos edge question at 24 months (p < 0.025).
 - Not counted: ticket 18 (forecast accuracy vs naive, no trading rule) and ticket 19 (data-input audit).
 No unseen SET window is left except data that has not happened yet: the live track (ticket 11). A new candidate from ticket 16 therefore has no clean historical window to be tested on; it should be tested by adding it to the forward paper track with a pre-committed rule, not by another backtest on 2018-2026.
 

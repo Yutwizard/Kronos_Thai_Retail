@@ -57,7 +57,7 @@ Written and tested on synthetic data only. It has NOT read the real live track, 
 - Known limitation: paper fills are taken at the logged prices, which may be optimistic (see the twelve-month decision rule).
 - Frozen ticker lists are hard-coded in the script and match the lists above.
 
-## Addendum A (written 2026-09-23, BEFORE any live-vs-benchmark comparison) -- DRAFT, needs approval of QA1-QA3
+## Addendum A (written 2026-09-23, BEFORE any live-vs-benchmark comparison) -- APPROVED 2026-09-24 (user "agree" to QA1-QA3 as recommended)
 Nothing above is changed. This adds what the rule left open. Written blind: no benchmark, active return or live IC has been computed.
 
 ### A1. Honest power at twelve months (the original power warning covered six months only)

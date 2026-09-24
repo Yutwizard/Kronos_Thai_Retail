@@ -1,6 +1,6 @@
-# Ticket 18: are Kronos forecasts better than a naive forecast? (DRAFT, needs approval)
+# Ticket 18: are Kronos forecasts better than a naive forecast?
 
-STATUS: DRAFT 2026-09-23 (from the 2026-09-23 review, item R1). Nothing run. Fixed design below; approve Q1-Q4 before any computation.
+STATUS: APPROVED 2026-09-24 (user "agree" to Q1-Q4 as recommended). Not yet run; runs after ticket 19.
 
 ## Question
 The project now describes itself as a forecasting/monitoring tool, not an edge (CLAUDE.md). That claim has never been tested. On the 2024 point-in-time cache, are Kronos-small's probabilistic forecasts (p5/p25/p50/p75/p95) more accurate than a naive forecast that needs no model?

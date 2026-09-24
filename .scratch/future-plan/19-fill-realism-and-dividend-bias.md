@@ -1,6 +1,6 @@
-# Ticket 19: are the live paper fills achievable, and how big is the dividend-adjustment bias? (DRAFT, needs approval)
+# Ticket 19: are the live paper fills achievable, and how big is the dividend-adjustment bias?
 
-STATUS: DRAFT 2026-09-23 (from the 2026-09-23 review, item R4, plus a bias found while scoping it). Nothing run. Approve Q1-Q4 before any download or computation.
+STATUS: APPROVED 2026-09-24 (user "agree" to Q1-Q4 as recommended). Running first.
 
 ## Facts (read from code, 2026-09-23)
 - Paper fills are typed in by hand in the dashboard (`/api/trades`, `fill_price`) and logged by `kth/trading/portfolio.py` `_log_trade` with `date.today()`: the log date is the day of entry, not necessarily the day the order would have filled.
@@ -39,3 +39,47 @@ Ticket 11 allows data-input checks before the review. This ticket computes no li
 - Q2: Classes A-D with a tolerance of one tick or 0.1%? **Recommended: yes.**
 - Q3: Pre-approve the total-return fix, applied only if the bias is at least 0.25% of capital? **Recommended: yes.**
 - Q4: Do this ticket before ticket 18 (it is quicker and affects the 2026-12-30 review)? **Recommended: yes.**
+
+## Implementation notes frozen BEFORE the run (2026-09-24; nothing computed yet)
+Facts found while wiring the script (read from metadata only, no prices compared):
+- The pipeline ran at two times of day. Until late June it ran in the morning of D (`generated_at` 06:28-10:34, `lookback_end` = D-1), so the ticket was for session D. From July it ran in the evening of D (19:37-22:05, `lookback_end` = D), so the ticket was for session D+1. Trades are logged dated D in both cases (`date.today()` at entry).
+- Rows 10-11 (2026-06-25, BANPU.BK and BTS.BK) have a log date one day BEFORE their `forecast_date` (2026-06-26). Reported as an anomaly; classified like any other row.
+
+Clarified definitions (these replace the wording above where they differ):
+- **Intended session** = the first session of that ticker strictly after the forecast's `lookback_end` (from `<forecast_date>/<ticker>_meta.json` in the 2026-09-23 snapshot; if missing, the first session after `forecast_date`). This covers both regimes: morning runs give D, evening runs give D+1.
+- Class A = price within the intended session's unadjusted [low, high] +/- tolerance; B = not A but within the log-date session's range; C = neither; D = no unadjusted data for either session.
+- Extra flag, reported per class: **logged before its intended session** (log date < intended session date). The price then could not have been observed in the session that fills it.
+- Tolerance = max(one SET tick, 0.1% of price). SET tick table: < 2: 0.01; 2-5: 0.02; 5-10: 0.05; 10-25: 0.10; 25-100: 0.25; 100-200: 0.50; 200-400: 1.00; >= 400: 2.00 (DRs use the same table).
+- Q2 factor F = Adj Close / Close on the **log date** (the date the review applies the trade). If the log date is not a session, use the last session on or before it.
+- Bias: net = sum over buys of shares x price x (1 - F) minus the same sum over exits (economically: dividends the adjusted marks assume but the logged cash never received). Gross buy-side also reported. **The 0.25% rule uses |net|.**
+- Cross-check: yfinance `dividends` for each traded ticker, 2026-06-01 to the download date, listed next to F. A ticker with F < 1 but no listed dividend, or the reverse, is reported.
+- Not decided here (reported only): the review applies each trade on its log date, which from July is one session before it could fill. Any change to that is a separate user decision, before 2026-12-30.
+
+## Result (run 2026-09-24, `scripts/audit_live_fills.py`, log `data/logs/live_fill_audit.log`)
+Snapshot 2026-09-23T222128 (46 trades); unadjusted prices for the 17 traded tickers downloaded 2026-09-24 into `data/audit/unadjusted/` (git-ignored). The first run printed the full table and then crashed while printing the summary (tuple keys in JSON). It was rerun on the same files after fixing the summary formatting and narrowing the dividend cross-check to dividends after each ticker's first trade. No definition or threshold was changed.
+
+### Q1 fill realism
+| class | trades | value (THB) |
+|---|---|---|
+| A: within the intended session's range | 38 | 872,264 |
+| B: only within the log-date session's range | 5 | 113,580 |
+| C: within neither | 3 | 31,965 |
+| D: no data | 0 | 0 |
+- By kind: thai_equity 32 A / 2 B / 3 C; DR 6 A / 3 B / 0 C.
+- Class C: rows 10 (BANPU.BK buy 5.25, 2026-06-25), 22 (IVL.BK exit 22.70, 2026-07-03), 24 (BANPU.BK exit 5.60, 2026-07-06).
+- **17 of 46 trades were logged before their intended session**: every evening-run trade from 2026-07-02 on, plus the two 2026-06-25 rows logged a day before their forecast date. Their prices could not have been observed when they were entered. Most still fall inside the next session's range (class A), but that is luck or a limit price, not a recorded fill. The 5 class-B trades (TRUE.BK 07-02, HORIZON23.BK 07-16, KUAISH80.BK 07-21, SINGTEL80.BK 07-30, BTS.BK 06-04) match only the log-date session, i.e. a price from the session before the one that would have filled them.
+- **Verdict by the frozen rule:** class C is 6.5% of trades and 3.1% of value, both under 10%, so fills are NOT flagged "partly not achievable". The logged-before-session count is reported in the process log from now on.
+
+### Q2 dividend-adjustment bias
+- Net bias +632 THB = **0.126% of capital** (gross on buys only: 3,481 THB = 0.70%; most of it reverses on exit because most positions were closed).
+- **Verdict by the frozen rule:** |net| < 0.25%, so the total-return fix is NOT applied; the review implementation is unchanged.
+- Cross-check: Yahoo lists dividends after the first trade for 12 of 17 tickers, consistent with F < 1. One mismatch: BANPU.BK lists a 0.40 dividend on 2026-09-11 but F = 1.0 on its trade dates (Yahoo did not adjust; BANPU has a data gap 2026-08-11..09-18). BANPU was bought and sold before 2026-09-11, so it does not affect the net figure.
+
+### Limits
+- F is measured against the 2026-09-24 download. Dividends paid after that date on positions still held, or on later trades, add to the bias, so the measured figure is a lower bound for the review date.
+- Tolerance and tick table as frozen; no sensitivity analysis was run.
+
+## Open, for the user (recommended answers first)
+- Q5: Rerun this audit on the review snapshot before each ticket-11 review, and apply the approved total-return fix then if |net| has reached 0.25%? The bias size is not a performance number, so this cannot be tuned on a result. **Recommended: yes.**
+- Q6: Make the review apply each trade on its intended session (first session after `lookback_end`) instead of the log date? From July, the log date is one session early. Decide before 2026-12-30. **Recommended: yes.**
+- Q7 (process, from today): enter fills after the session they filled in, at the real price, so the logged date is the fill date. Optionally, the dashboard could record a `fill_date` separate from the entry date. **Recommended: yes to the routine; the `fill_date` field as a small separate change.**

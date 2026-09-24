@@ -1,6 +1,6 @@
-# Ticket 20: forward shadow books for momentum and SMA200 (DRAFT, needs approval)
+# Ticket 20: forward shadow books for momentum and SMA200
 
-STATUS: DRAFT 2026-09-23 (from the 2026-09-23 review, item R3). Nothing built or run. Approve Q1-Q5 before implementation. Written blind: no forward result exists yet.
+STATUS: APPROVED 2026-09-24 (user "agree" to Q1-Q5 as recommended). To build before the first trading day of 2026-11. Written blind: no forward result exists yet.
 
 ## Why
 No unseen SET history is left (PLAN multiple-testing register). The only clean test for a new idea is forward data. Ticket 16 recommended exactly this for price-only momentum. Two rules already have fixed definitions and past (failed or marginal) evidence, so they can run forward next to the Kronos live book at almost no cost: computed books, no manual fills.
