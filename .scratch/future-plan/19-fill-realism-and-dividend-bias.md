@@ -83,3 +83,25 @@ Snapshot 2026-09-23T222128 (46 trades); unadjusted prices for the 17 traded tick
 - Q5: Rerun this audit on the review snapshot before each ticket-11 review, and apply the approved total-return fix then if |net| has reached 0.25%? The bias size is not a performance number, so this cannot be tuned on a result. **Recommended: yes.**
 - Q6: Make the review apply each trade on its intended session (first session after `lookback_end`) instead of the log date? From July, the log date is one session early. Decide before 2026-12-30. **Recommended: yes.**
 - Q7 (process, from today): enter fills after the session they filled in, at the real price, so the logged date is the fill date. Optionally, the dashboard could record a `fill_date` separate from the entry date. **Recommended: yes to the routine; the `fill_date` field as a small separate change.**
+
+## CORRECTION (2026-09-24, same day): the "17 logged before their session" figure is withdrawn
+While scoping Q7 I found that `kth/trading/portfolio.py` `_log_trade` writes `forecast_date = date.today()`, so the log's `forecast_date` is the entry date, not the forecast a trade came from. The first run used it to find `lookback_end`. A trade entered on the morning of D from the D-1 evening ticket was therefore wrongly anchored to the D forecast and flagged as "logged before its session".
+
+Corrected source rule (fixed before the rerun, self-tested): the source is trade ticket D if `trade_ticket_<D>.json` lists the ticker under the matching action (buy -> `buys`; exit -> `exits`/`reduces`). A ticket regenerated after the trade cannot list a trade that is already done, so a match means ticket D came first. Otherwise the source is the latest earlier ticket that lists it that way. No match = off-ticket trade: the log-date session is taken as intended, and "logged before" is unknown. Thresholds, tolerance and the bias definition are unchanged. Log: `data/logs/live_fill_audit_corrected.log`.
+
+| | first run | corrected |
+|---|---|---|
+| class A / B / C / D | 38 / 5 / 3 / 0 | 39 / 4 / 3 / 0 |
+| class C share of trades / value | 6.5% / 3.1% | 6.5% / 3.1% (same three rows) |
+| logged before intended session | 17 | **2** (BTS.BK exit 2026-07-14, IVL.BK exit 2026-09-02) |
+| off-ticket trades | not measured | 11 (the four 2026-06-04 buys, PSH.BK 06-30, PTTEP.BK 07-02, both HORIZON23.BK buys, SINGTEL80.BK 07-20, 07-30 and 08-18) |
+| net dividend bias | 0.126% of capital | unchanged |
+
+- Weak source matches, reported and not reclassified: BTS.BK buys 2026-07-01 matched to the 2026-06-24 ticket, KUAISH80.BK 2026-08-03 to 2026-07-20, TRUE.BK 2026-09-10 to 2026-09-02. These are more than three sessions apart and may really be off-ticket.
+- Verdicts by the frozen rule are unchanged: fills NOT flagged; total-return fix NOT applied.
+- Most trades were entered during or after the session they filled in, not before it. The real process gaps are: `forecast_date` in the log is wrong, 11 trades have no source ticket, and 2 were entered before their session.
+
+## User decisions (2026-09-24, "agree" to Q5-Q7)
+- Q5: this audit is rerun on the review snapshot before each ticket-11 review; the approved total-return fix is applied if |net| >= 0.25% of capital at that time.
+- Q6: the review applies each trade on its intended session (first session after the source forecast's `lookback_end`; off-ticket trades on the log date), using the source rule above.
+- Q7: fills are entered after the session they filled in, at the real price. The dashboard records a separate `fill_date` and the real source `forecast_date`.

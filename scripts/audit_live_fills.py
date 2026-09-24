@@ -55,7 +55,10 @@ def classify(row, df: pd.DataFrame | None, lookback_end) -> dict:
     """Class A/B/C/D, the intended session and whether the trade was logged before it."""
     if df is None or df.empty:
         return {"cls": "D", "intended": None, "logged_before_session": None}
-    intended = session_on_or_after(df, lookback_end, strictly_after=True)
+    if lookback_end is None:  # off-ticket trade: no forecast to anchor it, so the log-date session is intended
+        intended = session_on_or_after(df, row["date"])
+    else:
+        intended = session_on_or_after(df, lookback_end, strictly_after=True)
     log_day = row["date"] if row["date"] in df.index else None
     bar_i = df.loc[intended] if intended is not None else None
     bar_l = df.loc[log_day] if log_day is not None else None
@@ -67,7 +70,7 @@ def classify(row, df: pd.DataFrame | None, lookback_end) -> dict:
         cls = "B"
     else:
         cls = "C"
-    before = None if intended is None else bool(row["date"] < intended)
+    before = None if (intended is None or lookback_end is None) else bool(row["date"] < intended)
     return {"cls": cls, "intended": intended, "logged_before_session": before}
 
 
@@ -81,11 +84,46 @@ def adj_factor(df: pd.DataFrame | None, day) -> float | None:
     return a / c if c > 0 else None
 
 
-def lookback_end_for(row) -> pd.Timestamp:
-    m = SNAPSHOT / "forecast_cache" / MODEL_DIR / str(row["forecast_date"].date()) / f"{row['ticker']}_meta.json"
+ACTION_LISTS = {"buy": ("buys",), "exit": ("exits", "reduces"), "sell": ("exits", "reduces")}
+
+
+def ticket_entries(positions_dir: Path, day: str, _cache={}) -> dict[str, set]:
+    """{ticker: set of ticket lists it appears in} for trade_ticket_<day>.json."""
+    key = (str(positions_dir), day)
+    if key not in _cache:
+        p = positions_dir / f"trade_ticket_{day}.json"
+        out = {}
+        if p.exists():
+            d = json.loads(p.read_text())
+            for lst in ("buys", "exits", "reduces"):
+                for e in d.get(lst) or []:
+                    out.setdefault(e["ticker"], set()).add(lst)
+        _cache[key] = out
+    return _cache[key]
+
+
+def source_ticket_date(row, positions_dir: Path) -> str | None:
+    """The trade ticket a logged trade came from (the log's own `forecast_date` column is just the entry date).
+    Ticket D if it lists the ticker under the matching action (a ticket regenerated after the trade cannot list a
+    trade already done), else the latest earlier ticket that does; None = off-ticket trade."""
+    lists = ACTION_LISTS.get(row["action"], ())
+    days = sorted((p.stem.replace("trade_ticket_", "") for p in positions_dir.glob("trade_ticket_*.json")), reverse=True)
+    log_day = str(pd.Timestamp(row["date"]).date())
+    for day in days:
+        if day > log_day:
+            continue
+        if ticket_entries(positions_dir, day).get(row["ticker"], set()) & set(lists):
+            return day
+    return None
+
+
+def lookback_end_for(row, source_day: str | None) -> pd.Timestamp | None:
+    if source_day is None:
+        return None
+    m = SNAPSHOT / "forecast_cache" / MODEL_DIR / source_day / f"{row['ticker']}_meta.json"
     if m.exists():
         return pd.Timestamp(json.loads(m.read_text())["lookback_end"]).normalize()
-    return row["forecast_date"]
+    return pd.Timestamp(source_day)
 
 
 def download(tickers) -> None:
@@ -123,12 +161,13 @@ def audit(trades: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     rows = []
     for _, r in trades.iterrows():
         df = load_prices(r["ticker"])
-        lb = lookback_end_for(r)
+        src = source_ticket_date(r, SNAPSHOT / "positions")
+        lb = lookback_end_for(r, src)
         c = classify(r, df, lb)
         f = adj_factor(df, r["date"])
         value = r["shares"] * r["price"]
         sign = 1 if r["action"] == "buy" else -1
-        rows.append({**r.to_dict(), "lookback_end": lb, **c, "F": f, "value": value,
+        rows.append({**r.to_dict(), "source_ticket": src, "lookback_end": lb, **c, "F": f, "value": value,
                      "bias": None if f is None else sign * value * (1 - f),
                      "kind": "DR" if r["ticker"].endswith(DR_SUFFIXES) else "thai_equity"})
     out = pd.DataFrame(rows)
@@ -143,6 +182,7 @@ def audit(trades: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
         "class_value_thb": {k: round(x, 2) for k, x in out.groupby("cls")["value"].sum().items()},
         "class_by_kind": {f"{k}/{c}": int(x) for (k, c), x in out.groupby(["kind", "cls"]).size().items()},
         "logged_before_intended_session": int(out["logged_before_session"].fillna(False).sum()),
+        "off_ticket_trades": int(out["source_ticket"].isna().sum()),
         "class_C_share_trades": round(c_share_n, 4), "class_C_share_value": round(c_share_v, 4),
         "fills_partly_not_achievable": bool(c_share_n >= CLASS_C_RULE or c_share_v >= CLASS_C_RULE),
         "net_bias_thb": round(net, 2), "net_bias_share_of_capital": round(net / CAPITAL, 5),
@@ -175,7 +215,20 @@ def selftest() -> None:
     assert classify(ev(10.0, "2026-07-02"), None, idx[0])["cls"] == "D"
     assert abs(adj_factor(df, pd.Timestamp("2026-07-02")) - 0.97) < 1e-12
     assert abs(adj_factor(df, pd.Timestamp("2026-07-04")) - 1.0) < 1e-12  # weekend -> last session
-    print("selftest passed (tick table, tolerance, classes A-D, intended session both regimes, factor)")
+    # source ticket: a buy listed only in yesterday's buys (today's ticket shows it as a post-trade reduce)
+    import tempfile
+    with tempfile.TemporaryDirectory() as d:
+        d = Path(d)
+        (d / "trade_ticket_2026-07-01.json").write_text(json.dumps({"buys": [{"ticker": "X.BK"}], "exits": [], "reduces": []}))
+        (d / "trade_ticket_2026-07-02.json").write_text(json.dumps({"buys": [], "exits": [], "reduces": [{"ticker": "X.BK"}]}))
+        (d / "trade_ticket_2026-07-03.json").write_text(json.dumps({"buys": [{"ticker": "X.BK"}], "exits": [], "reduces": []}))
+        assert source_ticket_date({"date": "2026-07-02", "ticker": "X.BK", "action": "buy"}, d) == "2026-07-01"
+        assert source_ticket_date({"date": "2026-07-02", "ticker": "X.BK", "action": "exit"}, d) == "2026-07-02"
+        assert source_ticket_date({"date": "2026-07-03", "ticker": "X.BK", "action": "buy"}, d) == "2026-07-03"
+        assert source_ticket_date({"date": "2026-07-03", "ticker": "Y.BK", "action": "buy"}, d) is None
+    c = classify(ev(10.2, "2026-07-02"), df, None)  # off-ticket: the log-date session is the intended one
+    assert c["cls"] == "A" and c["intended"] == idx[1] and c["logged_before_session"] is None, c
+    print("selftest passed (source ticket, tick table, tolerance, classes A-D, intended session both regimes, factor)")
 
 
 def main() -> None:
@@ -190,7 +243,7 @@ def main() -> None:
         return download(sorted(trades["ticker"].unique()))
     meta = json.loads((AUDIT_DIR / "download_meta.json").read_text())
     out, summary = audit(trades)
-    cols = ["date", "ticker", "action", "shares", "price", "forecast_date", "lookback_end", "intended",
+    cols = ["date", "ticker", "action", "shares", "price", "source_ticket", "lookback_end", "intended",
             "logged_before_session", "cls", "F", "bias"]
     pd.set_option("display.width", 200)
     print(f"snapshot {SNAPSHOT.name}; unadjusted prices downloaded {meta['downloaded_on']}")
