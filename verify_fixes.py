@@ -406,6 +406,29 @@ def test_trade_log_records_fill_date_and_source_ticket(tmp):
     print("PASS test_trade_log_records_fill_date_and_source_ticket")
 
 
+def test_same_day_rerun_archives_instead_of_deleting(tmp):
+    """A second pipeline run on the same day must keep the first run's forecasts and ticket (live evidence)."""
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parent / "scripts"))
+    from dashboard import _archive_same_day_run
+
+    root = Path(tmp)
+    day_dir = root / "forecast_cache" / "M" / "2026-10-06"
+    day_dir.mkdir(parents=True)
+    (day_dir / "PTT.BK.parquet").write_bytes(b"morning")
+    (root / "positions").mkdir()
+    (root / "positions" / "trade_ticket_2026-10-06.json").write_text('{"buys": []}')
+    archive = _archive_same_day_run(root, "M", "2026-10-06", "073500")
+    assert archive == root / "forecast_cache_superseded" / "M" / "2026-10-06_073500"
+    assert (archive / "PTT.BK.parquet").read_bytes() == b"morning" and not day_dir.exists()
+    assert (root / "positions" / "superseded_trade_ticket_2026-10-06_073500.json").read_text() == '{"buys": []}'
+    assert (root / "positions" / "trade_ticket_2026-10-06.json").exists()  # STEP3 overwrites it later
+    day_dir.mkdir(parents=True)  # an empty folder (crashed run) is simply removed
+    assert _archive_same_day_run(root, "M", "2026-10-06", "080000") is None and not day_dir.exists()
+    print("PASS test_same_day_rerun_archives_instead_of_deleting")
+
+
 if __name__ == "__main__":
     import inspect
     import tempfile

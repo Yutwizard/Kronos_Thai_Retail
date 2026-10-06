@@ -8,6 +8,7 @@ freezes what exists now into a new timestamped folder that is never modified aft
         raw/*.parquet, raw/manifest.json            every cached price file
         positions/*                                 trade log, portfolio state, trade tickets
         forecast_cache/NeoQuasar_Kronos-small/<date>/   live forecast folders from LIVE_START on
+        forecast_cache_superseded/...                   earlier same-day runs, archived by the pipeline
         MANIFEST.sha256                             `sha256sum -c` compatible
         snapshot.json                               created_at, git commit, counts, changed files
 
@@ -64,6 +65,12 @@ def collect(data_root: Path) -> dict[str, Path]:
             for p in sorted(folder.iterdir()):
                 if p.is_file():
                     files[f"forecast_cache/{MODEL_DIR}/{folder.name}/{p.name}"] = p
+    sup_root = data_root / "forecast_cache_superseded" / MODEL_DIR  # same-day reruns archive, never delete
+    if sup_root.exists():
+        for folder in sorted(d for d in sup_root.iterdir() if d.is_dir()):
+            for p in sorted(folder.iterdir()):
+                if p.is_file():
+                    files[f"forecast_cache_superseded/{MODEL_DIR}/{folder.name}/{p.name}"] = p
     return files
 
 
@@ -162,7 +169,10 @@ def selftest() -> None:
         (data / "raw").mkdir(); (data / "raw" / "A.BK.parquet").write_bytes(b"v1")
         (data / "positions").mkdir(); (data / "positions" / "trade_log.csv").write_text("date\n")
 
+        sup = data / "forecast_cache_superseded" / MODEL_DIR / "2026-06-29_073500"
+        sup.mkdir(parents=True); (sup / "A.BK.parquet").write_bytes(b"morning")
         s1 = snapshot(data, dest, datetime(2026, 9, 23, 23, 50))
+        assert (s1 / "forecast_cache_superseded" / MODEL_DIR / "2026-06-29_073500" / "A.BK.parquet").read_bytes() == b"morning"
         assert not (s1 / "forecast_cache" / MODEL_DIR / "2026-05-15").exists(), "pre-live folder copied"
         assert (s1 / "raw" / "A.BK.parquet").read_bytes() == b"v1" and verify(s1) == []
         assert not os.access(s1 / "raw" / "A.BK.parquet", os.W_OK) or os.geteuid() == 0, "file left writable"

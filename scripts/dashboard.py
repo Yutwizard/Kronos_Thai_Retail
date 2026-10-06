@@ -532,6 +532,25 @@ def api_export_csv():
 
 # ---- CLI ----
 
+def _archive_same_day_run(data_root: Path, slug: str, day: str, stamp: str) -> Path | None:
+    """Move an earlier same-day forecast folder to data/forecast_cache_superseded/<slug>/<day>_<stamp> and keep a
+    copy of that day's trade ticket as positions/superseded_trade_ticket_<day>_<stamp>.json. Returns the archive
+    folder, or None if there was nothing to archive. An empty folder is just removed."""
+    import shutil
+    today_dir = data_root / "forecast_cache" / slug / day
+    archive = None
+    if today_dir.exists() and any(today_dir.iterdir()):
+        archive = data_root / "forecast_cache_superseded" / slug / f"{day}_{stamp}"
+        archive.parent.mkdir(parents=True, exist_ok=True)
+        shutil.move(str(today_dir), str(archive))
+    elif today_dir.exists():
+        today_dir.rmdir()
+    ticket = data_root / "positions" / f"trade_ticket_{day}.json"
+    if ticket.exists():
+        shutil.copy2(ticket, ticket.with_name(f"superseded_trade_ticket_{day}_{stamp}.json"))
+    return archive
+
+
 def cmd_generate():
     """Run morning pipeline: download data → generate forecasts → trade ticket."""
     import shutil
@@ -593,8 +612,11 @@ def cmd_generate():
         # not silently reuse a stale intraday forecast. This trades away
         # crash-resume (a rerun after a partial failure redoes all tickers on
         # GPU) for ranking correctness on every run.
-        if today_dir.exists():
-            shutil.rmtree(today_dir)
+        # The earlier run's folder and ticket may already have been traded on, so they are
+        # archived, not deleted (live-track evidence, ticket 05); snapshots include the archive.
+        archived = _archive_same_day_run(Path("data"), slug, today_str, datetime.now().strftime("%H%M%S"))
+        if archived:
+            log(f"STEP2: earlier {today_str} forecasts archived to {archived}")
         today_dir.mkdir(parents=True, exist_ok=True)
 
         # Skip tickers that failed price sanity check
