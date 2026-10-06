@@ -429,6 +429,42 @@ def test_same_day_rerun_archives_instead_of_deleting(tmp):
     print("PASS test_same_day_rerun_archives_instead_of_deleting")
 
 
+def test_scheduled_run_skips_holidays_and_completed_days(tmp):
+    """The 23:45 cron job: the latest SET session ignores zero-volume holiday stubs, and a scheduled run exits
+    at once when today's pipeline already completed."""
+    import os
+    import sys
+    from datetime import date
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parent / "scripts"))
+    import dashboard as D
+    from kth.data.universe import UNIVERSE
+    from kth.data.loader import sanitize_ticker
+
+    raw = Path(tmp) / "raw"
+    raw.mkdir()
+    tickers = [t for t, _, _ in UNIVERSE["thai_equity"]]
+    for i, t in enumerate(tickers):
+        days = ["2026-10-02", "2026-10-05"] + (["2026-10-06"] if i < 30 else [])
+        vols = [1e6] * len(days)
+        if i < 30:  # Yahoo-style flat zero-volume stub on a holiday after the last real bar
+            days, vols = days + ["2026-10-13"], vols + [0.0]
+        pd.DataFrame({"timestamps": pd.to_datetime(days), "volume": vols}).to_parquet(raw / f"{sanitize_ticker(t)}.parquet")
+    assert D._latest_set_session(raw) == date(2026, 10, 6)
+
+    cwd = os.getcwd()
+    try:
+        os.chdir(tmp)
+        (Path(tmp) / "data" / "logs").mkdir(parents=True)
+        log = Path(tmp) / "data" / "logs" / f"cron_{date.today()}.log"
+        log.write_text("[22:01:36] PIPELINE_OK\n")
+        assert D.cmd_generate(scheduled=True) == 0
+        assert "SCHEDULED: skipped -- today's pipeline already completed" in log.read_text()
+    finally:
+        os.chdir(cwd)
+    print("PASS test_scheduled_run_skips_holidays_and_completed_days")
+
+
 if __name__ == "__main__":
     import inspect
     import tempfile

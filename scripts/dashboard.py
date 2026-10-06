@@ -551,8 +551,36 @@ def _archive_same_day_run(data_root: Path, slug: str, day: str, stamp: str) -> P
     return archive
 
 
-def cmd_generate():
-    """Run morning pipeline: download data → generate forecasts → trade ticket."""
+def _latest_set_session(raw_dir: Path = Path("data/raw")) -> date | None:
+    """Latest date on which at least half of the thai_equity tickers have a real bar (volume > 0). Yahoo can
+    add flat zero-volume stub rows on SET holidays, so a plain last-row date is not enough."""
+    import pandas as pd
+    from kth.data.universe import UNIVERSE
+    from kth.data.loader import sanitize_ticker
+    tickers = [t for t, _, _ in UNIVERSE["thai_equity"]]
+    counts: dict = {}
+    for t in tickers:
+        f = raw_dir / f"{sanitize_ticker(t)}.parquet"
+        if not f.exists():
+            continue
+        d = pd.read_parquet(f, columns=["timestamps", "volume"])
+        real = d.loc[d["volume"] > 0, "timestamps"]
+        if len(real):
+            day = pd.Timestamp(real.iloc[-1]).date()
+            counts[day] = counts.get(day, 0) + 1
+    need, seen = len(tickers) / 2, 0
+    for day in sorted(counts, reverse=True):
+        seen += counts[day]
+        if seen >= need:
+            return day
+    return None
+
+
+def cmd_generate(scheduled: bool = False):
+    """Run the daily pipeline: download data → generate forecasts → trade ticket.
+    scheduled=True (the 23:45 weekday cron job, `--generate --scheduled`): skip if today's pipeline already
+    completed, or if there was no SET session today (holiday), so the timer never redoes a day or forecasts a
+    day without new prices."""
     import shutil
     log_path = Path(f"data/logs/cron_{date.today()}.log")
     log_path.parent.mkdir(parents=True, exist_ok=True)
@@ -565,6 +593,9 @@ def cmd_generate():
             f.write(line + "\n")
 
     os.environ["HF_HUB_OFFLINE"] = "1"
+    if scheduled and log_path.exists() and "PIPELINE_OK" in log_path.read_text():
+        log("SCHEDULED: skipped -- today's pipeline already completed")
+        return 0
 
     # Step 1: Download data
     log("STEP1: download_data.py")
@@ -585,6 +616,11 @@ def cmd_generate():
         for wl in warn_lines:
             log(f"STEP1_WARN: {wl.strip()}")
         log("STEP1_OK" + (f" ({len(warn_lines)} ticker warning(s), see above)" if warn_lines else ""))
+        if scheduled:
+            last = _latest_set_session()
+            if last != date.today():
+                log(f"SCHEDULED: skipped -- no SET session today (latest real close {last})")
+                return 0
     except Exception as e:
         log(f"STEP1_FAILED: {e}")
         return 1
@@ -689,12 +725,12 @@ def cmd_serve():
 
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "--generate":
-        sys.exit(cmd_generate())
+        sys.exit(cmd_generate(scheduled="--scheduled" in sys.argv[2:]))
     elif len(sys.argv) > 1 and sys.argv[1] == "--serve":
         cmd_serve()
     else:
         print("Usage:")
-        print("  dashboard.py --generate   # Run morning pipeline")
+        print("  dashboard.py --generate   # Run the daily pipeline (add --scheduled for the cron job)")
         print("  dashboard.py --serve      # Start web server")
         print(f"\nMode: {TRADING_MODE} (set KRONOS_MODE=live for Phase 2)")
         print(f"Port: {PORT} (set KRONOS_PORT to override)")
