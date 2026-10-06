@@ -10,6 +10,7 @@ checkpoints/
 kronos_repo/
 *.egg-info/
 venv/
+venv-py312/
 .worktrees/
 data/logs/
 data/live_portfolio.csv
