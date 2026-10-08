@@ -37,7 +37,7 @@ def _get_cached_closes() -> dict[str, float]:
         return _forecast_cache["data"]
     try:
         from kth.trading.trade_gen import load_forecasts
-        rows = load_forecasts(today)
+        rows = load_forecasts()  # latest forecasts on or before today
         closes = {r["ticker"]: r["close"] for r in rows}
     except Exception:
         closes = {}
@@ -123,9 +123,9 @@ def index():
 
 @app.route("/api/forecasts")
 def api_forecasts():
-    from kth.trading.trade_gen import get_all_ranked
+    from kth.trading.trade_gen import get_all_ranked, latest_forecast_date
     forecasts = get_all_ranked()
-    return jsonify({"date": str(date.today()), "count": len(forecasts), "forecasts": forecasts})
+    return jsonify({"date": latest_forecast_date() or str(date.today()), "count": len(forecasts), "forecasts": forecasts})
 
 
 def _cache_dates() -> list[str]:
@@ -325,17 +325,23 @@ def api_trades():
 
 @app.route("/api/health")
 def api_health():
+    """Forecasts are made by the 23:45 evening run, so on a weekday morning the newest folder is dated the previous
+    weekday: that is fresh. Stale = older than the previous weekday. Steps are read from that run's own log."""
+    import pandas as pd
+    from kth.trading.trade_gen import latest_forecast_date
     today_str = str(date.today())
-    log_path = Path(f"data/logs/cron_{today_str}.log")
+    last_forecast = latest_forecast_date(today_str)
+    prev_weekday = str((pd.Timestamp(today_str) - pd.offsets.BDay(1)).date())
+    stale = last_forecast is None or last_forecast < prev_weekday
     steps = {"download": "unknown", "forecast": "unknown", "trade_gen": "unknown"}
-    stale = True
-    last_forecast = None
+    log_path = Path(f"data/logs/cron_{today_str}.log")
+    if not log_path.exists() and last_forecast:
+        log_path = Path(f"data/logs/cron_{last_forecast}.log")
 
     if log_path.exists():
         content = log_path.read_text()
         if "PIPELINE_OK" in content:
             steps = {"download": "ok", "forecast": "ok", "trade_gen": "ok"}
-            stale = False
         else:
             if "STEP1_FAILED" in content:
                 steps["download"] = "failed"
@@ -346,23 +352,8 @@ def api_health():
             elif "forecast" in content.lower():
                 steps["forecast"] = "ok"
 
-    # Check for forecast cache
-    cache_dir = Path(f"data/forecast_cache/NeoQuasar_Kronos-small/{today_str}")
-    if cache_dir.exists():
-        last_forecast = today_str
-        stale = False
-        steps["forecast"] = steps.get("forecast", "ok")
-    else:
-        # Find latest cached date
-        parent = Path("data/forecast_cache/NeoQuasar_Kronos-small")
-        if parent.exists():
-            dates = sorted([d.name for d in parent.iterdir() if d.is_dir()], reverse=True)
-            if dates:
-                last_forecast = dates[0]
-                stale = dates[0] != today_str
-
     sanity_failures = []
-    sanity_log = Path(f"data/logs/sanity_{today_str}.json")
+    sanity_log = Path(f"data/logs/sanity_{last_forecast or today_str}.json")
     if sanity_log.exists():
         try:
             import json as _json
@@ -679,7 +670,7 @@ def cmd_generate(scheduled: bool = False):
     log("STEP3: trade ticket generation")
     try:
         from kth.trading.trade_gen import generate_trade_ticket
-        ticket = generate_trade_ticket()
+        ticket = generate_trade_ticket(report_date=today_str)  # the run's date, even if it crosses midnight
         log(f"STEP3_OK: {len(ticket.get('exits',[]))} exits, {len(ticket.get('buys',[]))} buys")
     except Exception as e:
         log(f"STEP3_FAILED: {e}")

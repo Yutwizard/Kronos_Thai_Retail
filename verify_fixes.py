@@ -465,6 +465,36 @@ def test_scheduled_run_skips_holidays_and_completed_days(tmp):
     print("PASS test_scheduled_run_skips_holidays_and_completed_days")
 
 
+def test_morning_view_uses_last_evening_forecast_and_ticket(tmp):
+    """Evening runs date forecasts/tickets by the run day; the next morning the dashboard must show them, not
+    'no ticket for today'. Future-dated folders are ignored, empty folders are skipped."""
+    import json
+    from datetime import date, timedelta
+    from pathlib import Path
+    import kth.trading.trade_gen as tg
+
+    tmp = Path(tmp)
+    old = tg.CACHE_DIR, tg.POSITIONS_DIR
+    tg.CACHE_DIR, tg.POSITIONS_DIR = tmp / "fc", tmp / "pos"
+    try:
+        today = date.today()
+        yday, tomorrow, older = (str(today - timedelta(days=k)) for k in (1, -1, 3))
+        for d, has in ((older, True), (yday, True), (tomorrow, True), (str(today), False)):
+            (tg.CACHE_DIR / d).mkdir(parents=True)
+            if has:
+                (tg.CACHE_DIR / d / "PTT.BK.parquet").write_bytes(b"x")
+        assert tg.latest_forecast_date() == yday  # today's folder is empty, tomorrow's is in the future
+        assert tg.latest_forecast_date(older) == older
+        tg.POSITIONS_DIR.mkdir()
+        for d in (older, yday, tomorrow):
+            (tg.POSITIONS_DIR / f"trade_ticket_{d}.json").write_text(json.dumps({"date": d, "buys": []}))
+        assert tg.load_trade_ticket()["date"] == yday
+        assert tg.load_trade_ticket(older)["date"] == older
+    finally:
+        tg.CACHE_DIR, tg.POSITIONS_DIR = old
+    print("PASS test_morning_view_uses_last_evening_forecast_and_ticket")
+
+
 if __name__ == "__main__":
     import inspect
     import tempfile

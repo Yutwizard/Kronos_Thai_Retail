@@ -78,6 +78,25 @@ def _tag_tiers(rows: list[dict], n: int = TOP_N) -> list[dict]:
     return rows
 
 
+def latest_forecast_date(on_or_before: str | None = None) -> str | None:
+    """Newest forecast folder (with at least one parquet) dated on or before `on_or_before` (default today).
+    The pipeline runs in the evening, so in the morning the forecasts to trade from are dated the day before."""
+    limit = on_or_before or str(date.today())
+    if not CACHE_DIR.exists():
+        return None
+    days = sorted(d.name for d in CACHE_DIR.iterdir()
+                  if d.is_dir() and d.name <= limit and any(d.glob("*.parquet")))
+    return days[-1] if days else None
+
+
+def latest_ticket_date(on_or_before: str | None = None) -> str | None:
+    """Newest saved trade ticket dated on or before `on_or_before` (default today)."""
+    limit = on_or_before or str(date.today())
+    days = sorted(p.stem.replace("trade_ticket_", "") for p in POSITIONS_DIR.glob("trade_ticket_*.json"))
+    days = [d for d in days if d <= limit]
+    return days[-1] if days else None
+
+
 def load_forecasts(report_date: str = None, prices: PriceStore | None = None,
                     resolver: ExecutionResolver | None = None) -> list[dict]:
     """Load today's forecast cache for every tradable ticker (thai_equity +
@@ -86,8 +105,10 @@ def load_forecasts(report_date: str = None, prices: PriceStore | None = None,
     against the DR's own SET close, never the underlying's raw close.
 
     prices/resolver: per-run seams (the test surface — inject fakes, no disk)."""
-    if report_date is None:
-        report_date = str(date.today())
+    if report_date is None:  # latest forecasts on or before today (evening runs are dated the day before)
+        report_date = latest_forecast_date()
+        if report_date is None:
+            return []
     day_dir = CACHE_DIR / report_date
     if not day_dir.exists():
         return []
@@ -195,7 +216,9 @@ def generate_trade_ticket(report_date: str = None, positions: dict = None,
     """
     prices = prices or PriceStore()
     resolver = resolver or ExecutionResolver(prices)
-    forecasts = load_forecasts(report_date, prices=prices, resolver=resolver)
+    if report_date is None:  # date the ticket by the forecasts it uses, not by the clock (a run can cross midnight)
+        report_date = latest_forecast_date()
+    forecasts = load_forecasts(report_date, prices=prices, resolver=resolver) if report_date else []
     if not forecasts:
         return {"error": "No forecasts available", "exits": [], "reduces": [], "buys": []}
 
@@ -374,9 +397,10 @@ def generate_trade_ticket(report_date: str = None, positions: dict = None,
 
 
 def load_trade_ticket(report_date: str = None) -> dict:
-    """Load persisted trade ticket for a date."""
+    """Load the persisted trade ticket for a date; default = the latest ticket on or before today (the evening
+    run's ticket is dated the day before the morning session it is traded in)."""
     if report_date is None:
-        report_date = str(date.today())
+        report_date = latest_ticket_date() or str(date.today())
     path = POSITIONS_DIR / f"trade_ticket_{report_date}.json"
     if path.exists():
         with open(path) as f:
