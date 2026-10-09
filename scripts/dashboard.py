@@ -567,6 +567,16 @@ def _latest_set_session(raw_dir: Path = Path("data/raw")) -> date | None:
     return None
 
 
+def _evening_run_completed(log_text: str, from_hour: int = 22) -> bool:
+    """True if the log has a PIPELINE_OK stamped at or after `from_hour` (an evening run with today's close).
+    A morning catch-up run (yesterday's close) must not stop that evening's scheduled run."""
+    import re
+    for m in re.finditer(r"^\[(\d{2}):\d{2}:\d{2}\] PIPELINE_OK", log_text, re.M):
+        if int(m.group(1)) >= from_hour:
+            return True
+    return False
+
+
 def cmd_generate(scheduled: bool = False):
     """Run the daily pipeline: download data → generate forecasts → trade ticket.
     scheduled=True (the 23:45 weekday cron job, `--generate --scheduled`): skip if today's pipeline already
@@ -584,8 +594,8 @@ def cmd_generate(scheduled: bool = False):
             f.write(line + "\n")
 
     os.environ["HF_HUB_OFFLINE"] = "1"
-    if scheduled and log_path.exists() and "PIPELINE_OK" in log_path.read_text():
-        log("SCHEDULED: skipped -- today's pipeline already completed")
+    if scheduled and log_path.exists() and _evening_run_completed(log_path.read_text()):
+        log("SCHEDULED: skipped -- today's evening pipeline already completed")
         return 0
 
     # Step 1: Download data

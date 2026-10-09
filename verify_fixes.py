@@ -459,7 +459,10 @@ def test_scheduled_run_skips_holidays_and_completed_days(tmp):
         log = Path(tmp) / "data" / "logs" / f"cron_{date.today()}.log"
         log.write_text("[22:01:36] PIPELINE_OK\n")
         assert D.cmd_generate(scheduled=True) == 0
-        assert "SCHEDULED: skipped -- today's pipeline already completed" in log.read_text()
+        assert "SCHEDULED: skipped -- today's evening pipeline already completed" in log.read_text()
+        # a morning catch-up run (yesterday's close) must not block the evening run
+        assert not D._evening_run_completed("[07:40:02] PIPELINE_OK\n")
+        assert D._evening_run_completed("[07:40:02] PIPELINE_OK\n[23:59:10] PIPELINE_OK\n")
     finally:
         os.chdir(cwd)
     print("PASS test_scheduled_run_skips_holidays_and_completed_days")
