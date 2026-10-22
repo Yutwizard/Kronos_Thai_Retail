@@ -3,6 +3,7 @@ __pycache__/
 .ipynb_checkpoints/
 data/raw/*.parquet
 data/forecast_cache/
+data/forecast_cache_backfill/
 reports/*.html
 data/backtest_results/
 data/raw_synthetic_backup/
